@@ -1,12 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { fetchRaces, fetchBackgrounds, fetchClasses, type ClassMap } from '@/lib/5etools/data'
+import {
+  fetchRaces, fetchBackgrounds, fetchClasses, fetchRaceAbilities, fetchFeats, fetchClassDetails,
+  type ClassMap, type RaceAbility, type Feat, type ClassDetail,
+} from '@/lib/5etools/data'
 import { getLevelFromXP, getProficiencyBonus } from '@/lib/5etools/xp'
 import Autocomplete from '@/components/ui/Autocomplete'
+import FeatModal from '@/components/ui/FeatModal'
 
 const ALIGNMENTS = [
   'Legal Bueno', 'Neutral Bueno', 'Caótico Bueno',
@@ -20,14 +24,27 @@ const SPELLCASTING_ABILITIES: Record<string, string> = {
   'Artificer': 'int',
 }
 
+const AB_KEYS = ['str', 'dex', 'con', 'int', 'wis', 'cha'] as const
+type AbKey = typeof AB_KEYS[number]
+type Abilities = Record<AbKey, number>
+
 interface ClassEntry {
-  class_name: string
-  level: number
-  subclass_name: string
-  is_primary: boolean
-  is_homebrew: boolean
-  homebrew_url: string
+  class_name: string; level: number; subclass_name: string
+  is_primary: boolean; is_homebrew: boolean; homebrew_url: string
 }
+
+interface ASIChoice {
+  type: 'asi' | 'feat'
+  // ASI: +2 to one or +1 to two
+  asi_mode?: '2to1' | '1to2'
+  asi_stat1?: AbKey
+  asi_stat2?: AbKey
+  feat_name?: string
+}
+
+interface DiceRoll { dice: number[]; dropped: number; total: number }
+
+// ── Helpers ──
 
 function L({ children }: { children: React.ReactNode }) {
   return (
@@ -35,15 +52,40 @@ function L({ children }: { children: React.ReactNode }) {
       display: 'block', fontSize: '0.82rem', marginBottom: '0.35rem',
       fontFamily: 'var(--font-cinzel, serif)', letterSpacing: '0.05em',
       color: 'var(--on-dark)',
-    }}>
-      {children}
-    </label>
+    }}>{children}</label>
   )
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <div><L>{label}</L>{children}</div>
 }
+
+function modVal(score: number) { return Math.floor((score - 10) / 2) }
+function modStr(score: number) { const m = modVal(score); return m >= 0 ? `+${m}` : `${m}` }
+
+function roll4d6drop1(): DiceRoll {
+  const dice = Array.from({ length: 4 }, () => Math.floor(Math.random() * 6) + 1)
+  const sorted = [...dice].sort((a, b) => a - b)
+  const dropped = sorted[0]
+  const total = sorted.slice(1).reduce((s, d) => s + d, 0)
+  return { dice, dropped, total }
+}
+
+function rollDie(faces: number): number {
+  return Math.floor(Math.random() * faces) + 1
+}
+
+// Compute ASI count per class based on class details and level
+function getASICount(className: string, level: number, details: Record<string, ClassDetail>): number {
+  const cd = details[className]
+  if (!cd) {
+    // Fallback: standard 4,8,12,16,19
+    return [4, 8, 12, 16, 19].filter(l => l <= level).length
+  }
+  return cd.asiLevels.filter(l => l <= level).length
+}
+
+// ───────────────────── MAIN COMPONENT ─────────────────────
 
 export default function NewCharacterPage() {
   const router = useRouter()
@@ -55,16 +97,22 @@ export default function NewCharacterPage() {
   const [races, setRaces] = useState<string[]>([])
   const [backgrounds, setBackgrounds] = useState<string[]>([])
   const [classMap, setClassMap] = useState<ClassMap>({})
+  const [raceAbilities, setRaceAbilities] = useState<Record<string, RaceAbility>>({})
+  const [feats, setFeats] = useState<Feat[]>([])
+  const [classDetails, setClassDetails] = useState<Record<string, ClassDetail>>({})
 
   useEffect(() => {
     fetchRaces().then(setRaces)
     fetchBackgrounds().then(setBackgrounds)
     fetchClasses().then(setClassMap)
+    fetchRaceAbilities().then(setRaceAbilities)
+    fetchFeats().then(setFeats)
+    fetchClassDetails().then(setClassDetails)
   }, [])
 
   const classNames = Object.keys(classMap).sort()
 
-  // Basic info
+  // ── Basic info ──
   const [name, setName] = useState('')
   const [race, setRace] = useState('')
   const [background, setBackground] = useState('')
@@ -72,56 +120,173 @@ export default function NewCharacterPage() {
   const [xp, setXp] = useState(0)
   const [speed, setSpeed] = useState(30)
 
-  // Derived from XP
+  // Derived
   const totalLevel = getLevelFromXP(xp)
   const profBonus = getProficiencyBonus(totalLevel)
 
-  // Classes
+  // ── Classes ──
   const [classes, setClasses] = useState<ClassEntry[]>([
     { class_name: '', level: 1, subclass_name: '', is_primary: true, is_homebrew: false, homebrew_url: '' }
   ])
-
   const assignedLevels = classes.reduce((sum, c) => sum + (c.level || 0), 0)
   const remainingLevels = totalLevel - assignedLevels
 
-  // Ability scores
-  const [abilities, setAbilities] = useState({ str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 })
+  // ── Base abilities (before bonuses) ──
+  const [baseAbilities, setBaseAbilities] = useState<Abilities>({ str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 })
+  const [diceRolls, setDiceRolls] = useState<Partial<Record<AbKey, DiceRoll>>>({})
 
-  // HP & Combat
-  const [hpMax, setHpMax] = useState(8)
-  const [ac, setAc] = useState(10)
+  // ── Racial bonus choice (for Custom Origin / Half-Elf style) ──
+  const [racialChoices, setRacialChoices] = useState<AbKey[]>([])
 
-  // Roleplay
-  const [personality, setPersonality] = useState('')
-  const [ideals, setIdeals] = useState('')
-  const [bonds, setBonds] = useState('')
-  const [flaws, setFlaws] = useState('')
+  // ── ASI choices ──
+  const [asiChoices, setAsiChoices] = useState<ASIChoice[]>([])
+  const [featModalOpen, setFeatModalOpen] = useState(false)
+  const [featModalASIIndex, setFeatModalASIIndex] = useState(-1)
 
-  function mod(score: number) {
-    const m = Math.floor((score - 10) / 2)
-    return m >= 0 ? `+${m}` : `${m}`
+  // ── HP ──
+  const [hpRolls, setHpRolls] = useState<number[]>([]) // per level rolled (starting from level 2)
+  const [hpManualOverride, setHpManualOverride] = useState<number | null>(null)
+
+  // ── AC ──
+  const [acManual, setAcManual] = useState<number | null>(null)
+
+  // Compute racial bonuses
+  const racialBonus = useCallback((): Partial<Abilities> => {
+    const ra = raceAbilities[race]
+    if (!ra) return {}
+    const bonus: Partial<Abilities> = {}
+    for (const [k, v] of Object.entries(ra.fixed)) {
+      if (AB_KEYS.includes(k as AbKey)) bonus[k as AbKey] = v
+    }
+    // Apply choices
+    for (const chosen of racialChoices) {
+      bonus[chosen] = (bonus[chosen] ?? 0) + 1
+    }
+    return bonus
+  }, [race, raceAbilities, racialChoices])
+
+  // Compute ASI bonuses
+  const asiBonuses = useCallback((): Partial<Abilities> => {
+    const bonus: Partial<Abilities> = {}
+    for (const asi of asiChoices) {
+      if (asi.type === 'asi') {
+        if (asi.asi_mode === '2to1' && asi.asi_stat1) {
+          bonus[asi.asi_stat1] = (bonus[asi.asi_stat1] ?? 0) + 2
+        } else if (asi.asi_mode === '1to2') {
+          if (asi.asi_stat1) bonus[asi.asi_stat1] = (bonus[asi.asi_stat1] ?? 0) + 1
+          if (asi.asi_stat2) bonus[asi.asi_stat2] = (bonus[asi.asi_stat2] ?? 0) + 1
+        }
+      }
+      // Feat ability bonuses are informational only — not auto-applied
+    }
+    return bonus
+  }, [asiChoices])
+
+  // Final abilities
+  const abilities: Abilities = { ...baseAbilities }
+  const rb = racialBonus()
+  const ab = asiBonuses()
+  for (const k of AB_KEYS) {
+    abilities[k] = baseAbilities[k] + (rb[k] ?? 0) + (ab[k] ?? 0)
   }
 
+  // AC auto
+  const autoAC = 10 + modVal(abilities.dex)
+  const ac = acManual ?? autoAC
+
+  // HP auto
+  const primaryClass = classes.find(c => c.is_primary && c.class_name) ?? classes[0]
+  const primaryHitDie = classDetails[primaryClass?.class_name]?.hitDie ?? 8
+  const conMod = modVal(abilities.con)
+  const hpLevel1 = primaryHitDie + conMod
+  const hpFromRolls = hpRolls.reduce((s, r) => s + r + conMod, 0)
+  const autoHP = Math.max(1, hpLevel1 + hpFromRolls)
+  const hpMax = hpManualOverride ?? autoHP
+
+  // Total ASI count
+  const totalASIs = classes.reduce((sum, cls) => {
+    if (!cls.class_name) return sum
+    return sum + getASICount(cls.class_name, cls.level, classDetails)
+  }, 0)
+
+  // Sync ASI array length
+  useEffect(() => {
+    setAsiChoices(prev => {
+      if (prev.length === totalASIs) return prev
+      if (prev.length < totalASIs) {
+        return [...prev, ...Array.from({ length: totalASIs - prev.length }, () => ({ type: 'asi' as const, asi_mode: '2to1' as const }))]
+      }
+      return prev.slice(0, totalASIs)
+    })
+  }, [totalASIs])
+
+  // Reset racial choices when race changes
+  useEffect(() => { setRacialChoices([]) }, [race])
+
+  // ── Class helpers ──
   function addClassEntry() {
     setClasses(prev => [...prev, { class_name: '', level: 1, subclass_name: '', is_primary: false, is_homebrew: false, homebrew_url: '' }])
   }
-
-  function removeClassEntry(i: number) {
-    setClasses(prev => prev.filter((_, idx) => idx !== i))
-  }
-
+  function removeClassEntry(i: number) { setClasses(prev => prev.filter((_, idx) => idx !== i)) }
   function updateClass(i: number, field: keyof ClassEntry, value: string | number | boolean) {
     setClasses(prev => prev.map((c, idx) => {
       if (idx !== i) return c
       const updated = { ...c, [field]: value }
-      // Reset subclass when class changes
       if (field === 'class_name') updated.subclass_name = ''
-      // Reset homebrew url when toggling off
       if (field === 'is_homebrew' && !value) updated.homebrew_url = ''
       return updated
     }))
   }
 
+  // ── Dice rolling ──
+  function rollOneAbility(ab: AbKey) {
+    const result = roll4d6drop1()
+    setDiceRolls(prev => ({ ...prev, [ab]: result }))
+    setBaseAbilities(prev => ({ ...prev, [ab]: result.total }))
+  }
+  function rollAllAbilities() {
+    const newRolls: Partial<Record<AbKey, DiceRoll>> = {}
+    const newAb: Abilities = { ...baseAbilities }
+    for (const ab of AB_KEYS) {
+      const result = roll4d6drop1()
+      newRolls[ab] = result
+      newAb[ab] = result.total
+    }
+    setDiceRolls(newRolls)
+    setBaseAbilities(newAb)
+  }
+
+  function rollHPForLevel(levelIndex: number) {
+    const result = rollDie(primaryHitDie)
+    setHpRolls(prev => {
+      const copy = [...prev]
+      copy[levelIndex] = result
+      return copy
+    })
+    setHpManualOverride(null)
+  }
+  function rollAllHP() {
+    const levels = totalLevel - 1
+    if (levels <= 0) return
+    const rolls = Array.from({ length: levels }, () => rollDie(primaryHitDie))
+    setHpRolls(rolls)
+    setHpManualOverride(null)
+  }
+
+  // ── ASI helpers ──
+  function updateASI(index: number, changes: Partial<ASIChoice>) {
+    setAsiChoices(prev => prev.map((a, i) => i === index ? { ...a, ...changes } : a))
+  }
+  function openFeatModal(asiIndex: number) {
+    setFeatModalASIIndex(asiIndex)
+    setFeatModalOpen(true)
+  }
+  function selectFeat(feat: Feat) {
+    updateASI(featModalASIIndex, { type: 'feat', feat_name: feat.name })
+    setFeatModalOpen(false)
+  }
+
+  // ── Submit ──
   async function handleSubmit() {
     if (!name.trim()) { setError('El nombre es requerido'); return }
     if (classes.every(c => !c.class_name)) { setError('Al menos una clase es requerida'); return }
@@ -158,16 +323,14 @@ export default function NewCharacterPage() {
           character_id: character.id,
           class_name: cls.class_name,
           subclass_name: cls.subclass_name || null,
-          level: cls.level,
-          is_primary: cls.is_primary,
-          is_homebrew: cls.is_homebrew,
-          homebrew_url: cls.homebrew_url || null,
+          level: cls.level, is_primary: cls.is_primary,
+          is_homebrew: cls.is_homebrew, homebrew_url: cls.homebrew_url || null,
           spellcasting_ability: spellcastingAbility,
           spell_save_dc: spellcastingAbility
-            ? 8 + profBonus + Math.floor((abilities[spellcastingAbility as keyof typeof abilities] - 10) / 2)
+            ? 8 + profBonus + modVal(abilities[spellcastingAbility as AbKey])
             : null,
           spell_attack_mod: spellcastingAbility
-            ? profBonus + Math.floor((abilities[spellcastingAbility as keyof typeof abilities] - 10) / 2)
+            ? profBonus + modVal(abilities[spellcastingAbility as AbKey])
             : null,
         })
         .select().single()
@@ -185,22 +348,46 @@ export default function NewCharacterPage() {
       }
     }
 
+    // Save feats as character features
+    for (const asi of asiChoices) {
+      if (asi.type === 'feat' && asi.feat_name) {
+        await supabase.from('character_features').insert({
+          character_id: character.id,
+          name: asi.feat_name,
+          description: '',
+          source: 'feat',
+        })
+      }
+    }
+
     router.push(`/characters/${character.id}/edit`)
   }
 
+  // ── Roleplay ──
+  const [personality, setPersonality] = useState('')
+  const [ideals, setIdeals] = useState('')
+  const [bonds, setBonds] = useState('')
+  const [flaws, setFlaws] = useState('')
+
+  // ── Styles ──
   const darkInput: React.CSSProperties = {
     width: '100%', padding: '0.45rem 0.75rem',
     background: 'rgba(245,233,204,0.12)', border: '1px solid var(--gold-dark)',
     color: 'var(--on-dark)', fontFamily: 'var(--font-crimson, serif)', fontSize: '1rem',
     outline: 'none', borderRadius: '2px',
   }
-
-  const darkSelect: React.CSSProperties = {
-    ...darkInput, cursor: 'pointer',
-    appearance: 'auto' as const,
+  const darkSelect: React.CSSProperties = { ...darkInput, cursor: 'pointer', appearance: 'auto' as const }
+  const sectionBox: React.CSSProperties = {
+    padding: '0.75rem 1rem', background: 'rgba(245,233,204,0.08)',
+    border: '1px solid var(--gold-dark)',
   }
 
   const STEPS = ['Básico', 'Clases', 'Stats', 'Personalidad']
+
+  // Racial ability info
+  const currentRacialAbility = raceAbilities[race]
+  const hasRacialChoice = currentRacialAbility?.choose
+  const hasNoRacialData = race.length > 0 && !currentRacialAbility
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--cover)' }}>
@@ -215,7 +402,7 @@ export default function NewCharacterPage() {
         </h1>
       </div>
 
-      {/* Step tabs */}
+      {/* Tabs */}
       <div style={{ display: 'flex', gap: 4, padding: '1rem 1.5rem 0', maxWidth: 760, margin: '0 auto' }}>
         {STEPS.map((label, i) => (
           <button key={i} onClick={() => setStep(i + 1)}
@@ -233,25 +420,19 @@ export default function NewCharacterPage() {
           </div>
         )}
 
-        {/* ── Paso 1: Básico ── */}
+        {/* ── PASO 1: BÁSICO ── */}
         {step === 1 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <h2 style={{ fontFamily: 'var(--font-cinzel, serif)', color: 'var(--gold)', fontSize: '1.1rem' }}>
               Información Básica
             </h2>
-
             <Field label="Nombre del personaje *">
-              <input value={name} onChange={e => setName(e.target.value)}
-                style={darkInput} placeholder="Y'Sera..." />
+              <input value={name} onChange={e => setName(e.target.value)} style={darkInput} placeholder="Y'Sera..." />
             </Field>
-
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <Autocomplete label="Raza" value={race} onChange={setRace}
-                options={races} placeholder="Elf, Human, Tiefling..." />
-              <Autocomplete label="Trasfondo" value={background} onChange={setBackground}
-                options={backgrounds} placeholder="Far Traveler, Sage..." />
+              <Autocomplete label="Raza" value={race} onChange={setRace} options={races} placeholder="Elf, Human, Tiefling..." />
+              <Autocomplete label="Trasfondo" value={background} onChange={setBackground} options={backgrounds} placeholder="Far Traveler, Sage..." />
             </div>
-
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <Field label="Alineamiento">
                 <select value={alignment} onChange={e => setAlignment(e.target.value)} style={darkSelect}>
@@ -263,7 +444,6 @@ export default function NewCharacterPage() {
                 <input type="number" value={speed} onChange={e => setSpeed(parseInt(e.target.value) || 30)} style={darkInput} />
               </Field>
             </div>
-
             <Field label="Experiencia (XP)">
               <input type="number" value={xp} onChange={e => setXp(parseInt(e.target.value) || 0)} style={darkInput} min={0} />
               <div style={{ marginTop: '0.4rem', fontSize: '0.85rem', color: 'var(--gold-light)', fontFamily: 'var(--font-cinzel, serif)' }}>
@@ -273,32 +453,21 @@ export default function NewCharacterPage() {
           </div>
         )}
 
-        {/* ── Paso 2: Clases ── */}
+        {/* ── PASO 2: CLASES ── */}
         {step === 2 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: '0.5rem' }}>
-              <h2 style={{ fontFamily: 'var(--font-cinzel, serif)', color: 'var(--gold)', fontSize: '1.1rem', margin: 0 }}>
-                Clases
-              </h2>
+              <h2 style={{ fontFamily: 'var(--font-cinzel, serif)', color: 'var(--gold)', fontSize: '1.1rem', margin: 0 }}>Clases</h2>
               <div style={{ fontSize: '0.85rem', fontFamily: 'var(--font-cinzel, serif)' }}>
                 <span style={{ color: 'var(--on-dark-muted)' }}>Nivel total: {totalLevel}</span>
-                {remainingLevels > 0 && (
-                  <span style={{ color: 'var(--gold-light)', marginLeft: '0.75rem' }}>
-                    Por asignar: {remainingLevels}
-                  </span>
-                )}
-                {remainingLevels < 0 && (
-                  <span style={{ color: '#f87171', marginLeft: '0.75rem' }}>
-                    Excedido: {Math.abs(remainingLevels)}
-                  </span>
-                )}
+                {remainingLevels > 0 && <span style={{ color: 'var(--gold-light)', marginLeft: '0.75rem' }}>Por asignar: {remainingLevels}</span>}
+                {remainingLevels < 0 && <span style={{ color: '#f87171', marginLeft: '0.75rem' }}>Excedido: {Math.abs(remainingLevels)}</span>}
               </div>
             </div>
 
             {classes.map((cls, i) => {
-              const subclassOptions = classMap[cls.class_name] ?? []
-              const maxForThis = cls.level + Math.max(0, remainingLevels)
-
+              const subOpts = classMap[cls.class_name] ?? []
+              const maxLvl = cls.level + Math.max(0, remainingLevels)
               return (
                 <div key={i} style={{ border: '1px solid var(--gold-dark)', padding: '1rem', background: 'rgba(255,255,255,0.05)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
@@ -307,59 +476,37 @@ export default function NewCharacterPage() {
                     </span>
                     <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                       <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer', fontSize: '0.82rem', color: 'var(--on-dark-muted)', fontFamily: 'var(--font-cinzel, serif)' }}>
-                        <input type="checkbox" checked={cls.is_homebrew}
-                          onChange={e => updateClass(i, 'is_homebrew', e.target.checked)}
-                          style={{ accentColor: 'var(--gold)' }} />
+                        <input type="checkbox" checked={cls.is_homebrew} onChange={e => updateClass(i, 'is_homebrew', e.target.checked)} style={{ accentColor: 'var(--gold)' }} />
                         Homebrew
                       </label>
                       {classes.length > 1 && (
-                        <button onClick={() => removeClassEntry(i)} style={{ color: '#f87171', fontSize: '0.82rem', background: 'none', border: 'none', cursor: 'pointer' }}>
-                          Eliminar
-                        </button>
+                        <button onClick={() => removeClassEntry(i)} style={{ color: '#f87171', fontSize: '0.82rem', background: 'none', border: 'none', cursor: 'pointer' }}>Eliminar</button>
                       )}
                     </div>
                   </div>
-
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                    <Autocomplete
-                      label="Clase"
-                      value={cls.class_name}
-                      onChange={val => updateClass(i, 'class_name', val)}
-                      options={classNames}
-                      placeholder="Fighter, Wizard, Rogue..."
-                    />
+                    <Autocomplete label="Clase" value={cls.class_name} onChange={val => updateClass(i, 'class_name', val)} options={classNames} placeholder="Fighter, Wizard, Rogue..." />
                     <div style={{ width: '5rem' }}>
                       <Field label="Nivel">
-                        <input type="number" value={cls.level} min={1} max={Math.min(20, maxForThis)}
-                          onChange={e => updateClass(i, 'level', Math.max(1, parseInt(e.target.value) || 1))}
-                          style={darkInput} />
+                        <input type="number" value={cls.level} min={1} max={Math.min(20, maxLvl)}
+                          onChange={e => updateClass(i, 'level', Math.max(1, parseInt(e.target.value) || 1))} style={darkInput} />
                       </Field>
                     </div>
                   </div>
-
                   {cls.is_homebrew ? (
                     <>
                       <Field label="Subclase (homebrew)">
-                        <input value={cls.subclass_name}
-                          onChange={e => updateClass(i, 'subclass_name', e.target.value)}
-                          style={darkInput} placeholder="Nombre de la subclase homebrew..." />
+                        <input value={cls.subclass_name} onChange={e => updateClass(i, 'subclass_name', e.target.value)} style={darkInput} placeholder="Nombre de la subclase homebrew..." />
                       </Field>
                       <div style={{ marginTop: '0.75rem' }}>
                         <Field label="Enlace fuente homebrew (opcional)">
-                          <input value={cls.homebrew_url}
-                            onChange={e => updateClass(i, 'homebrew_url', e.target.value)}
-                            style={darkInput} placeholder="https://..." />
+                          <input value={cls.homebrew_url} onChange={e => updateClass(i, 'homebrew_url', e.target.value)} style={darkInput} placeholder="https://..." />
                         </Field>
                       </div>
                     </>
                   ) : (
-                    <Autocomplete
-                      label="Subclase"
-                      value={cls.subclass_name}
-                      onChange={val => updateClass(i, 'subclass_name', val)}
-                      options={subclassOptions}
-                      placeholder={subclassOptions.length > 0 ? 'Buscar subclase...' : 'Selecciona una clase primero'}
-                    />
+                    <Autocomplete label="Subclase" value={cls.subclass_name} onChange={val => updateClass(i, 'subclass_name', val)}
+                      options={subOpts} placeholder={subOpts.length > 0 ? 'Buscar subclase...' : 'Selecciona una clase primero'} />
                   )}
                 </div>
               )
@@ -369,55 +516,286 @@ export default function NewCharacterPage() {
               padding: '0.6rem', border: '1px dashed var(--gold-dark)',
               color: 'var(--on-dark-muted)', background: 'transparent', cursor: 'pointer',
               fontFamily: 'var(--font-cinzel, serif)', fontSize: '0.82rem', letterSpacing: '0.05em',
-            }}>
-              + Agregar multiclase
-            </button>
+            }}>+ Agregar multiclase</button>
           </div>
         )}
 
-        {/* ── Paso 3: Stats ── */}
+        {/* ── PASO 3: STATS ── */}
         {step === 3 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <h2 style={{ fontFamily: 'var(--font-cinzel, serif)', color: 'var(--gold)', fontSize: '1.1rem' }}>
-              Estadísticas
-            </h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+              <h2 style={{ fontFamily: 'var(--font-cinzel, serif)', color: 'var(--gold)', fontSize: '1.1rem', margin: 0 }}>
+                Estadísticas
+              </h2>
+              <button onClick={rollAllAbilities} className="btn-dice">
+                Lanzar todos (4d6)
+              </button>
+            </div>
 
+            {/* Ability Scores Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
-              {(Object.keys(abilities) as (keyof typeof abilities)[]).map(ab => (
-                <div key={ab} style={{ border: '1px solid var(--gold-dark)', padding: '0.75rem', textAlign: 'center', background: 'rgba(255,255,255,0.05)' }}>
-                  <div style={{ fontFamily: 'var(--font-cinzel, serif)', fontSize: '0.75rem', color: 'var(--on-dark-muted)', marginBottom: '0.5rem', letterSpacing: '0.1em' }}>
-                    {ab.toUpperCase()}
+              {AB_KEYS.map(abKey => {
+                const base = baseAbilities[abKey]
+                const racialB = rb[abKey] ?? 0
+                const asiB = ab[abKey] ?? 0
+                const final = abilities[abKey]
+                const roll = diceRolls[abKey]
+                const hasBonus = racialB > 0 || asiB > 0
+
+                return (
+                  <div key={abKey} style={{ border: '1px solid var(--gold-dark)', padding: '0.6rem', textAlign: 'center', background: 'rgba(255,255,255,0.05)' }}>
+                    <div style={{ fontFamily: 'var(--font-cinzel, serif)', fontSize: '0.75rem', color: 'var(--on-dark-muted)', marginBottom: '0.4rem', letterSpacing: '0.1em' }}>
+                      {abKey.toUpperCase()}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', justifyContent: 'center' }}>
+                      <input type="number" value={base} min={1} max={30}
+                        onChange={e => setBaseAbilities(prev => ({ ...prev, [abKey]: parseInt(e.target.value) || 10 }))}
+                        style={{ ...darkInput, textAlign: 'center', fontSize: '1.2rem', fontWeight: 700, padding: '0.25rem', width: '3.5rem' }} />
+                      <button onClick={() => rollOneAbility(abKey)} className="btn-dice" title="4d6 drop lowest">
+                        🎲
+                      </button>
+                    </div>
+                    {roll && (
+                      <div style={{ fontSize: '0.72rem', color: 'var(--on-dark-muted)', marginTop: '0.2rem' }}>
+                        {roll.dice.map((d, i) => (
+                          <span key={i} style={{ textDecoration: d === roll.dropped && roll.dice.indexOf(d) === roll.dice.findIndex(x => x === roll.dropped) ? 'line-through' : 'none', opacity: d === roll.dropped ? 0.5 : 1, marginRight: '0.2rem' }}>
+                            {d}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {hasBonus && (
+                      <div style={{ fontSize: '0.72rem', color: 'var(--gold)', marginTop: '0.15rem' }}>
+                        {base}{racialB > 0 && <span> +{racialB}r</span>}{asiB > 0 && <span> +{asiB}a</span>} = {final}
+                      </div>
+                    )}
+                    <div style={{ color: 'var(--gold-light)', fontWeight: 700, marginTop: '0.2rem', fontSize: '0.9rem' }}>
+                      {modStr(final)}
+                    </div>
                   </div>
-                  <input type="number" value={abilities[ab]} min={1} max={30}
-                    onChange={e => setAbilities(prev => ({ ...prev, [ab]: parseInt(e.target.value) || 10 }))}
-                    style={{ ...darkInput, textAlign: 'center', fontSize: '1.3rem', fontWeight: 700, padding: '0.3rem' }} />
-                  <div style={{ color: 'var(--gold-light)', fontWeight: 700, marginTop: '0.3rem', fontSize: '0.9rem' }}>
-                    {mod(abilities[ab])}
-                  </div>
+                )
+              })}
+            </div>
+
+            {/* Racial Bonuses */}
+            {race && (
+              <div style={sectionBox}>
+                <div style={{ fontSize: '0.85rem', fontFamily: 'var(--font-cinzel, serif)', color: 'var(--on-dark-muted)', marginBottom: '0.4rem' }}>
+                  Bonuses raciales ({race})
                 </div>
-              ))}
+                {currentRacialAbility && (
+                  <div style={{ fontSize: '0.9rem', color: 'var(--gold-light)' }}>
+                    {Object.entries(currentRacialAbility.fixed).map(([k, v]) => (
+                      <span key={k} style={{ marginRight: '0.75rem' }}>{k.toUpperCase()} +{v}</span>
+                    ))}
+                    {!hasRacialChoice && Object.keys(currentRacialAbility.fixed).length === 0 && (
+                      <span style={{ color: 'var(--on-dark-muted)', fontSize: '0.85rem' }}>Sin bonuses fijos</span>
+                    )}
+                  </div>
+                )}
+                {hasRacialChoice && (
+                  <div style={{ marginTop: '0.5rem' }}>
+                    <div style={{ fontSize: '0.82rem', color: 'var(--on-dark-muted)', marginBottom: '0.3rem' }}>
+                      Elige {currentRacialAbility!.choose!.count} stat(s) para +1:
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      {currentRacialAbility!.choose!.from.map(stat => (
+                        <label key={stat} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem', color: 'var(--on-dark)', cursor: 'pointer' }}>
+                          <input type="checkbox"
+                            checked={racialChoices.includes(stat as AbKey)}
+                            onChange={e => {
+                              if (e.target.checked) {
+                                if (racialChoices.length < currentRacialAbility!.choose!.count) {
+                                  setRacialChoices(prev => [...prev, stat as AbKey])
+                                }
+                              } else {
+                                setRacialChoices(prev => prev.filter(s => s !== stat))
+                              }
+                            }}
+                            style={{ accentColor: 'var(--gold)' }}
+                          />
+                          {stat.toUpperCase()}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {hasNoRacialData && (
+                  <div style={{ marginTop: '0.3rem' }}>
+                    <div style={{ fontSize: '0.82rem', color: 'var(--on-dark-muted)', marginBottom: '0.3rem' }}>
+                      Esta raza no tiene bonuses fijos. Elige Custom Origin:
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      {AB_KEYS.map(stat => (
+                        <label key={stat} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem', color: 'var(--on-dark)', cursor: 'pointer' }}>
+                          <input type="checkbox"
+                            checked={racialChoices.includes(stat)}
+                            onChange={e => {
+                              if (e.target.checked) {
+                                if (racialChoices.length < 2) setRacialChoices(prev => [...prev, stat])
+                              } else {
+                                setRacialChoices(prev => prev.filter(s => s !== stat))
+                              }
+                            }}
+                            style={{ accentColor: 'var(--gold)' }}
+                          />
+                          {stat.toUpperCase()}
+                        </label>
+                      ))}
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--on-dark-muted)', marginTop: '0.2rem' }}>
+                      +2 al primero, +1 al segundo (o +1/+1 si solo eliges 2)
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ASI / Feat Cards */}
+            {totalASIs > 0 && (
+              <div>
+                <div style={{ fontSize: '0.85rem', fontFamily: 'var(--font-cinzel, serif)', color: 'var(--on-dark-muted)', marginBottom: '0.5rem' }}>
+                  Mejoras de puntuación de característica ({totalASIs})
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {asiChoices.map((asi, idx) => (
+                    <div key={idx} style={{ ...sectionBox, padding: '0.75rem' }}>
+                      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <span style={{ fontSize: '0.82rem', color: 'var(--on-dark-muted)', fontFamily: 'var(--font-cinzel, serif)' }}>
+                          ASI #{idx + 1}
+                        </span>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--on-dark)' }}>
+                          <input type="radio" name={`asi-${idx}`} checked={asi.type === 'asi'} onChange={() => updateASI(idx, { type: 'asi', asi_mode: '2to1', feat_name: undefined })} style={{ accentColor: 'var(--gold)' }} />
+                          Aumento de stats
+                        </label>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--on-dark)' }}>
+                          <input type="radio" name={`asi-${idx}`} checked={asi.type === 'feat'} onChange={() => openFeatModal(idx)} style={{ accentColor: 'var(--gold)' }} />
+                          Feat
+                        </label>
+                      </div>
+
+                      {asi.type === 'asi' && (
+                        <div>
+                          <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.82rem', color: 'var(--on-dark)', cursor: 'pointer' }}>
+                              <input type="radio" checked={asi.asi_mode === '2to1'} onChange={() => updateASI(idx, { asi_mode: '2to1', asi_stat2: undefined })} style={{ accentColor: 'var(--gold)' }} />
+                              +2 a uno
+                            </label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.82rem', color: 'var(--on-dark)', cursor: 'pointer' }}>
+                              <input type="radio" checked={asi.asi_mode === '1to2'} onChange={() => updateASI(idx, { asi_mode: '1to2' })} style={{ accentColor: 'var(--gold)' }} />
+                              +1 a dos
+                            </label>
+                          </div>
+                          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <select value={asi.asi_stat1 ?? ''} onChange={e => updateASI(idx, { asi_stat1: e.target.value as AbKey })} style={{ ...darkSelect, width: 'auto', padding: '0.3rem 0.5rem', fontSize: '0.85rem' }}>
+                              <option value="">— Stat —</option>
+                              {AB_KEYS.map(k => <option key={k} value={k}>{k.toUpperCase()}</option>)}
+                            </select>
+                            {asi.asi_mode === '1to2' && (
+                              <select value={asi.asi_stat2 ?? ''} onChange={e => updateASI(idx, { asi_stat2: e.target.value as AbKey })} style={{ ...darkSelect, width: 'auto', padding: '0.3rem 0.5rem', fontSize: '0.85rem' }}>
+                                <option value="">— Stat 2 —</option>
+                                {AB_KEYS.filter(k => k !== asi.asi_stat1).map(k => <option key={k} value={k}>{k.toUpperCase()}</option>)}
+                              </select>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {asi.type === 'feat' && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span style={{ fontSize: '0.9rem', color: asi.feat_name ? 'var(--gold-light)' : 'var(--on-dark-muted)' }}>
+                            {asi.feat_name ?? 'Ningún feat seleccionado'}
+                          </span>
+                          <button onClick={() => openFeatModal(idx)} className="btn-dice" style={{ fontSize: '0.75rem' }}>
+                            {asi.feat_name ? 'Cambiar' : 'Elegir'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* HP Section */}
+            <div style={sectionBox}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
+                <div style={{ fontSize: '0.85rem', fontFamily: 'var(--font-cinzel, serif)', color: 'var(--on-dark-muted)' }}>
+                  Puntos de vida (HP)
+                </div>
+                {totalLevel > 1 && (
+                  <button onClick={rollAllHP} className="btn-dice" style={{ fontSize: '0.72rem' }}>
+                    Lanzar dados de vida
+                  </button>
+                )}
+              </div>
+
+              <div style={{ fontSize: '0.85rem', color: 'var(--on-dark)', marginBottom: '0.4rem' }}>
+                Nivel 1: {primaryHitDie} (d{primaryHitDie} max) + {conMod >= 0 ? `+${conMod}` : conMod} CON = <strong style={{ color: 'var(--gold-light)' }}>{hpLevel1}</strong>
+              </div>
+
+              {totalLevel > 1 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.4rem' }}>
+                  {Array.from({ length: totalLevel - 1 }, (_, i) => {
+                    const rolled = hpRolls[i]
+                    return (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.82rem', color: 'var(--on-dark)' }}>
+                        <span>Nv{i + 2}:</span>
+                        {rolled != null ? (
+                          <span style={{ color: 'var(--gold-light)' }}>{rolled}+{conMod}={rolled + conMod}</span>
+                        ) : (
+                          <button onClick={() => rollHPForLevel(i)} className="btn-dice" style={{ fontSize: '0.7rem', padding: '0.15rem 0.35rem' }}>
+                            🎲 d{primaryHitDie}
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.3rem' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--on-dark-muted)' }}>HP Total:</span>
+                <input type="number" value={hpMax} min={1}
+                  onChange={e => setHpManualOverride(parseInt(e.target.value) || 1)}
+                  style={{ ...darkInput, width: '5rem', textAlign: 'center', fontSize: '1.1rem', fontWeight: 700 }} />
+                {hpManualOverride !== null && (
+                  <button onClick={() => setHpManualOverride(null)} className="btn-dice" style={{ fontSize: '0.72rem' }}>
+                    Auto
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-              <Field label="HP máximo">
-                <input type="number" value={hpMax} min={1} onChange={e => setHpMax(parseInt(e.target.value) || 1)} style={darkInput} />
-              </Field>
-              <Field label="Clase de Armadura (CA)">
-                <input type="number" value={ac} min={1} onChange={e => setAc(parseInt(e.target.value) || 10)} style={darkInput} />
-              </Field>
+            {/* AC Section */}
+            <div style={sectionBox}>
+              <div style={{ fontSize: '0.85rem', fontFamily: 'var(--font-cinzel, serif)', color: 'var(--on-dark-muted)', marginBottom: '0.4rem' }}>
+                Clase de Armadura (CA)
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <input type="number" value={ac} min={1}
+                  onChange={e => setAcManual(parseInt(e.target.value) || 10)}
+                  style={{ ...darkInput, width: '5rem', textAlign: 'center', fontSize: '1.1rem', fontWeight: 700 }} />
+                <span style={{ fontSize: '0.85rem', color: 'var(--on-dark-muted)' }}>
+                  10 + {modStr(abilities.dex)} DEX = {autoAC}
+                </span>
+                {acManual !== null && (
+                  <button onClick={() => setAcManual(null)} className="btn-dice" style={{ fontSize: '0.72rem' }}>
+                    Auto
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div style={{
-              padding: '0.75rem 1rem', background: 'rgba(245,233,204,0.08)', border: '1px solid var(--gold-dark)',
-              fontSize: '0.9rem', color: 'var(--on-dark-muted)', fontFamily: 'var(--font-cinzel, serif)',
-            }}>
+            {/* Prof Bonus */}
+            <div style={{ ...sectionBox, fontSize: '0.9rem', color: 'var(--on-dark-muted)', fontFamily: 'var(--font-cinzel, serif)' }}>
               Bonus de proficiencia: <span style={{ color: 'var(--gold-light)', fontWeight: 700 }}>+{profBonus}</span>
               <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem', opacity: 0.7 }}>(auto-calculado por nivel)</span>
             </div>
           </div>
         )}
 
-        {/* ── Paso 4: Personalidad ── */}
+        {/* ── PASO 4: PERSONALIDAD ── */}
         {step === 4 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <h2 style={{ fontFamily: 'var(--font-cinzel, serif)', color: 'var(--gold)', fontSize: '1.1rem' }}>
@@ -437,27 +815,29 @@ export default function NewCharacterPage() {
           </div>
         )}
 
-        {/* Navegación */}
+        {/* Nav */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2rem' }}>
           <button onClick={() => setStep(s => Math.max(1, s - 1))} disabled={step === 1}
             className="btn-parchment" style={{ opacity: step === 1 ? 0.3 : 1 }}>
             Anterior
           </button>
           {step < 4 ? (
-            <button onClick={() => setStep(s => Math.min(4, s + 1))} className="btn-crimson">
-              Siguiente →
-            </button>
+            <button onClick={() => setStep(s => Math.min(4, s + 1))} className="btn-crimson">Siguiente →</button>
           ) : (
-            <button onClick={handleSubmit} disabled={loading} className="btn-crimson"
-              style={{ opacity: loading ? 0.6 : 1 }}>
+            <button onClick={handleSubmit} disabled={loading} className="btn-crimson" style={{ opacity: loading ? 0.6 : 1 }}>
               {loading ? 'Creando...' : 'Crear Personaje →'}
             </button>
           )}
         </div>
       </div>
+
+      {/* Feat Modal */}
+      <FeatModal open={featModalOpen} onClose={() => setFeatModalOpen(false)} onSelect={selectFeat} feats={feats} characterLevel={totalLevel} />
     </div>
   )
 }
+
+// ── Spell Slots ──
 
 function getSpellSlots(className: string, level: number): Record<number, number> {
   const fullCaster: Record<number, number[]> = {

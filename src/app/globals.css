@@ -342,3 +342,63 @@ h1, h2, h3, h4 {
   border: 1px solid var(--cover);
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+/* ============================================================
+   MODAL / OVERLAY
+   ============================================================ */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.modal-panel {
+  background: var(--parchment);
+  background-image:
+    radial-gradient(ellipse at 15% 15%, rgba(160,110,40,0.1) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 85%, rgba(140,90,30,0.08) 0%, transparent 55%);
+  border: 2px solid var(--gold-dark);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+  color: var(--ink);
+  max-height: 85vh;
+  width: 100%;
+  max-width: 700px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.modal-panel .modal-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--parchment-edge);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.modal-panel .modal-body {
+  padding: 1rem 1.25rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* ============================================================
+   DICE BUTTON
+   ============================================================ */
+.btn-dice {
+  background: linear-gradient(180deg, var(--cover-light) 0%, var(--cover) 100%);
+  border: 1px solid var(--gold-dark);
+  color: var(--gold-light);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.03em;
+}
+.btn-dice:hover {
+  background: linear-gradient(180deg, var(--cover-mid) 0%, var(--cover-light) 100%);
+  color: var(--gold);
+}
