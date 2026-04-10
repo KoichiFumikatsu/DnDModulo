@@ -25,6 +25,41 @@ export interface ClassDetail {
   subclasses: string[]
 }
 
+export interface SpellEntry {
+  name: string
+  level: number
+  school: string
+  source: string
+  time?: string
+  range?: string
+  components?: string
+  duration?: string
+  description?: string
+  ritual?: boolean
+  concentration?: boolean
+}
+
+export interface EquipmentItem {
+  name: string
+  type: string
+  weight?: number
+  value?: number
+  source: string
+  ac?: number
+  damage?: string
+  damageType?: string
+  range?: string
+  properties?: string[]
+  weaponCategory?: string
+  rarity?: string
+}
+
+export interface TraitEntry {
+  name: string
+  description: string
+  source: string
+}
+
 // ── Caches ──
 
 let racesCache: string[] | null = null
@@ -33,6 +68,12 @@ let classesCache: ClassMap | null = null
 let raceAbilitiesCache: Record<string, RaceAbility> | null = null
 let featsCache: Feat[] | null = null
 let classDetailsCache: Record<string, ClassDetail> | null = null
+let spellsCache: Record<string, SpellEntry[]> = {}
+let equipmentCache: EquipmentItem[] | null = null
+let raceTraitsCache: Record<string, TraitEntry[]> = {}
+let racesJsonCache: { race?: unknown[]; subrace?: unknown[] } | null = null
+let classFeaturesCache: Record<string, TraitEntry[]> = {}
+let subclassFeaturesCache: Record<string, TraitEntry[]> = {}
 
 // ── Races (names) ──
 
@@ -249,6 +290,342 @@ export async function fetchFeats(): Promise<Feat[]> {
   }
 }
 
+// ── Helpers ──
+
+const SCHOOL_MAP: Record<string, string> = {
+  A: 'Abjuration',
+  C: 'Conjuration',
+  D: 'Divination',
+  E: 'Enchantment',
+  I: 'Illusion',
+  N: 'Necromancy',
+  T: 'Transmutation',
+  V: 'Evocation',
+}
+
+function flattenEntries(entries: unknown[]): string {
+  const parts: string[] = []
+  for (const entry of entries) {
+    if (typeof entry === 'string') {
+      parts.push(entry)
+    } else if (typeof entry === 'object' && entry !== null) {
+      const obj = entry as Record<string, unknown>
+      if (Array.isArray(obj.entries)) {
+        parts.push(flattenEntries(obj.entries))
+      }
+      if (typeof obj.text === 'string') {
+        parts.push(obj.text)
+      }
+      // Handle list items
+      if (Array.isArray(obj.items)) {
+        for (const item of obj.items) {
+          if (typeof item === 'string') {
+            parts.push(item)
+          } else if (typeof item === 'object' && item !== null) {
+            const itemObj = item as Record<string, unknown>
+            if (typeof itemObj.name === 'string' && typeof itemObj.entry === 'string') {
+              parts.push(`${itemObj.name}: ${itemObj.entry}`)
+            } else if (Array.isArray(itemObj.entries)) {
+              parts.push(flattenEntries(itemObj.entries))
+            }
+          }
+        }
+      }
+    }
+  }
+  return parts.join(' ')
+}
+
+// ── Spells ──
+
+export async function fetchSpells(className: string): Promise<SpellEntry[]> {
+  if (spellsCache[className]) return spellsCache[className]
+  try {
+    const spellFiles = ['spells-phb.json', 'spells-xphb.json']
+    const results = await Promise.all(
+      spellFiles.map(async (file) => {
+        try {
+          const res = await fetch(`${BASE}/spells/${file}`)
+          return res.json()
+        } catch {
+          return { spell: [] }
+        }
+      })
+    )
+
+    const spells: SpellEntry[] = []
+    const seen = new Set<string>()
+
+    for (const json of results) {
+      for (const s of json.spell ?? []) {
+        if (!s.name) continue
+        // Check if spell belongs to this class
+        const classList = s.classes?.fromClassList
+        if (!Array.isArray(classList)) continue
+        const match = classList.some(
+          (c: { name?: string }) =>
+            c.name?.toLowerCase() === className.toLowerCase()
+        )
+        if (!match) continue
+        // Dedupe by name
+        if (seen.has(s.name)) continue
+        seen.add(s.name)
+
+        spells.push({
+          name: s.name,
+          level: s.level ?? 0,
+          school: SCHOOL_MAP[s.school] ?? s.school ?? 'Unknown',
+          source: s.source ?? 'PHB',
+          time: Array.isArray(s.time)
+            ? s.time.map((t: { number?: number; unit?: string }) => `${t.number ?? ''} ${t.unit ?? ''}`).join(', ').trim()
+            : undefined,
+          range: s.range?.type === 'point'
+            ? (s.range.distance?.type === 'self' ? 'Self' : `${s.range.distance?.amount ?? ''} ${s.range.distance?.type ?? ''}`.trim())
+            : s.range?.type ?? undefined,
+          components: s.components
+            ? [s.components.v ? 'V' : '', s.components.s ? 'S' : '', s.components.m ? 'M' : ''].filter(Boolean).join(', ')
+            : undefined,
+          duration: Array.isArray(s.duration)
+            ? s.duration.map((d: { type?: string; duration?: { amount?: number; type?: string }; concentration?: boolean }) =>
+                d.type === 'instant' ? 'Instantaneous'
+                : d.type === 'permanent' ? 'Permanent'
+                : d.duration ? `${d.concentration ? 'Concentration, ' : ''}${d.duration.amount ?? ''} ${d.duration.type ?? ''}`.trim()
+                : d.type ?? ''
+              ).join(', ')
+            : undefined,
+          description: Array.isArray(s.entries) ? flattenEntries(s.entries) : undefined,
+          ritual: s.meta?.ritual ?? false,
+          concentration: Array.isArray(s.duration)
+            ? s.duration.some((d: { concentration?: boolean }) => d.concentration === true)
+            : false,
+        })
+      }
+    }
+
+    spells.sort((a, b) => a.level - b.level || a.name.localeCompare(b.name))
+    spellsCache[className] = spells
+    return spells
+  } catch {
+    return FALLBACK_SPELLS
+  }
+}
+
+// ── Equipment Items ──
+
+export async function fetchEquipmentItems(): Promise<EquipmentItem[]> {
+  if (equipmentCache) return equipmentCache
+  try {
+    const res = await fetch(`${BASE}/items-base.json`)
+    const json = await res.json()
+    const items: EquipmentItem[] = []
+
+    for (const item of json.baseitem ?? json.item ?? []) {
+      if (!item.name || item.source !== 'PHB') continue
+      items.push({
+        name: item.name,
+        type: item.type ?? 'Other',
+        weight: item.weight ?? undefined,
+        value: typeof item.value === 'number' ? item.value / 100 : undefined,
+        source: item.source,
+        ac: item.ac ?? undefined,
+        damage: item.dmg1 ?? undefined,
+        damageType: item.dmgType ?? undefined,
+        range: item.range ? `${item.range}` : undefined,
+        properties: Array.isArray(item.property) ? item.property : undefined,
+        weaponCategory: item.weaponCategory ?? undefined,
+        rarity: item.rarity ?? undefined,
+      })
+    }
+
+    items.sort((a, b) => a.name.localeCompare(b.name))
+    equipmentCache = items
+    return equipmentCache
+  } catch {
+    return FALLBACK_EQUIPMENT
+  }
+}
+
+// ── Race Traits ──
+
+async function getRacesJson(): Promise<{ race?: unknown[]; subrace?: unknown[] }> {
+  if (racesJsonCache) return racesJsonCache
+  const res = await fetch(`${BASE}/races.json`)
+  racesJsonCache = await res.json()
+  return racesJsonCache!
+}
+
+export async function fetchRaceTraits(raceName: string): Promise<TraitEntry[]> {
+  if (raceTraitsCache[raceName]) return raceTraitsCache[raceName]
+  try {
+    const json = await getRacesJson()
+    const traits: TraitEntry[] = []
+    const lowerName = raceName.toLowerCase()
+
+    // Search main races
+    for (const r of (json.race ?? []) as Record<string, unknown>[]) {
+      if ((r.name as string)?.toLowerCase() !== lowerName) continue
+      if (Array.isArray(r.entries)) {
+        for (const entry of r.entries) {
+          if (typeof entry === 'object' && entry !== null) {
+            const obj = entry as Record<string, unknown>
+            if (obj.type === 'entries' && typeof obj.name === 'string' && Array.isArray(obj.entries)) {
+              traits.push({
+                name: obj.name,
+                description: flattenEntries(obj.entries),
+                source: (r.source as string) ?? 'PHB',
+              })
+            }
+          }
+        }
+      }
+      break
+    }
+
+    // Search subraces (format: "SubraceName (RaceName)")
+    const subraceMatch = raceName.match(/^(.+?)\s*\((.+)\)$/)
+    if (subraceMatch) {
+      const [, srName, baseRace] = subraceMatch
+      // First get base race traits
+      const baseTraits = await fetchRaceTraits(baseRace)
+      traits.push(...baseTraits)
+
+      for (const sr of (json.subrace ?? []) as Record<string, unknown>[]) {
+        if (
+          (sr.name as string)?.toLowerCase() === srName.toLowerCase() &&
+          (sr.raceName as string)?.toLowerCase() === baseRace.toLowerCase()
+        ) {
+          if (Array.isArray(sr.entries)) {
+            for (const entry of sr.entries) {
+              if (typeof entry === 'object' && entry !== null) {
+                const obj = entry as Record<string, unknown>
+                if (obj.type === 'entries' && typeof obj.name === 'string' && Array.isArray(obj.entries)) {
+                  traits.push({
+                    name: obj.name,
+                    description: flattenEntries(obj.entries),
+                    source: (sr.source as string) ?? 'PHB',
+                  })
+                }
+              }
+            }
+          }
+          break
+        }
+      }
+    }
+
+    raceTraitsCache[raceName] = traits
+    return traits
+  } catch {
+    return FALLBACK_RACE_TRAITS
+  }
+}
+
+// ── Class Features ──
+
+export async function fetchClassFeatures(className: string, level: number): Promise<TraitEntry[]> {
+  const cacheKey = className
+  if (classFeaturesCache[cacheKey]) {
+    return classFeaturesCache[cacheKey].filter(
+      (_, idx) => idx < classFeaturesCache[cacheKey].length
+    )
+  }
+  try {
+    const indexRes = await fetch(`${BASE}/class/index.json`)
+    const index: Record<string, string> = await indexRes.json()
+
+    // Find the file for this class
+    const classKey = Object.keys(index).find(
+      (k) => k.toLowerCase() === className.toLowerCase()
+    )
+    if (!classKey) return FALLBACK_CLASS_FEATURES
+
+    const res = await fetch(`${BASE}/class/${index[classKey]}`)
+    const json = await res.json()
+    const allTraits: TraitEntry[] = []
+
+    for (const cf of json.classFeature ?? []) {
+      if (!cf.name || !cf.className) continue
+      if (cf.className.toLowerCase() !== className.toLowerCase()) continue
+      if (cf.source !== 'PHB' && cf.classSource !== 'PHB') continue
+      if (typeof cf.level !== 'number') continue
+
+      if (Array.isArray(cf.entries)) {
+        allTraits.push({
+          name: `${cf.name} (Level ${cf.level})`,
+          description: flattenEntries(cf.entries),
+          source: cf.source ?? 'PHB',
+        })
+      }
+    }
+
+    classFeaturesCache[cacheKey] = allTraits
+
+    // Return only up to the requested level
+    return allTraits.filter((t) => {
+      const levelMatch = t.name.match(/\(Level (\d+)\)/)
+      return levelMatch ? parseInt(levelMatch[1], 10) <= level : true
+    })
+  } catch {
+    return FALLBACK_CLASS_FEATURES
+  }
+}
+
+// ── Subclass Features ──
+
+export async function fetchSubclassFeatures(
+  className: string,
+  subclassName: string,
+  level: number
+): Promise<TraitEntry[]> {
+  const cacheKey = `${className}::${subclassName}`
+  if (subclassFeaturesCache[cacheKey]) {
+    return subclassFeaturesCache[cacheKey].filter((t) => {
+      const levelMatch = t.name.match(/\(Level (\d+)\)/)
+      return levelMatch ? parseInt(levelMatch[1], 10) <= level : true
+    })
+  }
+  try {
+    const indexRes = await fetch(`${BASE}/class/index.json`)
+    const index: Record<string, string> = await indexRes.json()
+
+    const classKey = Object.keys(index).find(
+      (k) => k.toLowerCase() === className.toLowerCase()
+    )
+    if (!classKey) return FALLBACK_SUBCLASS_FEATURES
+
+    const res = await fetch(`${BASE}/class/${index[classKey]}`)
+    const json = await res.json()
+    const allTraits: TraitEntry[] = []
+
+    for (const sf of json.subclassFeature ?? []) {
+      if (!sf.name || !sf.className || !sf.subclassShortName) continue
+      if (sf.className.toLowerCase() !== className.toLowerCase()) continue
+      if (
+        sf.subclassShortName.toLowerCase() !== subclassName.toLowerCase() &&
+        sf.subclassSource !== subclassName
+      ) continue
+      if (typeof sf.level !== 'number') continue
+
+      if (Array.isArray(sf.entries)) {
+        allTraits.push({
+          name: `${sf.name} (Level ${sf.level})`,
+          description: flattenEntries(sf.entries),
+          source: sf.source ?? 'PHB',
+        })
+      }
+    }
+
+    subclassFeaturesCache[cacheKey] = allTraits
+
+    return allTraits.filter((t) => {
+      const levelMatch = t.name.match(/\(Level (\d+)\)/)
+      return levelMatch ? parseInt(levelMatch[1], 10) <= level : true
+    })
+  } catch {
+    return FALLBACK_SUBCLASS_FEATURES
+  }
+}
+
 // ── Fallbacks ──
 
 const FALLBACK_RACES = [
@@ -360,3 +737,26 @@ const FALLBACK_FEATS: Feat[] = [
   { name: 'War Caster', source: 'PHB', prerequisite: [{ spellcasting: true }] },
   { name: 'Weapon Master', source: 'PHB', ability: [{ choose: { from: ['str', 'dex'] } }] },
 ]
+
+const FALLBACK_SPELLS: SpellEntry[] = []
+
+const FALLBACK_EQUIPMENT: EquipmentItem[] = [
+  { name: 'Longsword', type: 'M', weight: 3, value: 15, source: 'PHB', damage: '1d8', damageType: 'S', weaponCategory: 'martial' },
+  { name: 'Shortbow', type: 'R', weight: 2, value: 25, source: 'PHB', damage: '1d6', damageType: 'P', range: '80/320', weaponCategory: 'simple' },
+  { name: 'Dagger', type: 'M', weight: 1, value: 2, source: 'PHB', damage: '1d4', damageType: 'P', weaponCategory: 'simple' },
+  { name: 'Handaxe', type: 'M', weight: 2, value: 5, source: 'PHB', damage: '1d6', damageType: 'S', weaponCategory: 'simple' },
+  { name: 'Shield', type: 'S', weight: 6, value: 10, source: 'PHB', ac: 2 },
+  { name: 'Chain Mail', type: 'HA', weight: 55, value: 75, source: 'PHB', ac: 16 },
+  { name: 'Leather Armor', type: 'LA', weight: 10, value: 10, source: 'PHB', ac: 11 },
+  { name: 'Scale Mail', type: 'MA', weight: 45, value: 50, source: 'PHB', ac: 14 },
+  { name: 'Backpack', type: 'G', weight: 5, value: 2, source: 'PHB' },
+  { name: 'Rope, Hempen (50 feet)', type: 'G', weight: 10, value: 1, source: 'PHB' },
+  { name: 'Torch', type: 'G', weight: 1, value: 0.01, source: 'PHB' },
+  { name: 'Rations (1 day)', type: 'G', weight: 2, value: 0.5, source: 'PHB' },
+]
+
+const FALLBACK_RACE_TRAITS: TraitEntry[] = []
+
+const FALLBACK_CLASS_FEATURES: TraitEntry[] = []
+
+const FALLBACK_SUBCLASS_FEATURES: TraitEntry[] = []

@@ -47,7 +47,7 @@ function StatStepper({
         <button
           onClick={() => onUpdate(Math.max(0, current - 1))}
           className="w-8 h-8 rounded flex items-center justify-center font-bold text-lg transition-colors hover:opacity-80"
-          style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
+          style={{ background: 'var(--bg-secondary)', color: 'var(--on-dark)' }}>
           −
         </button>
         <input
@@ -60,13 +60,13 @@ function StatStepper({
           style={{
             background: 'var(--bg-secondary)',
             borderColor: 'var(--border)',
-            color: 'var(--text-primary)',
+            color: 'var(--on-dark)',
           }}
         />
         <button
           onClick={() => onUpdate(Math.min(max, current + 1))}
           className="w-8 h-8 rounded flex items-center justify-center font-bold text-lg transition-colors hover:opacity-80"
-          style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
+          style={{ background: 'var(--bg-secondary)', color: 'var(--on-dark)' }}>
           +
         </button>
       </div>
@@ -141,7 +141,7 @@ function HpBlock({ character }: { character: Character }) {
             placeholder="Daño"
             min={1}
             className="flex-1 px-2 py-1.5 rounded border text-sm outline-none"
-            style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+            style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--on-dark)' }}
             onKeyDown={e => e.key === 'Enter' && applyDamage()}
           />
           <button onClick={applyDamage}
@@ -158,7 +158,7 @@ function HpBlock({ character }: { character: Character }) {
             placeholder="Curar"
             min={1}
             className="flex-1 px-2 py-1.5 rounded border text-sm outline-none"
-            style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+            style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--on-dark)' }}
             onKeyDown={e => e.key === 'Enter' && applyHeal()}
           />
           <button onClick={applyHeal}
@@ -176,14 +176,14 @@ function HpBlock({ character }: { character: Character }) {
           <div className="flex items-center gap-1">
             <button onClick={() => updateHp(Math.max(0, hp - 1))}
               className="w-7 h-7 rounded text-sm font-bold"
-              style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>−</button>
+              style={{ background: 'var(--bg-secondary)', color: 'var(--on-dark)' }}>−</button>
             <input type="number" value={hp} min={0} max={character.hp_max}
               onChange={e => updateHp(Math.max(0, Math.min(character.hp_max, parseInt(e.target.value) || 0)))}
               className="w-16 text-center py-1 rounded border text-sm font-bold outline-none"
-              style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+              style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--on-dark)' }} />
             <button onClick={() => updateHp(Math.min(character.hp_max, hp + 1))}
               className="w-7 h-7 rounded text-sm font-bold"
-              style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>+</button>
+              style={{ background: 'var(--bg-secondary)', color: 'var(--on-dark)' }}>+</button>
           </div>
         </div>
         <div className="flex-1">
@@ -191,14 +191,14 @@ function HpBlock({ character }: { character: Character }) {
           <div className="flex items-center gap-1">
             <button onClick={() => updateTemp(Math.max(0, temp - 1))}
               className="w-7 h-7 rounded text-sm font-bold"
-              style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>−</button>
+              style={{ background: 'var(--bg-secondary)', color: 'var(--on-dark)' }}>−</button>
             <input type="number" value={temp} min={0}
               onChange={e => updateTemp(Math.max(0, parseInt(e.target.value) || 0))}
               className="w-16 text-center py-1 rounded border text-sm font-bold outline-none"
               style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border)', color: '#60a5fa' }} />
             <button onClick={() => updateTemp(temp + 1)}
               className="w-7 h-7 rounded text-sm font-bold"
-              style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>+</button>
+              style={{ background: 'var(--bg-secondary)', color: 'var(--on-dark)' }}>+</button>
           </div>
         </div>
       </div>
@@ -243,7 +243,7 @@ export default function QuickStats({ character, classResources, spellSlots, clas
       {classResources.length > 0 && (
         <section>
           <h3 className="text-sm font-semibold uppercase tracking-wide mb-3"
-            style={{ color: 'var(--text-muted)' }}>
+            style={{ color: 'var(--on-dark-muted)' }}>
             Recursos de clase
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -262,7 +262,7 @@ export default function QuickStats({ character, classResources, spellSlots, clas
       {Object.keys(slotsByClass).length > 0 && (
         <section>
           <h3 className="text-sm font-semibold uppercase tracking-wide mb-3"
-            style={{ color: 'var(--text-muted)' }}>
+            style={{ color: 'var(--on-dark-muted)' }}>
             Espacios de hechizo
           </h3>
           {Object.entries(slotsByClass).map(([classId, slots]) => (
@@ -288,7 +288,7 @@ export default function QuickStats({ character, classResources, spellSlots, clas
       {customStats.length > 0 && (
         <section>
           <h3 className="text-sm font-semibold uppercase tracking-wide mb-3"
-            style={{ color: 'var(--text-muted)' }}>
+            style={{ color: 'var(--on-dark-muted)' }}>
             Stats personalizados
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -342,14 +342,14 @@ function ResourceStepper({ resource, onUpdate }: {
       <div className="flex items-center gap-2">
         <button onClick={() => handle(current - 1)}
           className="w-8 h-8 rounded font-bold text-lg"
-          style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>−</button>
+          style={{ background: 'var(--bg-secondary)', color: 'var(--on-dark)' }}>−</button>
         <input type="number" value={current} min={0} max={resource.maximum}
           onChange={e => handle(parseInt(e.target.value) || 0)}
           className="flex-1 text-center py-1 rounded border text-sm font-bold outline-none"
-          style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+          style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--on-dark)' }} />
         <button onClick={() => handle(current + 1)}
           className="w-8 h-8 rounded font-bold text-lg"
-          style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>+</button>
+          style={{ background: 'var(--bg-secondary)', color: 'var(--on-dark)' }}>+</button>
       </div>
       <div className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
         Recupera en: {resource.reset_on === 'short_rest' ? 'descanso corto' : resource.reset_on === 'long_rest' ? 'descanso largo' : 'manual'}
@@ -374,7 +374,7 @@ function SpellSlotRow({ slot, onUpdate }: {
   return (
     <div className="flex items-center gap-3 px-3 py-2 rounded-lg"
       style={{ background: 'var(--bg-secondary)' }}>
-      <span className="text-xs font-medium w-16 flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
+      <span className="text-xs font-medium w-16 flex-shrink-0" style={{ color: 'var(--on-dark-muted)' }}>
         Nv {slot.spell_level}
       </span>
       <div className="flex gap-1.5 flex-1">
@@ -390,7 +390,7 @@ function SpellSlotRow({ slot, onUpdate }: {
           />
         ))}
       </div>
-      <span className="text-xs" style={{ color: available > 0 ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+      <span className="text-xs" style={{ color: available > 0 ? 'var(--on-dark)' : 'var(--on-dark-muted)' }}>
         {available} disp.
       </span>
     </div>

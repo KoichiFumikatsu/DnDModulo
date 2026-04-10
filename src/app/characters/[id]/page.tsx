@@ -131,7 +131,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
       {/* XP bar */}
       <div style={{ background: 'var(--cover-mid)', borderBottom: '1px solid var(--gold-dark)', padding: '0.4rem 1.5rem' }}>
         <div className="max-w-7xl mx-auto" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span style={{ fontFamily: 'var(--font-cinzel, serif)', color: 'var(--gold-dark)', fontSize: '0.7rem', letterSpacing: '0.1em', whiteSpace: 'nowrap' }}>
+          <span style={{ fontFamily: 'var(--font-cinzel, serif)', color: 'var(--gold-light)', fontSize: '0.7rem', letterSpacing: '0.1em', whiteSpace: 'nowrap' }}>
             XP
           </span>
           <div style={{ flex: 1, maxWidth: 300 }}>
@@ -217,7 +217,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
               <div className="flex flex-wrap gap-2">
                 {langProfs.map(p => (
                   <span key={p.id} className="px-2 py-1 rounded text-xs"
-                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
+                    style={{ background: 'var(--bg-secondary)', color: 'var(--on-dark)' }}>
                     {p.name}
                   </span>
                 ))}

@@ -32,7 +32,7 @@ export default async function DashboardPage() {
             Mis Aventureros
           </h1>
           <div className="ornate-divider" style={{ margin: '0.5rem 0 0' }}>
-            <span style={{ color: 'var(--gold-dark)', fontSize: '0.8rem', fontStyle: 'italic' }}>
+            <span style={{ color: 'var(--on-dark-muted)', fontSize: '0.8rem', fontStyle: 'italic' }}>
               {characters?.length ?? 0} personaje{(characters?.length ?? 0) !== 1 ? 's' : ''} en el grimorio
             </span>
           </div>

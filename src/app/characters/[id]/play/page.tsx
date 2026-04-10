@@ -40,8 +40,8 @@ export default async function PlayPage({ params }: { params: Promise<{ id: strin
         style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
         <div className="flex items-center gap-3">
           <Link href={`/characters/${id}`}
-            className="text-sm opacity-60 hover:opacity-100"
-            style={{ color: 'var(--text-primary)' }}>
+            className="text-sm hover:opacity-100"
+            style={{ color: 'var(--on-dark-muted)' }}>
             ← Hoja completa
           </Link>
           <span className="font-bold" style={{ color: 'var(--accent-gold)' }}>
@@ -49,7 +49,7 @@ export default async function PlayPage({ params }: { params: Promise<{ id: strin
           </span>
         </div>
         <div className="flex items-center gap-4 text-sm">
-          <span style={{ color: 'var(--text-muted)' }}>
+          <span style={{ color: 'var(--on-dark-muted)' }}>
             CA {character.ac} · Perc. Pasiva {10 + Math.floor((character.wis - 10) / 2) + character.proficiency_bonus}
           </span>
         </div>
@@ -68,7 +68,7 @@ export default async function PlayPage({ params }: { params: Promise<{ id: strin
         {weapons && weapons.length > 0 && (
           <section className="mt-6">
             <h3 className="text-sm font-semibold uppercase tracking-wide mb-3"
-              style={{ color: 'var(--text-muted)' }}>Ataques</h3>
+              style={{ color: 'var(--on-dark-muted)' }}>Ataques</h3>
             <div className="rounded-xl border divide-y"
               style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
               {weapons.map(w => (
