@@ -21,93 +21,59 @@ export default function RegisterPage() {
 
   return (
     <main className="flex items-center justify-center min-h-screen px-4"
-      style={{ background: 'var(--bg-primary)' }}>
-      <div className="w-full max-w-sm p-8 rounded-xl border"
-        style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+      style={{ background: 'var(--cover)' }}>
 
-        <div className="text-center mb-8">
-          <div className="text-4xl mb-2">🎲</div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--accent-gold)' }}>
-            Crear Cuenta
+      <div className="parchment-page ornate-border w-full" style={{ maxWidth: 380, padding: '2.5rem 2rem' }}>
+
+        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🎲</div>
+          <h1 style={{ fontFamily: 'var(--font-cinzel, serif)', color: 'var(--crimson)', fontSize: '1.5rem' }}>
+            Nuevo Aventurero
           </h1>
+          <p style={{ color: 'var(--ink-faded)', fontSize: '0.85rem', fontStyle: 'italic', marginTop: '0.25rem' }}>
+            Inscribe tu nombre en el grimorio
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div>
-            <label className="block text-sm font-medium mb-1"
-              style={{ color: 'var(--text-muted)' }}>
+            <label style={{ display: 'block', fontSize: '0.82rem', color: 'var(--ink-faded)', marginBottom: '0.35rem', fontFamily: 'var(--font-cinzel, serif)', letterSpacing: '0.05em' }}>
               Nombre de usuario
             </label>
-            <input
-              name="username"
-              type="text"
-              required
-              minLength={3}
-              className="w-full px-3 py-2 rounded-lg border outline-none focus:ring-2"
-              style={{
-                background: 'var(--bg-secondary)',
-                borderColor: 'var(--border)',
-                color: 'var(--text-primary)',
-              }}
-            />
+            <input name="username" type="text" required minLength={3} className="ifield" placeholder="KoichyKun..." />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1"
-              style={{ color: 'var(--text-muted)' }}>
-              Email
+            <label style={{ display: 'block', fontSize: '0.82rem', color: 'var(--ink-faded)', marginBottom: '0.35rem', fontFamily: 'var(--font-cinzel, serif)', letterSpacing: '0.05em' }}>
+              Correo
             </label>
-            <input
-              name="email"
-              type="email"
-              required
-              className="w-full px-3 py-2 rounded-lg border outline-none focus:ring-2"
-              style={{
-                background: 'var(--bg-secondary)',
-                borderColor: 'var(--border)',
-                color: 'var(--text-primary)',
-              }}
-            />
+            <input name="email" type="email" required className="ifield" placeholder="tu@correo.com" />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1"
-              style={{ color: 'var(--text-muted)' }}>
+            <label style={{ display: 'block', fontSize: '0.82rem', color: 'var(--ink-faded)', marginBottom: '0.35rem', fontFamily: 'var(--font-cinzel, serif)', letterSpacing: '0.05em' }}>
               Contraseña
             </label>
-            <input
-              name="password"
-              type="password"
-              required
-              minLength={6}
-              className="w-full px-3 py-2 rounded-lg border outline-none focus:ring-2"
-              style={{
-                background: 'var(--bg-secondary)',
-                borderColor: 'var(--border)',
-                color: 'var(--text-primary)',
-              }}
-            />
+            <input name="password" type="password" required minLength={6} className="ifield" />
           </div>
 
           {error && (
-            <p className="text-sm px-3 py-2 rounded-lg"
-              style={{ background: '#3d1515', color: '#f87171' }}>
+            <p style={{ background: '#3d0a0a', color: '#f5c0c0', padding: '0.5rem 0.75rem', fontSize: '0.85rem', border: '1px solid #8b1a1a' }}>
               {error}
             </p>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2.5 rounded-lg font-semibold transition-opacity disabled:opacity-60"
-            style={{ background: 'var(--accent)', color: 'white' }}>
-            {loading ? 'Creando cuenta...' : 'Crear cuenta'}
+          <button type="submit" disabled={loading} className="btn-crimson"
+            style={{ width: '100%', padding: '0.65rem', marginTop: '0.5rem', opacity: loading ? 0.6 : 1 }}>
+            {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
           </button>
         </form>
 
-        <p className="text-center text-sm mt-6" style={{ color: 'var(--text-muted)' }}>
+        <div className="ornate-divider" style={{ margin: '1.25rem 0 1rem' }} />
+
+        <p style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--ink-faded)' }}>
           ¿Ya tienes cuenta?{' '}
-          <Link href="/auth/login" style={{ color: 'var(--accent-hover)' }}>
+          <Link href="/auth/login" style={{ color: 'var(--crimson)', fontWeight: 600 }}>
             Inicia sesión
           </Link>
         </p>

@@ -5,45 +5,46 @@
    ============================================================ */
 
 :root {
-  /* Pergamino */
-  --parchment:        #f2e8d5;
-  --parchment-dark:   #e4d3b0;
-  --parchment-shadow: #c9b48a;
-  --parchment-edge:   #b89a5e;
+  /* Pergamino — páginas del libro */
+  --parchment:        #f5e9cc;
+  --parchment-dark:   #e8d5a8;
+  --parchment-shadow: #c9aa72;
+  --parchment-edge:   #a07840;
 
-  /* Tinta */
-  --ink:              #1c0f05;
-  --ink-faded:        #4a3020;
-  --ink-light:        #7a5c3f;
-  --ink-very-light:   #a8896a;
+  /* Tinta — texto sobre pergamino */
+  --ink:              #1e120a;
+  --ink-faded:        #5a3e28;
+  --ink-light:        #8a6244;
 
-  /* Cubierta del libro */
-  --cover:            #1a0e06;
-  --cover-mid:        #2c1a0a;
-  --cover-light:      #3d2510;
+  /* Cubierta — fondo exterior (marrón cálido, no negro) */
+  --cover:            #2e1a0a;
+  --cover-mid:        #3d2410;
+  --cover-light:      #4e3018;
+
+  /* Texto claro — para zonas oscuras (navbar, fondo) */
+  --on-dark:          #f0deb8;
+  --on-dark-muted:    #c4a070;
 
   /* Acentos */
-  --gold:             #c9921a;
-  --gold-light:       #e8b84b;
+  --gold:             #d4971e;
+  --gold-light:       #f0c050;
   --gold-dark:        #8b6010;
   --crimson:          #8b1a1a;
-  --crimson-light:    #c0392b;
+  --crimson-light:    #b52020;
 
-  /* Estados */
-  --hp-good:          #2d6a2d;
-  --hp-warn:          #8b6010;
+  /* Estados HP */
+  --hp-good:          #2d5a2d;
+  --hp-warn:          #7a5500;
   --hp-danger:        #8b1a1a;
 
-  /* Alias para componentes */
+  /* Alias genéricos usados en componentes */
   --bg-primary:       var(--cover);
   --bg-secondary:     var(--cover-mid);
   --bg-card:          var(--parchment);
-  --bg-card-dark:     var(--parchment-dark);
   --border:           var(--parchment-edge);
   --text-primary:     var(--ink);
   --text-muted:       var(--ink-faded);
   --accent:           var(--crimson);
-  --accent-hover:     var(--crimson-light);
   --accent-gold:      var(--gold);
   --success:          var(--hp-good);
   --danger:           var(--hp-danger);
@@ -55,35 +56,24 @@
 }
 
 /* ============================================================
-   RESET Y BASE
+   BASE
    ============================================================ */
 *, *::before, *::after { box-sizing: border-box; }
-
 html { height: 100%; }
 
 body {
-  background: var(--cover);
+  background-color: var(--cover);
+  /* Textura sutil de cuero */
+  background-image:
+    radial-gradient(ellipse at 20% 10%, rgba(90,50,15,0.4) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 90%, rgba(60,30,5,0.35) 0%, transparent 55%);
   color: var(--ink);
-  font-family: 'Crimson Text', 'Georgia', 'Times New Roman', serif;
+  font-family: 'Crimson Text', Georgia, 'Times New Roman', serif;
   font-size: 16px;
   line-height: 1.6;
   min-height: 100%;
-  /* Textura de cuero para el fondo */
-  background-image:
-    repeating-linear-gradient(
-      45deg,
-      transparent,
-      transparent 2px,
-      rgba(255,255,255,0.01) 2px,
-      rgba(255,255,255,0.01) 4px
-    ),
-    radial-gradient(ellipse at 30% 20%, rgba(80,40,10,0.3) 0%, transparent 60%),
-    radial-gradient(ellipse at 70% 80%, rgba(60,30,5,0.3) 0%, transparent 60%);
 }
 
-/* ============================================================
-   TIPOGRAFÍA
-   ============================================================ */
 h1, h2, h3, h4 {
   font-family: 'Cinzel', 'Palatino Linotype', serif;
   font-weight: 600;
@@ -91,69 +81,74 @@ h1, h2, h3, h4 {
 }
 
 /* ============================================================
-   CLASES DE LIBRO
+   PERGAMINO — página / card
    ============================================================ */
-
-/* Página de pergamino */
 .parchment-page {
   background-color: var(--parchment);
   background-image:
-    radial-gradient(ellipse at 10% 10%, rgba(180,130,60,0.15) 0%, transparent 50%),
-    radial-gradient(ellipse at 90% 90%, rgba(160,110,40,0.12) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 50%, rgba(200,160,80,0.05) 0%, transparent 80%);
+    radial-gradient(ellipse at 15% 15%, rgba(160,110,40,0.12) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 85%, rgba(140,90,30,0.10) 0%, transparent 55%);
   color: var(--ink);
   border: 1px solid var(--parchment-edge);
   box-shadow:
-    inset 0 0 40px rgba(0,0,0,0.08),
-    0 4px 20px rgba(0,0,0,0.4),
-    2px 2px 8px rgba(0,0,0,0.3);
-  position: relative;
+    inset 0 0 30px rgba(0,0,0,0.06),
+    0 4px 18px rgba(0,0,0,0.45);
 }
 
-/* Borde ornamental doble */
+/* Borde dorado doble */
 .ornate-border {
   border: 2px solid var(--gold-dark);
-  box-shadow: inset 0 0 0 1px var(--parchment-shadow);
-  position: relative;
+  outline: 1px solid var(--parchment-shadow);
+  outline-offset: 3px;
 }
 
-.ornate-border::before {
-  content: '';
-  position: absolute;
-  inset: 3px;
-  border: 1px solid var(--gold-dark);
-  opacity: 0.4;
-  pointer-events: none;
+/* Sección interior */
+.sheet-section {
+  background-color: var(--parchment);
+  background-image: radial-gradient(ellipse at 80% 20%, rgba(140,100,40,0.07) 0%, transparent 60%);
+  border: 1px solid var(--parchment-edge);
+  padding: 1rem;
 }
 
-/* Encabezado de capítulo */
+/* Stat box tipo hoja D&D */
+.stat-box {
+  background: var(--parchment-dark);
+  border: 2px solid var(--gold-dark);
+  text-align: center;
+  padding: 0.5rem 0.25rem;
+  box-shadow: inset 0 1px 4px rgba(0,0,0,0.1);
+}
+
+/* Encabezado de sección con líneas a los lados */
 .chapter-heading {
   font-family: 'Cinzel', serif;
+  font-size: 0.75rem;
   color: var(--crimson);
   text-align: center;
-  position: relative;
-  padding: 0.5rem 2rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
-
 .chapter-heading::before,
 .chapter-heading::after {
-  content: '⸻';
-  color: var(--gold-dark);
-  font-size: 0.8em;
-  vertical-align: middle;
-  margin: 0 0.75rem;
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--gold-dark), transparent);
+  opacity: 0.6;
 }
 
 /* Divisor ornamental */
 .ornate-divider {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin: 1rem 0;
+  gap: 0.5rem;
   color: var(--gold-dark);
-  opacity: 0.6;
+  opacity: 0.7;
 }
-
 .ornate-divider::before,
 .ornate-divider::after {
   content: '';
@@ -162,121 +157,113 @@ h1, h2, h3, h4 {
   background: linear-gradient(to right, transparent, var(--gold-dark), transparent);
 }
 
-/* Sección de hoja de personaje */
-.sheet-section {
-  background-color: var(--parchment);
-  background-image:
-    radial-gradient(ellipse at 80% 20%, rgba(140,100,40,0.08) 0%, transparent 60%);
-  border: 1px solid var(--parchment-edge);
-  border-radius: 2px;
-  padding: 1rem;
-  box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);
-}
-
-/* Stat box al estilo D&D */
-.stat-box {
-  background: var(--parchment-dark);
-  border: 2px solid var(--gold-dark);
-  border-radius: 4px;
-  text-align: center;
-  padding: 0.5rem 0.25rem;
-  box-shadow: inset 0 1px 4px rgba(0,0,0,0.1);
-}
-
-/* Botón de pergamino */
+/* ============================================================
+   BOTONES
+   ============================================================ */
 .btn-parchment {
   background: linear-gradient(180deg, var(--parchment) 0%, var(--parchment-dark) 100%);
   border: 1px solid var(--parchment-edge);
   color: var(--ink);
-  padding: 0.4rem 1rem;
+  padding: 0.45rem 1.1rem;
   font-family: 'Cinzel', serif;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   cursor: pointer;
-  transition: all 0.15s;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  transition: background 0.15s, box-shadow 0.15s;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+  letter-spacing: 0.04em;
 }
-
 .btn-parchment:hover {
   background: var(--parchment-dark);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
-/* Botón crimson */
 .btn-crimson {
-  background: linear-gradient(180deg, #a32020 0%, var(--crimson) 100%);
+  background: linear-gradient(180deg, #a82020 0%, var(--crimson) 100%);
   border: 1px solid var(--gold-dark);
   color: var(--parchment);
-  padding: 0.4rem 1.25rem;
+  padding: 0.45rem 1.25rem;
   font-family: 'Cinzel', serif;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: background 0.15s;
   box-shadow: 0 2px 6px rgba(0,0,0,0.35);
   letter-spacing: 0.05em;
 }
-
 .btn-crimson:hover {
-  background: linear-gradient(180deg, #c02828 0%, #a32020 100%);
+  background: linear-gradient(180deg, #c02828 0%, #a82020 100%);
 }
 
-/* Barra de HP / XP */
+/* ============================================================
+   BARRAS (HP / XP)
+   ============================================================ */
 .ancient-bar-track {
   height: 10px;
   background: var(--parchment-shadow);
   border: 1px solid var(--gold-dark);
-  border-radius: 2px;
   overflow: hidden;
   box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
 }
-
 .ancient-bar-fill {
   height: 100%;
   transition: width 0.4s ease;
-  border-radius: 1px;
 }
 
-/* Input de pergamino */
-.input-parchment {
+/* ============================================================
+   INPUTS sobre pergamino
+   ============================================================ */
+.input-parchment,
+.ifield {
+  width: 100%;
+  padding: 0.4rem 0.75rem;
   background: var(--parchment-dark);
   border: 1px solid var(--parchment-edge);
   color: var(--ink);
-  padding: 0.4rem 0.75rem;
   font-family: 'Crimson Text', serif;
   font-size: 1rem;
-  border-radius: 2px;
   outline: none;
-  width: 100%;
   transition: border-color 0.15s;
 }
-
-.input-parchment:focus {
+.input-parchment:focus,
+.ifield:focus {
   border-color: var(--gold-dark);
-  box-shadow: 0 0 0 2px rgba(200,146,26,0.2);
+  box-shadow: 0 0 0 2px rgba(180,130,20,0.2);
 }
 
-
-/* ============================================================
-   SCROLLBAR DEL GRIMORIO
-   ============================================================ */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: var(--cover-mid); }
-::-webkit-scrollbar-thumb {
-  background: var(--gold-dark);
+/* Input en zona oscura (auth) */
+.input-dark {
+  width: 100%;
+  padding: 0.45rem 0.8rem;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--gold-dark);
+  color: var(--on-dark);
+  font-family: 'Crimson Text', serif;
+  font-size: 1rem;
+  outline: none;
   border-radius: 2px;
-  border: 1px solid var(--cover);
+  transition: border-color 0.15s;
 }
-::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+.input-dark:focus {
+  border-color: var(--gold-light);
+  background: rgba(255,255,255,0.12);
+}
+.input-dark::placeholder { color: var(--on-dark-muted); }
 
 /* ============================================================
-   NAVBAR DEL LIBRO
+   NAVBAR / CUBIERTA
    ============================================================ */
 .book-nav {
-  background: linear-gradient(180deg, var(--cover-light) 0%, var(--cover) 100%);
+  background: linear-gradient(180deg, var(--cover-light) 0%, var(--cover-mid) 100%);
   border-bottom: 2px solid var(--gold-dark);
-  box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
 }
 
-/* Tabs estilo marcapáginas */
+/* Texto en zona oscura */
+.on-dark { color: var(--on-dark); }
+.on-dark-muted { color: var(--on-dark-muted); }
+
+/* ============================================================
+   TABS estilo marcapáginas
+   ============================================================ */
 .tab-bookmark {
   font-family: 'Cinzel', serif;
   font-size: 0.78rem;
@@ -285,31 +272,44 @@ h1, h2, h3, h4 {
   border: 1px solid transparent;
   transition: all 0.15s;
   cursor: pointer;
-  border-radius: 2px 2px 0 0;
 }
-
 .tab-bookmark.active {
   background: var(--parchment);
   color: var(--ink);
   border-color: var(--parchment-edge);
   border-bottom-color: var(--parchment);
-  box-shadow: 0 -2px 6px rgba(0,0,0,0.15);
 }
-
 .tab-bookmark:not(.active) {
   background: var(--cover-light);
-  color: var(--gold-light);
+  color: var(--on-dark-muted);
   border-color: var(--gold-dark);
-  opacity: 0.7;
+  opacity: 0.75;
 }
-
 .tab-bookmark:not(.active):hover {
   opacity: 1;
-  background: var(--cover-mid);
+  color: var(--on-dark);
 }
 
-/* Badge de nivel */
-/* Tarjeta de personaje con hover CSS puro */
+/* ============================================================
+   BADGE DE NIVEL
+   ============================================================ */
+.level-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+  color: var(--cover);
+  font-family: 'Cinzel', serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  letter-spacing: 0.05em;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+/* ============================================================
+   TARJETA DE PERSONAJE
+   ============================================================ */
 .char-card {
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
@@ -318,17 +318,27 @@ h1, h2, h3, h4 {
   box-shadow: 0 10px 35px rgba(0,0,0,0.55), 3px 3px 10px rgba(0,0,0,0.4) !important;
 }
 
-.level-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, var(--gold-dark), var(--gold));
-  color: var(--cover);
+/* Botón de edición en tabs */
+.btn-primary {
+  padding: 0.4rem 1rem;
+  background: var(--crimson);
+  border: 1px solid var(--gold-dark);
+  color: var(--parchment);
   font-family: 'Cinzel', serif;
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 0.15rem 0.5rem;
-  border-radius: 2px;
-  letter-spacing: 0.05em;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  letter-spacing: 0.04em;
 }
+.btn-primary:hover { background: var(--crimson-light); }
+
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--cover-mid); }
+::-webkit-scrollbar-thumb {
+  background: var(--gold-dark);
+  border: 1px solid var(--cover);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--gold); }
