@@ -16,10 +16,10 @@
   --ink-faded:        #5a3e28;
   --ink-light:        #8a6244;
 
-  /* Cubierta — fondo exterior (marrón cálido, no negro) */
-  --cover:            #2e1a0a;
-  --cover-mid:        #3d2410;
-  --cover-light:      #4e3018;
+  /* Cubierta — fondo exterior */
+  --cover:            #6b4423;
+  --cover-mid:        #7d5230;
+  --cover-light:      #8f6038;
 
   /* Texto claro — para zonas oscuras (navbar, fondo) */
   --on-dark:          #f0deb8;
