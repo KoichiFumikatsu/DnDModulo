@@ -67,23 +67,12 @@ export default async function DashboardPage() {
               <Link
                 key={character.id}
                 href={`/characters/${character.id}`}
-                className="parchment-page"
+                className="parchment-page char-card"
                 style={{
                   textDecoration: 'none',
                   display: 'block',
                   borderRadius: '2px',
                   padding: '1.25rem',
-                  transition: 'box-shadow 0.2s, transform 0.2s',
-                }}
-                onMouseEnter={e => {
-                  const el = e.currentTarget as HTMLElement
-                  el.style.transform = 'translateY(-2px)'
-                  el.style.boxShadow = '0 8px 30px rgba(0,0,0,0.5), 2px 2px 8px rgba(0,0,0,0.4)'
-                }}
-                onMouseLeave={e => {
-                  const el = e.currentTarget as HTMLElement
-                  el.style.transform = ''
-                  el.style.boxShadow = ''
                 }}
               >
                 {/* Nombre + nivel */}

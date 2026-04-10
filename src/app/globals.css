@@ -348,6 +348,15 @@ h1, h2, h3, h4 {
 }
 
 /* Badge de nivel */
+/* Tarjeta de personaje con hover CSS puro */
+.char-card {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.char-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 35px rgba(0,0,0,0.55), 3px 3px 10px rgba(0,0,0,0.4) !important;
+}
+
 .level-badge {
   display: inline-flex;
   align-items: center;
