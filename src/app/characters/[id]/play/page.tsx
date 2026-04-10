@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import QuickStats from '@/modules/characters/components/QuickStats'
+import DeathSavesClient from './DeathSavesClient'
 
 export default async function PlayPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -94,5 +95,3 @@ export default async function PlayPage({ params }: { params: Promise<{ id: strin
   )
 }
 
-// Inline client component for death saves
-import DeathSavesClient from './DeathSavesClient'

@@ -82,7 +82,9 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
 
   const classLabel = (classes ?? []).map(c => `${c.class_name} ${c.level}`).join(' / ')
 
-  const spellsByClass: Record<string, { class: typeof classes[0]; spells: typeof spells }> = {}
+  type ClassRow = NonNullable<typeof classes>[number]
+  type SpellRow = NonNullable<typeof spells>[number]
+  const spellsByClass: Record<string, { class: ClassRow; spells: SpellRow[] }> = {}
   for (const cls of (classes ?? [])) {
     const classSpells = (spells ?? []).filter(s => s.class_id === cls.id)
     if (classSpells.length > 0) {
