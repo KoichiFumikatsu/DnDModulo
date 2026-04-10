@@ -1,37 +1,364 @@
 @import "tailwindcss";
 
+/* ============================================================
+   TEMA: LIBRO ANTIGUO / GRIMORIO
+   ============================================================ */
+
 :root {
-  --bg-primary: #0f0d1a;
-  --bg-secondary: #1a1728;
-  --bg-card: #221f33;
-  --border: #3d3660;
-  --text-primary: #e8e3f0;
-  --text-muted: #8b82a8;
-  --accent: #7c5cbf;
-  --accent-hover: #9370db;
-  --accent-gold: #c9a84c;
-  --danger: #c0392b;
-  --success: #27ae60;
+  /* Pergamino */
+  --parchment:        #f2e8d5;
+  --parchment-dark:   #e4d3b0;
+  --parchment-shadow: #c9b48a;
+  --parchment-edge:   #b89a5e;
+
+  /* Tinta */
+  --ink:              #1c0f05;
+  --ink-faded:        #4a3020;
+  --ink-light:        #7a5c3f;
+  --ink-very-light:   #a8896a;
+
+  /* Cubierta del libro */
+  --cover:            #1a0e06;
+  --cover-mid:        #2c1a0a;
+  --cover-light:      #3d2510;
+
+  /* Acentos */
+  --gold:             #c9921a;
+  --gold-light:       #e8b84b;
+  --gold-dark:        #8b6010;
+  --crimson:          #8b1a1a;
+  --crimson-light:    #c0392b;
+
+  /* Estados */
+  --hp-good:          #2d6a2d;
+  --hp-warn:          #8b6010;
+  --hp-danger:        #8b1a1a;
+
+  /* Alias para componentes */
+  --bg-primary:       var(--cover);
+  --bg-secondary:     var(--cover-mid);
+  --bg-card:          var(--parchment);
+  --bg-card-dark:     var(--parchment-dark);
+  --border:           var(--parchment-edge);
+  --text-primary:     var(--ink);
+  --text-muted:       var(--ink-faded);
+  --accent:           var(--crimson);
+  --accent-hover:     var(--crimson-light);
+  --accent-gold:      var(--gold);
+  --success:          var(--hp-good);
+  --danger:           var(--hp-danger);
 }
 
 @theme inline {
-  --color-background: var(--bg-primary);
-  --color-foreground: var(--text-primary);
+  --color-background: var(--cover);
+  --color-foreground: var(--ink);
 }
 
-* {
-  box-sizing: border-box;
-}
+/* ============================================================
+   RESET Y BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { height: 100%; }
 
 body {
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  font-family: 'Segoe UI', system-ui, sans-serif;
-  min-height: 100vh;
+  background: var(--cover);
+  color: var(--ink);
+  font-family: 'Crimson Text', 'Georgia', 'Times New Roman', serif;
+  font-size: 16px;
+  line-height: 1.6;
+  min-height: 100%;
+  /* Textura de cuero para el fondo */
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 2px,
+      rgba(255,255,255,0.01) 2px,
+      rgba(255,255,255,0.01) 4px
+    ),
+    radial-gradient(ellipse at 30% 20%, rgba(80,40,10,0.3) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 80%, rgba(60,30,5,0.3) 0%, transparent 60%);
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--bg-secondary); }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+/* ============================================================
+   TIPOGRAFÍA
+   ============================================================ */
+h1, h2, h3, h4 {
+  font-family: 'Cinzel', 'Palatino Linotype', serif;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+/* ============================================================
+   CLASES DE LIBRO
+   ============================================================ */
+
+/* Página de pergamino */
+.parchment-page {
+  background-color: var(--parchment);
+  background-image:
+    radial-gradient(ellipse at 10% 10%, rgba(180,130,60,0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 90% 90%, rgba(160,110,40,0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(200,160,80,0.05) 0%, transparent 80%);
+  color: var(--ink);
+  border: 1px solid var(--parchment-edge);
+  box-shadow:
+    inset 0 0 40px rgba(0,0,0,0.08),
+    0 4px 20px rgba(0,0,0,0.4),
+    2px 2px 8px rgba(0,0,0,0.3);
+  position: relative;
+}
+
+/* Borde ornamental doble */
+.ornate-border {
+  border: 2px solid var(--gold-dark);
+  box-shadow: inset 0 0 0 1px var(--parchment-shadow);
+  position: relative;
+}
+
+.ornate-border::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1px solid var(--gold-dark);
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* Encabezado de capítulo */
+.chapter-heading {
+  font-family: 'Cinzel', serif;
+  color: var(--crimson);
+  text-align: center;
+  position: relative;
+  padding: 0.5rem 2rem;
+}
+
+.chapter-heading::before,
+.chapter-heading::after {
+  content: '⸻';
+  color: var(--gold-dark);
+  font-size: 0.8em;
+  vertical-align: middle;
+  margin: 0 0.75rem;
+}
+
+/* Divisor ornamental */
+.ornate-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0;
+  color: var(--gold-dark);
+  opacity: 0.6;
+}
+
+.ornate-divider::before,
+.ornate-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--gold-dark), transparent);
+}
+
+/* Sección de hoja de personaje */
+.sheet-section {
+  background-color: var(--parchment);
+  background-image:
+    radial-gradient(ellipse at 80% 20%, rgba(140,100,40,0.08) 0%, transparent 60%);
+  border: 1px solid var(--parchment-edge);
+  border-radius: 2px;
+  padding: 1rem;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);
+}
+
+/* Stat box al estilo D&D */
+.stat-box {
+  background: var(--parchment-dark);
+  border: 2px solid var(--gold-dark);
+  border-radius: 4px;
+  text-align: center;
+  padding: 0.5rem 0.25rem;
+  box-shadow: inset 0 1px 4px rgba(0,0,0,0.1);
+}
+
+/* Botón de pergamino */
+.btn-parchment {
+  background: linear-gradient(180deg, var(--parchment) 0%, var(--parchment-dark) 100%);
+  border: 1px solid var(--parchment-edge);
+  color: var(--ink);
+  padding: 0.4rem 1rem;
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.btn-parchment:hover {
+  background: var(--parchment-dark);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+/* Botón crimson */
+.btn-crimson {
+  background: linear-gradient(180deg, #a32020 0%, var(--crimson) 100%);
+  border: 1px solid var(--gold-dark);
+  color: var(--parchment);
+  padding: 0.4rem 1.25rem;
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+  letter-spacing: 0.05em;
+}
+
+.btn-crimson:hover {
+  background: linear-gradient(180deg, #c02828 0%, #a32020 100%);
+}
+
+/* Barra de HP / XP */
+.ancient-bar-track {
+  height: 10px;
+  background: var(--parchment-shadow);
+  border: 1px solid var(--gold-dark);
+  border-radius: 2px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.ancient-bar-fill {
+  height: 100%;
+  transition: width 0.4s ease;
+  border-radius: 1px;
+}
+
+/* Input de pergamino */
+.input-parchment {
+  background: var(--parchment-dark);
+  border: 1px solid var(--parchment-edge);
+  color: var(--ink);
+  padding: 0.4rem 0.75rem;
+  font-family: 'Crimson Text', serif;
+  font-size: 1rem;
+  border-radius: 2px;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.15s;
+}
+
+.input-parchment:focus {
+  border-color: var(--gold-dark);
+  box-shadow: 0 0 0 2px rgba(200,146,26,0.2);
+}
+
+/* ============================================================
+   ANIMACIÓN DE CAMBIO DE PÁGINA
+   ============================================================ */
+
+@keyframes page-enter {
+  0% {
+    opacity: 0;
+    transform: perspective(1800px) rotateY(-12deg) translateX(-30px);
+    transform-origin: left center;
+    box-shadow: -20px 0 40px rgba(0,0,0,0.5);
+  }
+  60% {
+    opacity: 1;
+    transform: perspective(1800px) rotateY(-2deg) translateX(-4px);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(1800px) rotateY(0deg) translateX(0);
+    transform-origin: left center;
+    box-shadow: none;
+  }
+}
+
+@keyframes page-exit {
+  0% {
+    opacity: 1;
+    transform: perspective(1800px) rotateY(0deg);
+    transform-origin: right center;
+  }
+  100% {
+    opacity: 0;
+    transform: perspective(1800px) rotateY(12deg) translateX(30px);
+    transform-origin: right center;
+  }
+}
+
+.page-turning-enter {
+  animation: page-enter 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* ============================================================
+   SCROLLBAR DEL GRIMORIO
+   ============================================================ */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--cover-mid); }
+::-webkit-scrollbar-thumb {
+  background: var(--gold-dark);
+  border-radius: 2px;
+  border: 1px solid var(--cover);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+/* ============================================================
+   NAVBAR DEL LIBRO
+   ============================================================ */
+.book-nav {
+  background: linear-gradient(180deg, var(--cover-light) 0%, var(--cover) 100%);
+  border-bottom: 2px solid var(--gold-dark);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+}
+
+/* Tabs estilo marcapáginas */
+.tab-bookmark {
+  font-family: 'Cinzel', serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+  cursor: pointer;
+  border-radius: 2px 2px 0 0;
+}
+
+.tab-bookmark.active {
+  background: var(--parchment);
+  color: var(--ink);
+  border-color: var(--parchment-edge);
+  border-bottom-color: var(--parchment);
+  box-shadow: 0 -2px 6px rgba(0,0,0,0.15);
+}
+
+.tab-bookmark:not(.active) {
+  background: var(--cover-light);
+  color: var(--gold-light);
+  border-color: var(--gold-dark);
+  opacity: 0.7;
+}
+
+.tab-bookmark:not(.active):hover {
+  opacity: 1;
+  background: var(--cover-mid);
+}
+
+/* Badge de nivel */
+.level-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+  color: var(--cover);
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 2px;
+  letter-spacing: 0.05em;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}

@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import QuickStats from '@/modules/characters/components/QuickStats'
+import { getXPProgress } from '@/lib/5etools/xp'
 
 const ABILITY_NAMES = { str: 'FUE', dex: 'DES', con: 'CON', int: 'INT', wis: 'SAB', cha: 'CAR' }
 const SKILLS = [
@@ -33,8 +34,7 @@ function mod(score: number) {
 
 function AbilityBox({ label, score }: { label: string; score: number }) {
   return (
-    <div className="flex flex-col items-center rounded-lg border py-3 px-2"
-      style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+    <div className="stat-box">
       <span className="text-xs font-bold uppercase tracking-wide mb-1"
         style={{ color: 'var(--text-muted)' }}>{label}</span>
       <span className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{score}</span>
@@ -81,6 +81,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
   ])
 
   const classLabel = (classes ?? []).map(c => `${c.class_name} ${c.level}`).join(' / ')
+  const xpData = getXPProgress(character.experience_points ?? 0)
 
   type ClassRow = NonNullable<typeof classes>[number]
   type SpellRow = NonNullable<typeof spells>[number]
@@ -93,51 +94,70 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
   }
 
   const langProfs = (proficiencies ?? []).filter(p => p.type === 'language')
-  const otherProfs = (proficiencies ?? []).filter(p => p.type !== 'language' && p.type !== 'skill' && p.type !== 'saving_throw')
   const skillProfs = (proficiencies ?? []).filter(p => p.type === 'skill')
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
-      {/* Header */}
-      <div className="border-b px-6 py-4"
-        style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
+    <div className="min-h-screen" style={{ background: 'var(--cover)' }}>
+      {/* Header estilo grimorio */}
+      <div className="book-nav px-6 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
             <Link href="/dashboard"
-              className="text-sm opacity-60 hover:opacity-100"
-              style={{ color: 'var(--text-primary)' }}>
-              ← Mis PJs
+              style={{ color: 'var(--gold-light)', fontSize: '0.8rem', textDecoration: 'none', opacity: 0.7, fontFamily: 'var(--font-cinzel, serif)' }}>
+              ← Grimorio
             </Link>
             <div>
-              <h1 className="text-xl font-bold" style={{ color: 'var(--accent-gold)' }}>
+              <h1 style={{ fontFamily: 'var(--font-cinzel, serif)', color: 'var(--gold)', fontSize: '1.2rem', lineHeight: 1.1 }}>
                 {character.name}
               </h1>
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                {character.race} · {classLabel}
+              <p style={{ color: 'var(--gold-light)', fontSize: '0.78rem', opacity: 0.75, fontStyle: 'italic' }}>
+                {character.race} · {classLabel} · <span style={{ color: 'var(--gold)' }}>Nivel {xpData.level}</span>
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Link href={`/characters/${id}/play`}
-              className="px-4 py-2 rounded-lg font-semibold text-sm"
-              style={{ background: 'var(--accent)', color: 'white' }}>
-              Modo Mesa ⚡
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <Link href={`/characters/${id}/play`} className="btn-crimson"
+              style={{ textDecoration: 'none', fontSize: '0.8rem' }}>
+              ⚡ Modo Mesa
             </Link>
-            <Link href={`/characters/${id}/edit`}
-              className="px-4 py-2 rounded-lg font-semibold text-sm border"
-              style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
+            <Link href={`/characters/${id}/edit`} className="btn-parchment"
+              style={{ textDecoration: 'none', fontSize: '0.8rem' }}>
               Editar
             </Link>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* XP bar */}
+      <div style={{ background: 'var(--cover-mid)', borderBottom: '1px solid var(--gold-dark)', padding: '0.4rem 1.5rem' }}>
+        <div className="max-w-7xl mx-auto" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <span style={{ fontFamily: 'var(--font-cinzel, serif)', color: 'var(--gold-dark)', fontSize: '0.7rem', letterSpacing: '0.1em', whiteSpace: 'nowrap' }}>
+            XP
+          </span>
+          <div style={{ flex: 1, maxWidth: 300 }}>
+            <div className="ancient-bar-track" style={{ height: 6 }}>
+              {xpData.nextLevelXP && (
+                <div className="ancient-bar-fill" style={{
+                  width: `${xpData.pct}%`,
+                  background: 'linear-gradient(90deg, var(--gold-dark), var(--gold))',
+                }} />
+              )}
+            </div>
+          </div>
+          <span style={{ color: 'var(--gold-light)', fontSize: '0.75rem', fontStyle: 'italic', whiteSpace: 'nowrap' }}>
+            {character.experience_points.toLocaleString()}
+            {xpData.nextLevelXP
+              ? ` / ${xpData.nextLevelXP.toLocaleString()} para nivel ${xpData.level + 1}`
+              : ' — nivel máximo'}
+          </span>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Left Column */}
         <div className="space-y-4">
           {/* Portrait */}
-          <div className="rounded-xl border overflow-hidden"
-            style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+          <div className="parchment-page ornate-border overflow-hidden">
             <div className="aspect-square flex items-center justify-center"
               style={{ background: 'var(--bg-secondary)' }}>
               {character.image_url ? (
@@ -153,7 +173,8 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
                 ['Trasfondo', character.background],
                 ['Alineamiento', character.alignment],
                 ['Velocidad', character.speed ? `${character.speed} ft` : null],
-                ['XP', character.experience_points?.toLocaleString()],
+                ['Nivel', `${xpData.level}`],
+                ['XP', `${character.experience_points?.toLocaleString()}${xpData.nextLevelXP ? ` / ${xpData.nextLevelXP.toLocaleString()}` : ''}`],
               ].map(([label, value]) => value && (
                 <div key={label as string} className="flex justify-between">
                   <span style={{ color: 'var(--text-muted)' }}>{label}</span>
@@ -223,8 +244,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
               { label: 'Iniciativa', value: mod(character.dex + (character.initiative_bonus ?? 0)) },
               { label: 'Bonus Prof.', value: `+${character.proficiency_bonus}` },
             ].map(({ label, value }) => (
-              <div key={label} className="rounded-lg border p-3 text-center"
-                style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+              <div key={label} className="stat-box">
                 <div className="text-xs font-bold uppercase tracking-wide mb-1"
                   style={{ color: 'var(--text-muted)' }}>{label}</div>
                 <div className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>{value}</div>
@@ -233,10 +253,8 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
           </div>
 
           {/* Skills */}
-          <div className="rounded-xl border p-4"
-            style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-            <h3 className="text-xs font-bold uppercase tracking-wide mb-3"
-              style={{ color: 'var(--text-muted)' }}>Habilidades</h3>
+          <div className="sheet-section ornate-border">
+            <h3 className="chapter-heading text-xs mb-3">Habilidades</h3>
             <div className="space-y-1">
               {SKILLS.map(skill => {
                 const prof = skillProfs.find(p => p.name === skill.key)
