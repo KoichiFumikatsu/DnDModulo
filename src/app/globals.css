@@ -254,45 +254,6 @@ h1, h2, h3, h4 {
   box-shadow: 0 0 0 2px rgba(200,146,26,0.2);
 }
 
-/* ============================================================
-   ANIMACIÓN DE CAMBIO DE PÁGINA
-   ============================================================ */
-
-@keyframes page-enter {
-  0% {
-    opacity: 0;
-    transform: perspective(1800px) rotateY(-12deg) translateX(-30px);
-    transform-origin: left center;
-    box-shadow: -20px 0 40px rgba(0,0,0,0.5);
-  }
-  60% {
-    opacity: 1;
-    transform: perspective(1800px) rotateY(-2deg) translateX(-4px);
-  }
-  100% {
-    opacity: 1;
-    transform: perspective(1800px) rotateY(0deg) translateX(0);
-    transform-origin: left center;
-    box-shadow: none;
-  }
-}
-
-@keyframes page-exit {
-  0% {
-    opacity: 1;
-    transform: perspective(1800px) rotateY(0deg);
-    transform-origin: right center;
-  }
-  100% {
-    opacity: 0;
-    transform: perspective(1800px) rotateY(12deg) translateX(30px);
-    transform-origin: right center;
-  }
-}
-
-.page-turning-enter {
-  animation: page-enter 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-}
 
 /* ============================================================
    SCROLLBAR DEL GRIMORIO

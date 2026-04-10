@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { Cinzel, Crimson_Text } from 'next/font/google'
-import PageTransition from '@/components/ui/PageTransition'
 import './globals.css'
 
 const cinzel = Cinzel({
@@ -30,9 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         className="min-h-full flex flex-col"
         style={{ fontFamily: "var(--font-crimson, 'Georgia', serif)" }}
       >
-        <PageTransition>
-          {children}
-        </PageTransition>
+        {children}
       </body>
     </html>
   )
