@@ -13,6 +13,8 @@ export interface CharacterClass {
   spellcasting_ability: Ability | null
   spell_save_dc: number | null
   spell_attack_mod: number | null
+  is_homebrew: boolean
+  homebrew_url: string | null
 }
 
 export interface SpellSlot {

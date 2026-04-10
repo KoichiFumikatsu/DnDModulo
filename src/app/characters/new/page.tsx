@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { fetchRaces, fetchBackgrounds } from '@/lib/5etools/data'
+import { fetchRaces, fetchBackgrounds, fetchClasses, type ClassMap } from '@/lib/5etools/data'
+import { getLevelFromXP, getProficiencyBonus } from '@/lib/5etools/xp'
 import Autocomplete from '@/components/ui/Autocomplete'
 
 const ALIGNMENTS = [
@@ -13,21 +14,21 @@ const ALIGNMENTS = [
   'Legal Malvado', 'Neutral Malvado', 'Caótico Malvado',
 ]
 
-const D5E_CLASSES = [
-  'Bárbaro', 'Bardo', 'Clérigo', 'Druida', 'Guerrero', 'Hechicero',
-  'Mago', 'Monje', 'Paladín', 'Pícaro', 'Explorador', 'Brujo',
-  'Artificiero', 'Sangre de Dracónido',
-]
-
 const SPELLCASTING_ABILITIES: Record<string, string> = {
-  'Bardo': 'cha', 'Clérigo': 'wis', 'Druida': 'wis', 'Hechicero': 'cha',
-  'Mago': 'int', 'Paladín': 'cha', 'Explorador': 'wis', 'Brujo': 'cha',
-  'Artificiero': 'int',
+  'Bard': 'cha', 'Cleric': 'wis', 'Druid': 'wis', 'Sorcerer': 'cha',
+  'Wizard': 'int', 'Paladin': 'cha', 'Ranger': 'wis', 'Warlock': 'cha',
+  'Artificer': 'int',
 }
 
-interface ClassEntry { class_name: string; level: number; subclass_name: string; is_primary: boolean }
+interface ClassEntry {
+  class_name: string
+  level: number
+  subclass_name: string
+  is_primary: boolean
+  is_homebrew: boolean
+  homebrew_url: string
+}
 
-// Label con texto claro para fondo oscuro
 function L({ children }: { children: React.ReactNode }) {
   return (
     <label style={{
@@ -53,10 +54,15 @@ export default function NewCharacterPage() {
   // 5etools data
   const [races, setRaces] = useState<string[]>([])
   const [backgrounds, setBackgrounds] = useState<string[]>([])
+  const [classMap, setClassMap] = useState<ClassMap>({})
+
   useEffect(() => {
     fetchRaces().then(setRaces)
     fetchBackgrounds().then(setBackgrounds)
+    fetchClasses().then(setClassMap)
   }, [])
+
+  const classNames = Object.keys(classMap).sort()
 
   // Basic info
   const [name, setName] = useState('')
@@ -66,10 +72,17 @@ export default function NewCharacterPage() {
   const [xp, setXp] = useState(0)
   const [speed, setSpeed] = useState(30)
 
+  // Derived from XP
+  const totalLevel = getLevelFromXP(xp)
+  const profBonus = getProficiencyBonus(totalLevel)
+
   // Classes
   const [classes, setClasses] = useState<ClassEntry[]>([
-    { class_name: '', level: 1, subclass_name: '', is_primary: true }
+    { class_name: '', level: 1, subclass_name: '', is_primary: true, is_homebrew: false, homebrew_url: '' }
   ])
+
+  const assignedLevels = classes.reduce((sum, c) => sum + (c.level || 0), 0)
+  const remainingLevels = totalLevel - assignedLevels
 
   // Ability scores
   const [abilities, setAbilities] = useState({ str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 })
@@ -77,7 +90,6 @@ export default function NewCharacterPage() {
   // HP & Combat
   const [hpMax, setHpMax] = useState(8)
   const [ac, setAc] = useState(10)
-  const [profBonus, setProfBonus] = useState(2)
 
   // Roleplay
   const [personality, setPersonality] = useState('')
@@ -91,7 +103,7 @@ export default function NewCharacterPage() {
   }
 
   function addClassEntry() {
-    setClasses(prev => [...prev, { class_name: '', level: 1, subclass_name: '', is_primary: false }])
+    setClasses(prev => [...prev, { class_name: '', level: 1, subclass_name: '', is_primary: false, is_homebrew: false, homebrew_url: '' }])
   }
 
   function removeClassEntry(i: number) {
@@ -99,12 +111,21 @@ export default function NewCharacterPage() {
   }
 
   function updateClass(i: number, field: keyof ClassEntry, value: string | number | boolean) {
-    setClasses(prev => prev.map((c, idx) => idx === i ? { ...c, [field]: value } : c))
+    setClasses(prev => prev.map((c, idx) => {
+      if (idx !== i) return c
+      const updated = { ...c, [field]: value }
+      // Reset subclass when class changes
+      if (field === 'class_name') updated.subclass_name = ''
+      // Reset homebrew url when toggling off
+      if (field === 'is_homebrew' && !value) updated.homebrew_url = ''
+      return updated
+    }))
   }
 
   async function handleSubmit() {
     if (!name.trim()) { setError('El nombre es requerido'); return }
     if (classes.every(c => !c.class_name)) { setError('Al menos una clase es requerida'); return }
+    if (remainingLevels < 0) { setError('Los niveles asignados superan el nivel total por XP'); return }
 
     setLoading(true)
     setError(null)
@@ -139,6 +160,8 @@ export default function NewCharacterPage() {
           subclass_name: cls.subclass_name || null,
           level: cls.level,
           is_primary: cls.is_primary,
+          is_homebrew: cls.is_homebrew,
+          homebrew_url: cls.homebrew_url || null,
           spellcasting_ability: spellcastingAbility,
           spell_save_dc: spellcastingAbility
             ? 8 + profBonus + Math.floor((abilities[spellcastingAbility as keyof typeof abilities] - 10) / 2)
@@ -165,9 +188,6 @@ export default function NewCharacterPage() {
     router.push(`/characters/${character.id}/edit`)
   }
 
-  const totalLevel = classes.reduce((sum, c) => sum + (c.level || 0), 0)
-
-  // Estilos base para inputs sobre fondo oscuro
   const darkInput: React.CSSProperties = {
     width: '100%', padding: '0.45rem 0.75rem',
     background: 'rgba(245,233,204,0.12)', border: '1px solid var(--gold-dark)',
@@ -226,20 +246,10 @@ export default function NewCharacterPage() {
             </Field>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <Autocomplete
-                label="Raza"
-                value={race}
-                onChange={setRace}
-                options={races}
-                placeholder="Elf, Human, Tiefling..."
-              />
-              <Autocomplete
-                label="Trasfondo"
-                value={background}
-                onChange={setBackground}
-                options={backgrounds}
-                placeholder="Far Traveler, Sage..."
-              />
+              <Autocomplete label="Raza" value={race} onChange={setRace}
+                options={races} placeholder="Elf, Human, Tiefling..." />
+              <Autocomplete label="Trasfondo" value={background} onChange={setBackground}
+                options={backgrounds} placeholder="Far Traveler, Sage..." />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -256,6 +266,9 @@ export default function NewCharacterPage() {
 
             <Field label="Experiencia (XP)">
               <input type="number" value={xp} onChange={e => setXp(parseInt(e.target.value) || 0)} style={darkInput} min={0} />
+              <div style={{ marginTop: '0.4rem', fontSize: '0.85rem', color: 'var(--gold-light)', fontFamily: 'var(--font-cinzel, serif)' }}>
+                Nivel {totalLevel} — Bonus de proficiencia +{profBonus}
+              </div>
             </Field>
           </div>
         )}
@@ -263,42 +276,94 @@ export default function NewCharacterPage() {
         {/* ── Paso 2: Clases ── */}
         {step === 2 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <h2 style={{ fontFamily: 'var(--font-cinzel, serif)', color: 'var(--gold)', fontSize: '1.1rem' }}>
-              Clases {totalLevel > 0 && <span style={{ color: 'var(--on-dark-muted)', fontSize: '0.9rem' }}>— Nivel total: {totalLevel}</span>}
-            </h2>
-
-            {classes.map((cls, i) => (
-              <div key={i} style={{ border: '1px solid var(--gold-dark)', padding: '1rem', background: 'rgba(255,255,255,0.05)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                  <span style={{ color: 'var(--on-dark-muted)', fontSize: '0.82rem', fontFamily: 'var(--font-cinzel, serif)' }}>
-                    Clase {i + 1} {cls.is_primary && '(principal)'}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <h2 style={{ fontFamily: 'var(--font-cinzel, serif)', color: 'var(--gold)', fontSize: '1.1rem', margin: 0 }}>
+                Clases
+              </h2>
+              <div style={{ fontSize: '0.85rem', fontFamily: 'var(--font-cinzel, serif)' }}>
+                <span style={{ color: 'var(--on-dark-muted)' }}>Nivel total: {totalLevel}</span>
+                {remainingLevels > 0 && (
+                  <span style={{ color: 'var(--gold-light)', marginLeft: '0.75rem' }}>
+                    Por asignar: {remainingLevels}
                   </span>
-                  {classes.length > 1 && (
-                    <button onClick={() => removeClassEntry(i)} style={{ color: '#f87171', fontSize: '0.82rem', background: 'none', border: 'none', cursor: 'pointer' }}>
-                      Eliminar
-                    </button>
+                )}
+                {remainingLevels < 0 && (
+                  <span style={{ color: '#f87171', marginLeft: '0.75rem' }}>
+                    Excedido: {Math.abs(remainingLevels)}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {classes.map((cls, i) => {
+              const subclassOptions = classMap[cls.class_name] ?? []
+              const maxForThis = cls.level + Math.max(0, remainingLevels)
+
+              return (
+                <div key={i} style={{ border: '1px solid var(--gold-dark)', padding: '1rem', background: 'rgba(255,255,255,0.05)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                    <span style={{ color: 'var(--on-dark-muted)', fontSize: '0.82rem', fontFamily: 'var(--font-cinzel, serif)' }}>
+                      Clase {i + 1} {cls.is_primary && '(principal)'}
+                    </span>
+                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer', fontSize: '0.82rem', color: 'var(--on-dark-muted)', fontFamily: 'var(--font-cinzel, serif)' }}>
+                        <input type="checkbox" checked={cls.is_homebrew}
+                          onChange={e => updateClass(i, 'is_homebrew', e.target.checked)}
+                          style={{ accentColor: 'var(--gold)' }} />
+                        Homebrew
+                      </label>
+                      {classes.length > 1 && (
+                        <button onClick={() => removeClassEntry(i)} style={{ color: '#f87171', fontSize: '0.82rem', background: 'none', border: 'none', cursor: 'pointer' }}>
+                          Eliminar
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                    <Autocomplete
+                      label="Clase"
+                      value={cls.class_name}
+                      onChange={val => updateClass(i, 'class_name', val)}
+                      options={classNames}
+                      placeholder="Fighter, Wizard, Rogue..."
+                    />
+                    <div style={{ width: '5rem' }}>
+                      <Field label="Nivel">
+                        <input type="number" value={cls.level} min={1} max={Math.min(20, maxForThis)}
+                          onChange={e => updateClass(i, 'level', Math.max(1, parseInt(e.target.value) || 1))}
+                          style={darkInput} />
+                      </Field>
+                    </div>
+                  </div>
+
+                  {cls.is_homebrew ? (
+                    <>
+                      <Field label="Subclase (homebrew)">
+                        <input value={cls.subclass_name}
+                          onChange={e => updateClass(i, 'subclass_name', e.target.value)}
+                          style={darkInput} placeholder="Nombre de la subclase homebrew..." />
+                      </Field>
+                      <div style={{ marginTop: '0.75rem' }}>
+                        <Field label="Enlace fuente homebrew (opcional)">
+                          <input value={cls.homebrew_url}
+                            onChange={e => updateClass(i, 'homebrew_url', e.target.value)}
+                            style={darkInput} placeholder="https://..." />
+                        </Field>
+                      </div>
+                    </>
+                  ) : (
+                    <Autocomplete
+                      label="Subclase"
+                      value={cls.subclass_name}
+                      onChange={val => updateClass(i, 'subclass_name', val)}
+                      options={subclassOptions}
+                      placeholder={subclassOptions.length > 0 ? 'Buscar subclase...' : 'Selecciona una clase primero'}
+                    />
                   )}
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                  <Field label="Clase">
-                    <select value={cls.class_name} onChange={e => updateClass(i, 'class_name', e.target.value)} style={darkSelect}>
-                      <option value="">— Seleccionar —</option>
-                      {D5E_CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
-                      <option value="Custom">Personalizada</option>
-                    </select>
-                  </Field>
-                  <Field label="Nivel">
-                    <input type="number" value={cls.level} min={1} max={20}
-                      onChange={e => updateClass(i, 'level', parseInt(e.target.value) || 1)} style={darkInput} />
-                  </Field>
-                </div>
-                <Field label="Subclase (opcional)">
-                  <input value={cls.subclass_name}
-                    onChange={e => updateClass(i, 'subclass_name', e.target.value)}
-                    style={darkInput} placeholder="Wild Magic, Life Domain..." />
-                </Field>
-              </div>
-            ))}
+              )
+            })}
 
             <button onClick={addClassEntry} style={{
               padding: '0.6rem', border: '1px dashed var(--gold-dark)',
@@ -333,16 +398,21 @@ export default function NewCharacterPage() {
               ))}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <Field label="HP máximo">
                 <input type="number" value={hpMax} min={1} onChange={e => setHpMax(parseInt(e.target.value) || 1)} style={darkInput} />
               </Field>
               <Field label="Clase de Armadura (CA)">
                 <input type="number" value={ac} min={1} onChange={e => setAc(parseInt(e.target.value) || 10)} style={darkInput} />
               </Field>
-              <Field label="Bonus Proficiencia">
-                <input type="number" value={profBonus} min={2} max={6} onChange={e => setProfBonus(parseInt(e.target.value) || 2)} style={darkInput} />
-              </Field>
+            </div>
+
+            <div style={{
+              padding: '0.75rem 1rem', background: 'rgba(245,233,204,0.08)', border: '1px solid var(--gold-dark)',
+              fontSize: '0.9rem', color: 'var(--on-dark-muted)', fontFamily: 'var(--font-cinzel, serif)',
+            }}>
+              Bonus de proficiencia: <span style={{ color: 'var(--gold-light)', fontWeight: 700 }}>+{profBonus}</span>
+              <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem', opacity: 0.7 }}>(auto-calculado por nivel)</span>
             </div>
           </div>
         )}
@@ -402,7 +472,7 @@ function getSpellSlots(className: string, level: number): Record<number, number>
     17:[4,3,3,3,2,1,1,1,1], 18:[4,3,3,3,3,1,1,1,1],
     19:[4,3,3,3,3,2,1,1,1], 20:[4,3,3,3,3,2,2,1,1],
   }
-  const fullCasters = ['Bardo','Clérigo','Druida','Hechicero','Mago']
+  const fullCasters = ['Bard', 'Cleric', 'Druid', 'Sorcerer', 'Wizard']
   if (!fullCasters.includes(className)) return {}
   const slots = fullCaster[Math.min(20, Math.max(1, level))] ?? []
   const result: Record<number, number> = {}
