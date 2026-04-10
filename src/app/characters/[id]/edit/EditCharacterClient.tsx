@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Autocomplete from '@/components/ui/Autocomplete'
+import SpellModal from '@/components/ui/SpellModal'
 import {
   fetchSpells, type SpellEntry,
   fetchEquipmentItems, type EquipmentItem,
@@ -18,7 +19,7 @@ import type {
 /* ── Constants ── */
 
 const ABILITY_LABELS: Record<string, string> = {
-  str: 'FUE', dex: 'DES', con: 'CON', int: 'INT', wis: 'SAB', cha: 'CAR',
+  str: 'STR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'WIS', cha: 'CHA',
 }
 
 const DMG_TYPE_MAP: Record<string, string> = {
@@ -45,6 +46,15 @@ function parseItemValue(notes: string | null): number | null {
 function cleanNotes(notes: string | null): string {
   if (!notes) return ''
   return notes.replace(/value:[\d.]+\s*/g, '').trim()
+}
+
+/** Strip 5etools {@tag content|source} references from text */
+function cleanTaggedText(text: string | null): string {
+  if (!text) return ''
+  return text
+    .replace(/\{@\w+\s+([^|}]+)(?:\|[^}]*)?\}/g, '$1')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -85,6 +95,8 @@ export default function EditCharacterClient({
   const [equipmentItems, setEquipmentItems] = useState<EquipmentItem[]>([])
   const [weaponItems, setWeaponItems] = useState<EquipmentItem[]>([])
   const [loadingTraits, setLoadingTraits] = useState(false)
+  const [spellModalOpen, setSpellModalOpen] = useState(false)
+  const [expandedFeature, setExpandedFeature] = useState<string | null>(null)
 
   /* ── Basic state ── */
   const [basic, setBasic] = useState({
@@ -212,20 +224,21 @@ export default function EditCharacterClient({
      SPELLS — CRUD + autocomplete
      ══════════════════════════════════════════════════════════════ */
 
-  function handleSpellAutocomplete(name: string) {
-    setNewSpell(p => ({ ...p, name }))
-    const match = spellList.find(s => s.name === name)
-    if (match) {
-      setNewSpell(p => ({
-        ...p,
-        name,
-        spell_level: match.level,
-        range: match.range ?? '',
-        damage: '',
-        components: match.components ?? '',
-        custom_notes: match.concentration ? 'Concentración' : '',
-      }))
-    }
+  function handleSpellSelect(spell: SpellEntry) {
+    setNewSpell(p => ({
+      ...p,
+      name: spell.name,
+      spell_level: spell.level,
+      range: spell.range ?? '',
+      damage: '',
+      components: spell.components ?? '',
+      custom_notes: [
+        spell.concentration ? 'Concentration' : '',
+        spell.ritual ? 'Ritual' : '',
+        spell.duration ?? '',
+      ].filter(Boolean).join(', '),
+    }))
+    setSpellModalOpen(false)
   }
 
   async function addSpell() {
@@ -699,62 +712,71 @@ export default function EditCharacterClient({
                 <select value={newSpell.spell_level}
                   onChange={e => setNewSpell(p => ({ ...p, spell_level: +e.target.value }))}
                   className="ifield">
-                  <option value={0}>Truco (0)</option>
+                  <option value={0}>Cantrip (0)</option>
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
-                    <option key={n} value={n}>Nivel {n}</option>
+                    <option key={n} value={n}>Level {n}</option>
                   ))}
                 </select>
               </F>
             </div>
 
-            {/* Off-class / scroll toggle */}
-            <div className="flex items-center gap-2">
+            {/* Spell name: button to open modal, or manual input */}
+            <div className="flex items-center gap-2 mb-1">
               <input type="checkbox" id="offclass" checked={isOffClassSpell}
                 onChange={e => setIsOffClassSpell(e.target.checked)} />
               <label htmlFor="offclass" className="text-xs"
                 style={{ color: 'var(--text-muted)' }}>
-                Hechizo fuera de clase / Pergamino
+                Off-class spell / Scroll (manual entry)
               </label>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <F label="Nombre del hechizo">
-                {isOffClassSpell ? (
-                  <input value={newSpell.name}
-                    onChange={e => setNewSpell(p => ({ ...p, name: e.target.value }))}
-                    className="ifield" placeholder="Nombre del hechizo..." />
-                ) : (
-                  <Autocomplete
-                    value={newSpell.name}
-                    onChange={handleSpellAutocomplete}
-                    options={spellList.map(s => s.name)}
-                    placeholder="Buscar hechizo..."
-                  />
-                )}
+            {isOffClassSpell ? (
+              <F label="Spell name">
+                <input value={newSpell.name}
+                  onChange={e => setNewSpell(p => ({ ...p, name: e.target.value }))}
+                  className="ifield" placeholder="Spell name..." />
               </F>
-              <F label="Componentes">
+            ) : (
+              <div>
+                <label className="block text-xs font-medium mb-1 capitalize"
+                  style={{ color: 'var(--text-muted)' }}>Spell name</label>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <input value={newSpell.name} readOnly className="ifield"
+                    placeholder="Click to browse spells..."
+                    style={{ cursor: 'pointer', flex: 1 }}
+                    onClick={() => setSpellModalOpen(true)} />
+                  <button onClick={() => setSpellModalOpen(true)} className="btn-primary"
+                    style={{ whiteSpace: 'nowrap', padding: '0.4rem 0.8rem' }}>
+                    Browse Spells
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
+              <F label="Components">
                 <input value={newSpell.components}
                   onChange={e => setNewSpell(p => ({ ...p, components: e.target.value }))}
                   className="ifield" placeholder="V, S, M" />
               </F>
-              <F label="Alcance">
+              <F label="Range">
                 <input value={newSpell.range}
                   onChange={e => setNewSpell(p => ({ ...p, range: e.target.value }))}
-                  className="ifield" placeholder="40m, Toque..." />
+                  className="ifield" placeholder="120 feet, Touch..." />
               </F>
-              <F label="Dano">
+              <F label="Damage">
                 <input value={newSpell.damage}
                   onChange={e => setNewSpell(p => ({ ...p, damage: e.target.value }))}
                   className="ifield" placeholder="1d10..." />
               </F>
-              <F label="Notas">
+              <F label="Notes">
                 <input value={newSpell.custom_notes}
                   onChange={e => setNewSpell(p => ({ ...p, custom_notes: e.target.value }))}
-                  className="ifield" placeholder="DC 15, Concentracion..." />
+                  className="ifield" placeholder="Concentration, DC 15..." />
               </F>
             </div>
 
-            <button onClick={addSpell} className="btn-primary">+ Agregar hechizo</button>
+            <button onClick={addSpell} className="btn-primary">+ Add Spell</button>
           </div>
 
           {/* Spell list grouped by level */}
@@ -765,14 +787,14 @@ export default function EditCharacterClient({
               <div key={lvl}>
                 <h4 className="text-xs font-bold uppercase tracking-wide mb-2"
                   style={{ color: 'var(--on-dark-muted)' }}>
-                  {lvl === 0 ? 'Trucos' : `Nivel ${lvl}`}
+                  {lvl === 0 ? 'Cantrips' : `Level ${lvl}`}
                 </h4>
                 <div className="space-y-2">
                   {lvlSpells.map(s => (
                     <div key={s.id}
                       className="flex items-center gap-3 px-3 py-2 rounded-lg parchment-page">
                       {s.is_always_prepared && (
-                        <span title="Siempre preparado" className="text-xs opacity-70">&#128274;</span>
+                        <span title="Always prepared" className="text-xs opacity-70">&#128274;</span>
                       )}
                       <span className="flex-1 text-sm font-medium"
                         style={{ color: 'var(--text-primary)' }}>
@@ -808,6 +830,14 @@ export default function EditCharacterClient({
               </div>
             )
           })}
+
+          {/* Spell Modal */}
+          <SpellModal
+            open={spellModalOpen}
+            onClose={() => setSpellModalOpen(false)}
+            onSelect={handleSpellSelect}
+            spells={spellList}
+          />
         </div>
       )}
 
@@ -1004,72 +1034,113 @@ export default function EditCharacterClient({
           <button onClick={loadAutoTraits} disabled={loadingTraits}
             className="btn-primary"
             style={{ opacity: loadingTraits ? 0.6 : 1 }}>
-            {loadingTraits ? 'Cargando rasgos...' : 'Cargar rasgos automaticos'}
+            {loadingTraits ? 'Loading traits...' : 'Load Auto Traits'}
           </button>
 
           {/* Manual add form */}
           <div className="parchment-page rounded-xl p-4 space-y-3">
             <h3 className="font-semibold text-sm" style={{ color: 'var(--text-muted)' }}>
-              Agregar rasgo/habilidad
+              Add trait / feature
             </h3>
             <div className="grid grid-cols-2 gap-3">
-              <F label="Nombre">
+              <F label="Name">
                 <input value={newFeature.name}
                   onChange={e => setNewFeature(p => ({ ...p, name: e.target.value }))}
-                  className="ifield" placeholder="Vision Oscura..." />
+                  className="ifield" placeholder="Darkvision..." />
               </F>
-              <F label="Fuente">
+              <F label="Source">
                 <input value={newFeature.source}
                   onChange={e => setNewFeature(p => ({ ...p, source: e.target.value }))}
-                  className="ifield" placeholder="raza, clase, homebrew..." />
+                  className="ifield" placeholder="race, class, homebrew..." />
               </F>
             </div>
-            <F label="Descripcion">
+            <F label="Description">
               <textarea value={newFeature.description}
                 onChange={e => setNewFeature(p => ({ ...p, description: e.target.value }))}
                 rows={3} className="ifield resize-none" />
             </F>
-            <button onClick={addFeature} className="btn-primary">+ Agregar</button>
+            <button onClick={addFeature} className="btn-primary">+ Add</button>
           </div>
 
-          {/* Feature list */}
-          <div className="space-y-3">
-            {localFeatures.map(f => (
-              <div key={f.id} className="px-4 py-3 rounded-lg parchment-page">
-                <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-sm"
-                      style={{ color: 'var(--accent-gold)' }}>
-                      {f.name}
-                    </span>
-                    {f.source && (
-                      <span className="text-[0.65rem] px-1.5 py-0.5 rounded"
-                        style={{
-                          background: f.source.startsWith('Raza:')
-                            ? 'var(--gold-dark)'
-                            : f.source.startsWith('Clase:')
-                              ? 'var(--crimson)'
-                              : f.source.startsWith('Subclase:')
-                                ? 'var(--cover-light)'
-                                : 'var(--parchment-shadow)',
-                          color: 'var(--parchment)',
+          {/* Feature grid — 2 columns */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            {localFeatures.map(f => {
+              const isExpanded = expandedFeature === f.id
+              const cleanDesc = cleanTaggedText(f.description)
+              const hasDesc = cleanDesc.length > 0
+              return (
+                <div key={f.id}
+                  className="parchment-page rounded-lg"
+                  style={{
+                    cursor: hasDesc ? 'pointer' : 'default',
+                    transition: 'box-shadow 0.15s',
+                    gridColumn: isExpanded ? '1 / -1' : undefined,
+                  }}
+                  onClick={() => hasDesc && setExpandedFeature(isExpanded ? null : f.id)}>
+                  <div style={{ padding: '0.6rem 0.75rem' }}>
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="flex items-center gap-2 flex-wrap" style={{ flex: 1 }}>
+                        <span style={{
+                          fontFamily: 'var(--font-cinzel, Cinzel, serif)',
+                          fontSize: '0.88rem', fontWeight: 600,
+                          color: 'var(--accent-gold)',
                         }}>
-                        {f.source}
-                      </span>
+                          {f.name}
+                        </span>
+                        {f.source && (
+                          <span style={{
+                            fontSize: '0.62rem', padding: '0.1rem 0.4rem', borderRadius: '2px',
+                            background: f.source.startsWith('Raza:') || f.source.startsWith('Race:')
+                              ? 'var(--gold-dark)'
+                              : f.source.startsWith('Clase:') || f.source.startsWith('Class:')
+                                ? 'var(--crimson)'
+                                : f.source.startsWith('Subclase:') || f.source.startsWith('Subclass:')
+                                  ? 'var(--cover-light)'
+                                  : 'var(--parchment-shadow)',
+                            color: 'var(--parchment)',
+                            fontFamily: 'var(--font-cinzel, Cinzel, serif)',
+                            letterSpacing: '0.03em',
+                          }}>
+                            {f.source}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1" style={{ flexShrink: 0 }}>
+                        {hasDesc && (
+                          <span style={{ fontSize: '0.7rem', color: 'var(--ink-light)' }}>
+                            {isExpanded ? '▲' : '▼'}
+                          </span>
+                        )}
+                        <button
+                          onClick={e => { e.stopPropagation(); deleteFeature(f.id) }}
+                          style={{ color: 'var(--danger)', fontSize: '0.85rem', background: 'none', border: 'none', cursor: 'pointer', padding: '0 0.2rem' }}>
+                          &#10005;
+                        </button>
+                      </div>
+                    </div>
+                    {!isExpanded && hasDesc && (
+                      <p style={{
+                        fontSize: '0.78rem', color: 'var(--ink-faded)',
+                        marginTop: '0.25rem', lineHeight: 1.35,
+                        overflow: 'hidden', textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}>
+                        {cleanDesc.length > 80 ? cleanDesc.slice(0, 77) + '...' : cleanDesc}
+                      </p>
+                    )}
+                    {isExpanded && (
+                      <p style={{
+                        fontSize: '0.85rem', color: 'var(--text-primary)',
+                        marginTop: '0.35rem', lineHeight: 1.45,
+                        whiteSpace: 'pre-wrap',
+                      }}>
+                        {cleanDesc}
+                      </p>
                     )}
                   </div>
-                  <button onClick={() => deleteFeature(f.id)}
-                    style={{ color: 'var(--danger)' }}>
-                    &#10005;
-                  </button>
                 </div>
-                {f.description && (
-                  <p className="text-sm mt-1" style={{ color: 'var(--text-primary)' }}>
-                    {f.description}
-                  </p>
-                )}
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}

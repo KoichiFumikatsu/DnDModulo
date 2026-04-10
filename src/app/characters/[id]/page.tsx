@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import QuickStats from '@/modules/characters/components/QuickStats'
 import { getXPProgress } from '@/lib/5etools/xp'
 
-const ABILITY_NAMES = { str: 'FUE', dex: 'DES', con: 'CON', int: 'INT', wis: 'SAB', cha: 'CAR' }
+const ABILITY_NAMES = { str: 'STR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'WIS', cha: 'CHA' }
 const SKILLS = [
   { name: 'Acrobacias', ability: 'dex', key: 'Acrobatics' },
   { name: 'Adiestramiento', ability: 'wis', key: 'Animal Handling' },
