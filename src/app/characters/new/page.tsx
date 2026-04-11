@@ -40,6 +40,8 @@ interface ASIChoice {
   asi_stat1?: AbKey
   asi_stat2?: AbKey
   feat_name?: string
+  feat_ability?: Array<Record<string, unknown>>  // raw ability data from feat
+  feat_ability_choice?: AbKey  // user pick when feat has a choose option
 }
 
 interface DiceRoll { dice: number[]; dropped: number; total: number }
@@ -165,7 +167,7 @@ export default function NewCharacterPage() {
     return bonus
   }, [race, raceAbilities, racialChoices])
 
-  // Compute ASI bonuses
+  // Compute ASI bonuses (including feat ability bonuses)
   const asiBonuses = useCallback((): Partial<Abilities> => {
     const bonus: Partial<Abilities> = {}
     for (const asi of asiChoices) {
@@ -176,8 +178,22 @@ export default function NewCharacterPage() {
           if (asi.asi_stat1) bonus[asi.asi_stat1] = (bonus[asi.asi_stat1] ?? 0) + 1
           if (asi.asi_stat2) bonus[asi.asi_stat2] = (bonus[asi.asi_stat2] ?? 0) + 1
         }
+      } else if (asi.type === 'feat' && asi.feat_ability) {
+        for (const ab of asi.feat_ability) {
+          for (const [k, v] of Object.entries(ab)) {
+            if (k === 'choose') {
+              // User picks from a list — apply their choice
+              if (asi.feat_ability_choice) {
+                const c = v as { amount?: number }
+                const amt = c.amount ?? 1
+                bonus[asi.feat_ability_choice] = (bonus[asi.feat_ability_choice] ?? 0) + amt
+              }
+            } else if (AB_KEYS.includes(k as AbKey) && typeof v === 'number') {
+              bonus[k as AbKey] = (bonus[k as AbKey] ?? 0) + v
+            }
+          }
+        }
       }
-      // Feat ability bonuses are informational only — not auto-applied
     }
     return bonus
   }, [asiChoices])
@@ -282,7 +298,11 @@ export default function NewCharacterPage() {
     setFeatModalOpen(true)
   }
   function selectFeat(feat: Feat) {
-    updateASI(featModalASIIndex, { type: 'feat', feat_name: feat.name })
+    updateASI(featModalASIIndex, {
+      type: 'feat', feat_name: feat.name,
+      feat_ability: feat.ability ?? [],
+      feat_ability_choice: undefined,
+    })
     setFeatModalOpen(false)
   }
 
@@ -702,13 +722,53 @@ export default function NewCharacterPage() {
                       )}
 
                       {asi.type === 'feat' && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span style={{ fontSize: '0.9rem', color: asi.feat_name ? 'var(--gold-light)' : 'var(--on-dark-muted)' }}>
-                            {asi.feat_name ?? 'Ningún feat seleccionado'}
-                          </span>
-                          <button onClick={() => openFeatModal(idx)} className="btn-dice" style={{ fontSize: '0.75rem' }}>
-                            {asi.feat_name ? 'Cambiar' : 'Elegir'}
-                          </button>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ fontSize: '0.9rem', color: asi.feat_name ? 'var(--gold-light)' : 'var(--on-dark-muted)' }}>
+                              {asi.feat_name ?? 'Ningún feat seleccionado'}
+                            </span>
+                            <button onClick={() => openFeatModal(idx)} className="btn-dice" style={{ fontSize: '0.75rem' }}>
+                              {asi.feat_name ? 'Cambiar' : 'Elegir'}
+                            </button>
+                          </div>
+                          {/* Show feat ability bonuses */}
+                          {asi.feat_ability && asi.feat_ability.length > 0 && (() => {
+                            const directBonuses: string[] = []
+                            let chooseFrom: string[] = []
+                            let chooseAmount = 1
+                            for (const ab of asi.feat_ability) {
+                              for (const [k, v] of Object.entries(ab)) {
+                                if (k === 'choose') {
+                                  const c = v as { from?: string[], amount?: number }
+                                  chooseFrom = (c.from ?? []).filter(s => AB_KEYS.includes(s as AbKey))
+                                  chooseAmount = c.amount ?? 1
+                                } else if (AB_KEYS.includes(k as AbKey) && typeof v === 'number') {
+                                  directBonuses.push(`${k.toUpperCase()} +${v}`)
+                                }
+                              }
+                            }
+                            return (
+                              <div style={{ marginTop: '0.35rem', fontSize: '0.82rem' }}>
+                                {directBonuses.length > 0 && (
+                                  <span style={{ color: 'var(--gold-light)', marginRight: '0.75rem' }}>
+                                    {directBonuses.join(', ')}
+                                  </span>
+                                )}
+                                {chooseFrom.length > 0 && (
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', color: 'var(--on-dark-muted)' }}>
+                                    +{chooseAmount} a:
+                                    <select
+                                      value={asi.feat_ability_choice ?? ''}
+                                      onChange={e => updateASI(idx, { feat_ability_choice: e.target.value as AbKey })}
+                                      style={{ ...darkSelect, width: 'auto', padding: '0.2rem 0.4rem', fontSize: '0.82rem' }}>
+                                      <option value="">— Elegir stat —</option>
+                                      {chooseFrom.map(s => <option key={s} value={s}>{s.toUpperCase()}</option>)}
+                                    </select>
+                                  </span>
+                                )}
+                              </div>
+                            )
+                          })()}
                         </div>
                       )}
                     </div>
