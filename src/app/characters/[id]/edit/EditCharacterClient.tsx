@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import Autocomplete from '@/components/ui/Autocomplete'
 import SpellModal from '@/components/ui/SpellModal'
 import {
-  fetchSpells, type SpellEntry,
+  fetchAllSpells, type SpellEntry,
   fetchEquipmentItems, type EquipmentItem,
   fetchRaceTraits, fetchClassFeatures, fetchSubclassFeatures,
 } from '@/lib/5etools/data'
@@ -143,6 +143,8 @@ export default function EditCharacterClient({
     damage: '',
     components: '',
     is_prepared: true,
+    source_type: 'spell' as 'spell' | 'scroll' | 'charges',
+    charges_max: null as number | null,
   })
 
   /* ── Weapons ── */
@@ -176,14 +178,12 @@ export default function EditCharacterClient({
      EFFECTS — fetch 5etools data
      ══════════════════════════════════════════════════════════════ */
 
-  // Spells for the currently selected class
-  const selectedClassName = classes.find(c => c.id === newSpell.class_id)?.class_name ?? ''
+  // Spells — fetch all spells once (class filtering done in SpellModal)
   useEffect(() => {
-    if (!selectedClassName) return
-    fetchSpells(selectedClassName)
+    fetchAllSpells()
       .then(setSpellList)
       .catch(() => setSpellList([]))
-  }, [selectedClassName])
+  }, [])
 
   // Equipment & weapons on mount
   useEffect(() => {
@@ -243,7 +243,7 @@ export default function EditCharacterClient({
 
   async function addSpell() {
     if (!newSpell.name.trim() || !newSpell.class_id) return
-    const { data } = await supabase.from('character_spells').insert({
+    const base = {
       character_id: character.id,
       class_id: newSpell.class_id,
       spell_level: newSpell.spell_level,
@@ -254,9 +254,20 @@ export default function EditCharacterClient({
       components: newSpell.components || null,
       is_prepared: newSpell.is_prepared,
       sort_order: localSpells.length,
+    }
+    // Try with source_type columns; fall back if migration not yet applied
+    let { data, error } = await supabase.from('character_spells').insert({
+      ...base,
+      source_type: newSpell.source_type,
+      charges_max: newSpell.source_type === 'charges' ? (newSpell.charges_max ?? 1) : null,
+      charges_used: 0,
     }).select().single()
+    if (error && error.message?.includes('source_type')) {
+      const res = await supabase.from('character_spells').insert(base).select().single()
+      data = res.data
+    }
     if (data) setLocalSpells(prev => [...prev, data])
-    setNewSpell(p => ({ ...p, name: '', custom_notes: '', range: '', damage: '', components: '' }))
+    setNewSpell(p => ({ ...p, name: '', custom_notes: '', range: '', damage: '', components: '', source_type: 'spell', charges_max: null }))
   }
 
   async function deleteSpell(id: string) {
@@ -726,7 +737,7 @@ export default function EditCharacterClient({
                 onChange={e => setIsOffClassSpell(e.target.checked)} />
               <label htmlFor="offclass" className="text-xs"
                 style={{ color: 'var(--text-muted)' }}>
-                Off-class spell / Scroll (manual entry)
+                Entrada manual (nombre libre)
               </label>
             </div>
 
@@ -752,6 +763,26 @@ export default function EditCharacterClient({
                 </div>
               </div>
             )}
+
+            {/* Spell source type */}
+            <div className="grid grid-cols-2 gap-3">
+              <F label="Tipo">
+                <select value={newSpell.source_type}
+                  onChange={e => setNewSpell(p => ({ ...p, source_type: e.target.value as 'spell' | 'scroll' | 'charges' }))}
+                  className="ifield">
+                  <option value="spell">Hechizo (spell slot)</option>
+                  <option value="scroll">Pergamino (un uso)</option>
+                  <option value="charges">Cargas (item)</option>
+                </select>
+              </F>
+              {newSpell.source_type === 'charges' && (
+                <F label="Cargas max.">
+                  <input type="number" value={newSpell.charges_max ?? ''}
+                    onChange={e => setNewSpell(p => ({ ...p, charges_max: e.target.value ? +e.target.value : null }))}
+                    className="ifield" placeholder="3" min={1} />
+                </F>
+              )}
+            </div>
 
             <div className="grid grid-cols-2 gap-3">
               <F label="Components">
@@ -796,6 +827,20 @@ export default function EditCharacterClient({
                       {s.is_always_prepared && (
                         <span title="Always prepared" className="text-xs opacity-70">&#128274;</span>
                       )}
+                      {/* Source type badge */}
+                      {s.source_type === 'scroll' && (
+                        <span title="Pergamino" className="text-xs"
+                          style={{ color: 'var(--gold-dark)', fontWeight: 600 }}>
+                          &#128220;
+                        </span>
+                      )}
+                      {s.source_type === 'charges' && (
+                        <span title={`Cargas: ${(s.charges_max ?? 0) - (s.charges_used ?? 0)}/${s.charges_max ?? 0}`}
+                          className="text-xs"
+                          style={{ color: 'var(--hp-warn)', fontWeight: 600 }}>
+                          &#9889; {(s.charges_max ?? 0) - (s.charges_used ?? 0)}/{s.charges_max ?? 0}
+                        </span>
+                      )}
                       <span className="flex-1 text-sm font-medium"
                         style={{ color: 'var(--text-primary)' }}>
                         {s.name}
@@ -837,6 +882,8 @@ export default function EditCharacterClient({
             onClose={() => setSpellModalOpen(false)}
             onSelect={handleSpellSelect}
             spells={spellList}
+            characterClasses={classes.map(c => c.class_name)}
+            defaultClass={classes.find(c => c.id === newSpell.class_id)?.class_name ?? classes[0]?.class_name ?? ''}
           />
         </div>
       )}

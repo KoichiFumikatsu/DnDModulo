@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getXPProgress } from '@/lib/5etools/xp'
+import DeleteCharacterButton from '@/components/ui/DeleteCharacterButton'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -64,17 +65,18 @@ export default async function DashboardPage() {
             const classNames = classesByChar[character.id] ?? []
 
             return (
-              <Link
-                key={character.id}
-                href={`/characters/${character.id}`}
-                className="parchment-page char-card"
-                style={{
-                  textDecoration: 'none',
-                  display: 'block',
-                  borderRadius: '2px',
-                  padding: '1.25rem',
-                }}
-              >
+              <div key={character.id} style={{ position: 'relative' }}>
+                <DeleteCharacterButton characterId={character.id} characterName={character.name} />
+                <Link
+                  href={`/characters/${character.id}`}
+                  className="parchment-page char-card"
+                  style={{
+                    textDecoration: 'none',
+                    display: 'block',
+                    borderRadius: '2px',
+                    padding: '1.25rem',
+                  }}
+                >
                 {/* Nombre + nivel */}
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="flex-1 min-w-0">
@@ -152,6 +154,7 @@ export default async function DashboardPage() {
                   )}
                 </div>
               </Link>
+              </div>
             )
           })}
         </div>

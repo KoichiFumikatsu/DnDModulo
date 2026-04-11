@@ -38,6 +38,9 @@ export interface CharacterSpell {
   range: string | null
   damage: string | null
   components: string | null
+  source_type?: 'spell' | 'scroll' | 'charges'
+  charges_max?: number | null
+  charges_used?: number
 }
 
 export interface CharacterWeapon {

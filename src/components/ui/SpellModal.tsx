@@ -3,11 +3,18 @@
 import { useState, useRef, useEffect } from 'react'
 import type { SpellEntry } from '@/lib/5etools/data'
 
+const ALL_CLASSES = [
+  'Bard', 'Cleric', 'Druid', 'Paladin', 'Ranger',
+  'Sorcerer', 'Warlock', 'Wizard', 'Artificer',
+]
+
 interface Props {
   open: boolean
   onClose: () => void
   onSelect: (spell: SpellEntry) => void
   spells: SpellEntry[]
+  characterClasses?: string[]
+  defaultClass?: string
 }
 
 const SCHOOL_COLORS: Record<string, string> = {
@@ -21,24 +28,38 @@ const SCHOOL_COLORS: Record<string, string> = {
   Transmutation: '#d97706',
 }
 
-export default function SpellModal({ open, onClose, onSelect, spells }: Props) {
+export default function SpellModal({ open, onClose, onSelect, spells, characterClasses, defaultClass }: Props) {
   const [search, setSearch] = useState('')
   const [levelFilter, setLevelFilter] = useState<number | ''>('')
   const [schoolFilter, setSchoolFilter] = useState('')
+  const [classFilter, setClassFilter] = useState(defaultClass ?? characterClasses?.[0] ?? '')
   const [ritualFilter, setRitualFilter] = useState(false)
   const [concFilter, setConcFilter] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (open) { setSearch(''); setLevelFilter(''); setSchoolFilter('') }
-  }, [open])
+    if (open) {
+      setSearch('')
+      setLevelFilter('')
+      setSchoolFilter('')
+      setClassFilter(defaultClass ?? characterClasses?.[0] ?? '')
+    }
+  }, [open, defaultClass, characterClasses])
 
   if (!open) return null
+
+  // Build ordered class list: character's classes first, then the rest
+  const charSet = new Set((characterClasses ?? []).map(c => c))
+  const orderedClasses = [
+    ...(characterClasses ?? []),
+    ...ALL_CLASSES.filter(c => !charSet.has(c)),
+  ]
 
   const filtered = spells.filter(s => {
     if (search && !s.name.toLowerCase().includes(search.toLowerCase())) return false
     if (levelFilter !== '' && s.level !== levelFilter) return false
     if (schoolFilter && s.school !== schoolFilter) return false
+    if (classFilter && s.classes && !s.classes.some(c => c.toLowerCase() === classFilter.toLowerCase())) return false
     if (ritualFilter && !s.ritual) return false
     if (concFilter && !s.concentration) return false
     return true
@@ -76,6 +97,15 @@ export default function SpellModal({ open, onClose, onSelect, spells }: Props) {
             style={{ marginBottom: '0.5rem' }}
           />
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', fontSize: '0.82rem', alignItems: 'center' }}>
+            <select value={classFilter} onChange={e => setClassFilter(e.target.value)}
+              className="ifield" style={{ width: 'auto', padding: '0.25rem 0.5rem', fontSize: '0.82rem' }}>
+              <option value="">Todas las clases</option>
+              {orderedClasses.map(c => (
+                <option key={c} value={c}>
+                  {c}{charSet.has(c) ? ' *' : ''}
+                </option>
+              ))}
+            </select>
             <select value={levelFilter} onChange={e => setLevelFilter(e.target.value === '' ? '' : +e.target.value)}
               className="ifield" style={{ width: 'auto', padding: '0.25rem 0.5rem', fontSize: '0.82rem' }}>
               <option value="">Todos los niveles</option>

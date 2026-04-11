@@ -37,6 +37,7 @@ export interface SpellEntry {
   description?: string
   ritual?: boolean
   concentration?: boolean
+  classes?: string[]
 }
 
 export interface EquipmentItem {
@@ -69,6 +70,7 @@ let raceAbilitiesCache: Record<string, RaceAbility> | null = null
 let featsCache: Feat[] | null = null
 let classDetailsCache: Record<string, ClassDetail> | null = null
 let spellsCache: Record<string, SpellEntry[]> = {}
+let allSpellsCache: SpellEntry[] | null = null
 let equipmentCache: EquipmentItem[] | null = null
 let raceTraitsCache: Record<string, TraitEntry[]> = {}
 let racesJsonCache: { race?: unknown[]; subrace?: unknown[] } | null = null
@@ -407,6 +409,75 @@ export async function fetchSpells(className: string): Promise<SpellEntry[]> {
     return spells
   } catch {
     return FALLBACK_SPELLS
+  }
+}
+
+export async function fetchAllSpells(): Promise<SpellEntry[]> {
+  if (allSpellsCache) return allSpellsCache
+  try {
+    const spellFiles = ['spells-phb.json', 'spells-xphb.json']
+    const results = await Promise.all(
+      spellFiles.map(async (file) => {
+        try {
+          const res = await fetch(`${BASE}/spells/${file}`)
+          return res.json()
+        } catch {
+          return { spell: [] }
+        }
+      })
+    )
+
+    const spells: SpellEntry[] = []
+    const seen = new Set<string>()
+
+    for (const json of results) {
+      for (const s of json.spell ?? []) {
+        if (!s.name) continue
+        if (seen.has(s.name)) continue
+        seen.add(s.name)
+
+        const classList = s.classes?.fromClassList
+        const classNames: string[] = Array.isArray(classList)
+          ? classList.map((c: { name?: string }) => c.name ?? '').filter(Boolean)
+          : []
+
+        spells.push({
+          name: s.name,
+          level: s.level ?? 0,
+          school: SCHOOL_MAP[s.school] ?? s.school ?? 'Unknown',
+          source: s.source ?? 'PHB',
+          time: Array.isArray(s.time)
+            ? s.time.map((t: { number?: number; unit?: string }) => `${t.number ?? ''} ${t.unit ?? ''}`).join(', ').trim()
+            : undefined,
+          range: s.range?.type === 'point'
+            ? (s.range.distance?.type === 'self' ? 'Self' : `${s.range.distance?.amount ?? ''} ${s.range.distance?.type ?? ''}`.trim())
+            : s.range?.type ?? undefined,
+          components: s.components
+            ? [s.components.v ? 'V' : '', s.components.s ? 'S' : '', s.components.m ? 'M' : ''].filter(Boolean).join(', ')
+            : undefined,
+          duration: Array.isArray(s.duration)
+            ? s.duration.map((d: { type?: string; duration?: { amount?: number; type?: string }; concentration?: boolean }) =>
+                d.type === 'instant' ? 'Instantaneous'
+                : d.type === 'permanent' ? 'Permanent'
+                : d.duration ? `${d.concentration ? 'Concentration, ' : ''}${d.duration.amount ?? ''} ${d.duration.type ?? ''}`.trim()
+                : d.type ?? ''
+              ).join(', ')
+            : undefined,
+          description: Array.isArray(s.entries) ? flattenEntries(s.entries) : undefined,
+          ritual: s.meta?.ritual ?? false,
+          concentration: Array.isArray(s.duration)
+            ? s.duration.some((d: { concentration?: boolean }) => d.concentration === true)
+            : false,
+          classes: classNames,
+        })
+      }
+    }
+
+    spells.sort((a, b) => a.level - b.level || a.name.localeCompare(b.name))
+    allSpellsCache = spells
+    return spells
+  } catch {
+    return []
   }
 }
 
