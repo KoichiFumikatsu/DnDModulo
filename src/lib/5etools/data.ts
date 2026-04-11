@@ -23,6 +23,8 @@ export interface ClassDetail {
   hitDie: number
   asiLevels: number[]
   subclasses: string[]
+  skillChoices?: { from: string[]; count: number } | { any: number }
+  savingThrows?: string[]
 }
 
 export interface SpellEntry {
@@ -77,6 +79,8 @@ let racesJsonCache: { race?: unknown[]; subrace?: unknown[] } | null = null
 let classFeaturesCache: Record<string, TraitEntry[]> = {}
 let subclassFeaturesCache: Record<string, TraitEntry[]> = {}
 let spellClassLookupCache: Record<string, Set<string>> | null = null
+let backgroundSkillsCache: Record<string, string[]> | null = null
+let raceSkillsCache: Record<string, { fixed: string[]; choose?: { from: string[]; count: number } }> | null = null
 
 // ── Races (names) ──
 
@@ -169,6 +173,73 @@ export async function fetchBackgrounds(): Promise<string[]> {
   }
 }
 
+// ── Background Skill Proficiencies ──
+
+export async function fetchBackgroundSkills(): Promise<Record<string, string[]>> {
+  if (backgroundSkillsCache) return backgroundSkillsCache
+  try {
+    const res = await fetch(`${BASE}/backgrounds.json`)
+    const json = await res.json()
+    const map: Record<string, string[]> = {}
+    for (const b of json.background ?? []) {
+      if (!b.name || !b.skillProficiencies) continue
+      const skills: string[] = []
+      for (const entry of b.skillProficiencies) {
+        for (const key of Object.keys(entry)) {
+          if (key !== 'choose' && key !== 'any' && entry[key] === true) {
+            skills.push(key)
+          }
+        }
+      }
+      if (skills.length > 0) map[b.name] = skills
+    }
+    backgroundSkillsCache = map
+    return map
+  } catch {
+    return {}
+  }
+}
+
+// ── Race Skill Proficiencies ──
+
+export interface RaceSkillProf {
+  fixed: string[]
+  choose?: { from: string[]; count: number }
+  any?: number
+}
+
+export async function fetchRaceSkills(): Promise<Record<string, RaceSkillProf>> {
+  if (raceSkillsCache) return raceSkillsCache as Record<string, RaceSkillProf>
+  try {
+    const res = await fetch(`${BASE}/races.json`)
+    const json = await res.json()
+    const map: Record<string, RaceSkillProf> = {}
+
+    for (const r of [...(json.race ?? []), ...(json.subrace ?? [])]) {
+      if (!r.skillProficiencies) continue
+      const name = r.raceName ? `${r.name} (${r.raceName})` : r.name
+      const entry = r.skillProficiencies[0]
+      const prof: RaceSkillProf = { fixed: [] }
+
+      for (const [key, val] of Object.entries(entry)) {
+        if (key === 'choose' && typeof val === 'object' && val !== null) {
+          const c = val as { from?: string[]; count?: number }
+          prof.choose = { from: c.from ?? [], count: c.count ?? 1 }
+        } else if (key === 'any' && typeof val === 'number') {
+          prof.any = val
+        } else if (val === true) {
+          prof.fixed.push(key)
+        }
+      }
+      map[name] = prof
+    }
+    raceSkillsCache = map as Record<string, { fixed: string[]; choose?: { from: string[]; count: number } }>
+    return map
+  } catch {
+    return {}
+  }
+}
+
 // ── Classes (names + subclasses) ──
 
 export async function fetchClasses(): Promise<ClassMap> {
@@ -247,7 +318,22 @@ export async function fetchClassDetails(): Promise<Record<string, ClassDetail>> 
         }
         subclasses.sort()
 
-        map[cls.name] = { hitDie, asiLevels, subclasses }
+        // Skill proficiency choices
+        const sp = cls.startingProficiencies?.skills
+        let skillChoices: ClassDetail['skillChoices'] = undefined
+        if (Array.isArray(sp) && sp.length > 0) {
+          const entry = sp[0]
+          if (entry.any) {
+            skillChoices = { any: entry.any }
+          } else if (entry.choose) {
+            skillChoices = { from: entry.choose.from ?? [], count: entry.choose.count ?? 1 }
+          }
+        }
+
+        // Saving throw proficiencies
+        const savingThrows: string[] = Array.isArray(cls.proficiency) ? cls.proficiency : []
+
+        map[cls.name] = { hitDie, asiLevels, subclasses, skillChoices, savingThrows }
       }
     }
 

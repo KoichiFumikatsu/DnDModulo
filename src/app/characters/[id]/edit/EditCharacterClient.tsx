@@ -9,6 +9,8 @@ import {
   fetchAllSpells, type SpellEntry,
   fetchEquipmentItems, type EquipmentItem,
   fetchRaceTraits, fetchClassFeatures, fetchSubclassFeatures,
+  fetchClassDetails, fetchBackgroundSkills, fetchRaceSkills,
+  type ClassDetail, type RaceSkillProf,
 } from '@/lib/5etools/data'
 import type {
   Character, CharacterClass, SpellSlot, CharacterSpell,
@@ -179,6 +181,15 @@ export default function EditCharacterClient({
     proficiencies.filter(p => p.type === 'skill')
   )
 
+  /* ── Skill suggestion data from 5etools ── */
+  interface SkillSuggestion {
+    skill: string
+    source: string
+    type: 'proficiency' | 'expertise' | 'advantage' | 'choice'
+  }
+  const [skillSuggestions, setSkillSuggestions] = useState<SkillSuggestion[]>([])
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false)
+
   /* ══════════════════════════════════════════════════════════════
      EFFECTS — fetch 5etools data
      ══════════════════════════════════════════════════════════════ */
@@ -189,6 +200,109 @@ export default function EditCharacterClient({
       .then(setSpellList)
       .catch(() => setSpellList([]))
   }, [])
+
+  // Skill suggestions — from class, race, background, features
+  useEffect(() => {
+    async function loadSuggestions() {
+      setLoadingSuggestions(true)
+      const suggestions: SkillSuggestion[] = []
+
+      try {
+        // Class skill proficiencies
+        const classDetails = await fetchClassDetails()
+        for (const cls of classes) {
+          const detail = classDetails[cls.class_name]
+          if (detail?.skillChoices) {
+            const sc = detail.skillChoices
+            if ('any' in sc) {
+              suggestions.push({ skill: `Any ${sc.any} skills`, source: cls.class_name, type: 'choice' })
+            } else if ('from' in sc) {
+              for (const s of sc.from) {
+                suggestions.push({ skill: s, source: `${cls.class_name} (choose ${sc.count})`, type: 'choice' })
+              }
+            }
+          }
+          // Rogue expertise at levels 1/6
+          if (cls.class_name === 'Rogue') {
+            if (cls.level >= 1) suggestions.push({ skill: 'Choose 2 for Expertise', source: 'Rogue Lv1', type: 'expertise' })
+            if (cls.level >= 6) suggestions.push({ skill: 'Choose 2 more for Expertise', source: 'Rogue Lv6', type: 'expertise' })
+          }
+          // Bard expertise at levels 3/10
+          if (cls.class_name === 'Bard') {
+            if (cls.level >= 3) suggestions.push({ skill: 'Choose 2 for Expertise', source: 'Bard Lv3', type: 'expertise' })
+            if (cls.level >= 10) suggestions.push({ skill: 'Choose 2 more for Expertise', source: 'Bard Lv10', type: 'expertise' })
+          }
+        }
+
+        // Background skills
+        const bgSkills = await fetchBackgroundSkills()
+        const bgName = character.background ?? ''
+        const bgMatch = bgSkills[bgName]
+        if (bgMatch) {
+          for (const s of bgMatch) {
+            suggestions.push({ skill: s, source: `Background: ${bgName}`, type: 'proficiency' })
+          }
+        }
+
+        // Race skills
+        const raceSkills = await fetchRaceSkills()
+        const raceName = character.subrace
+          ? `${character.subrace} (${character.race})`
+          : character.race ?? ''
+        const raceMatch = raceSkills[raceName] ?? raceSkills[character.race ?? '']
+        if (raceMatch) {
+          for (const s of raceMatch.fixed) {
+            suggestions.push({ skill: s, source: `Race: ${raceName}`, type: 'proficiency' })
+          }
+          if (raceMatch.choose) {
+            for (const s of raceMatch.choose.from) {
+              suggestions.push({ skill: s, source: `Race: ${raceName} (choose ${raceMatch.choose.count})`, type: 'choice' })
+            }
+          }
+          if (raceMatch.any) {
+            suggestions.push({ skill: `Any ${raceMatch.any} skills`, source: `Race: ${raceName}`, type: 'choice' })
+          }
+        }
+
+        // Features that mention advantage on skills
+        for (const f of features) {
+          const desc = (f.description ?? '').toLowerCase()
+          // Check for advantage mentions
+          if (desc.includes('advantage') || desc.includes('ventaja')) {
+            const allSkillKeys = ['acrobatics','animal handling','arcana','athletics','deception','history',
+              'insight','intimidation','investigation','medicine','nature','perception',
+              'performance','persuasion','religion','sleight of hand','stealth','survival']
+            for (const sk of allSkillKeys) {
+              if (desc.includes(sk.toLowerCase())) {
+                suggestions.push({ skill: sk, source: f.name, type: 'advantage' })
+              }
+            }
+            // Common patterns
+            if (desc.includes('perception') && !suggestions.some(s => s.skill === 'perception' && s.source === f.name)) {
+              // already handled above
+            }
+          }
+          // Check for proficiency mentions
+          if (desc.includes('proficiency') || desc.includes('competencia') || desc.includes('proficient')) {
+            const allSkillKeys = ['acrobatics','animal handling','arcana','athletics','deception','history',
+              'insight','intimidation','investigation','medicine','nature','perception',
+              'performance','persuasion','religion','sleight of hand','stealth','survival']
+            for (const sk of allSkillKeys) {
+              if (desc.includes(sk.toLowerCase())) {
+                suggestions.push({ skill: sk, source: f.name, type: 'proficiency' })
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error loading skill suggestions:', err)
+      }
+
+      setSkillSuggestions(suggestions)
+      setLoadingSuggestions(false)
+    }
+    loadSuggestions()
+  }, [classes, character.background, character.race, character.subrace, features])
 
   // Equipment & weapons on mount
   useEffect(() => {
@@ -793,90 +907,186 @@ export default function EditCharacterClient({
          ════════════════════════════════════════════════════════ */}
       {tab === 'skills' && (
         <div className="space-y-4">
-          <div className="parchment-page rounded-xl p-4">
-            <h3 className="font-semibold text-sm mb-1" style={{ color: 'var(--text-muted)' }}>
-              Habilidades
-            </h3>
-            <p className="text-xs mb-3" style={{ color: 'var(--ink-faded)' }}>
-              Haz clic en el circulo para cambiar: sin competencia → competente → experto.
-            </p>
-            <div className="space-y-0.5">
-              {SKILLS.map(skill => {
-                const prof = getSkillProf(skill.key)
-                const level = prof?.proficiency_level ?? 'none'
-                const adv = prof?.has_advantage ?? false
-                const bonus = calcSkillBonus(skill.key, skill.ability)
-                const sign = bonus >= 0 ? '+' : ''
-                return (
-                  <div key={skill.key} className="flex items-center gap-2 py-1"
-                    style={{ borderBottom: '1px solid var(--parchment-edge)' }}>
-                    {/* Proficiency dot — clickable to cycle */}
-                    <button
-                      onClick={() => cycleProf(skill.key)}
-                      title={level === 'none' ? 'Sin competencia' : level === 'proficient' ? 'Competente' : 'Experto'}
-                      style={{
-                        width: 14, height: 14, borderRadius: '50%', border: 'none',
-                        cursor: 'pointer', flexShrink: 0,
-                        background: level === 'expertise'
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '1rem', alignItems: 'start' }}>
+            {/* Left: Skills list */}
+            <div className="parchment-page rounded-xl p-4">
+              <h3 className="font-semibold text-sm mb-1" style={{ color: 'var(--text-muted)' }}>
+                Skills
+              </h3>
+              <p className="text-xs mb-3" style={{ color: 'var(--ink-faded)' }}>
+                Click the dot to cycle: none → proficient → expertise.
+              </p>
+              <div className="space-y-0.5">
+                {SKILLS.map(skill => {
+                  const prof = getSkillProf(skill.key)
+                  const level = prof?.proficiency_level ?? 'none'
+                  const adv = prof?.has_advantage ?? false
+                  const bonus = calcSkillBonus(skill.key, skill.ability)
+                  const sign = bonus >= 0 ? '+' : ''
+                  return (
+                    <div key={skill.key} className="flex items-center gap-2 py-1"
+                      style={{ borderBottom: '1px solid var(--parchment-edge)' }}>
+                      <button
+                        onClick={() => cycleProf(skill.key)}
+                        title={level === 'none' ? 'None' : level === 'proficient' ? 'Proficient' : 'Expertise'}
+                        style={{
+                          width: 14, height: 14, borderRadius: '50%', border: 'none',
+                          cursor: 'pointer', flexShrink: 0,
+                          background: level === 'expertise'
+                            ? 'var(--accent-gold)'
+                            : level === 'proficient'
+                              ? 'var(--accent, var(--crimson))'
+                              : 'var(--parchment-dark)',
+                          boxShadow: level !== 'none' ? '0 0 3px rgba(0,0,0,0.3)' : 'none',
+                        }}
+                      />
+                      <span className="flex-1 text-sm" style={{
+                        color: level !== 'none' ? 'var(--text-primary)' : 'var(--ink-faded)',
+                        fontWeight: level !== 'none' ? 600 : 400,
+                      }}>
+                        {skill.name}
+                      </span>
+                      <span className="text-sm font-semibold w-8 text-right" style={{
+                        color: level === 'expertise'
                           ? 'var(--accent-gold)'
                           : level === 'proficient'
-                            ? 'var(--accent, var(--crimson))'
-                            : 'var(--parchment-dark)',
-                        boxShadow: level !== 'none' ? '0 0 3px rgba(0,0,0,0.3)' : 'none',
-                      }}
-                    />
-                    {/* Skill name */}
-                    <span className="flex-1 text-sm" style={{
-                      color: level !== 'none' ? 'var(--text-primary)' : 'var(--ink-faded)',
-                      fontWeight: level !== 'none' ? 600 : 400,
-                    }}>
-                      {skill.name}
-                    </span>
-                    {/* Bonus */}
-                    <span className="text-sm font-semibold w-8 text-right" style={{
-                      color: level === 'expertise'
-                        ? 'var(--accent-gold)'
-                        : level === 'proficient'
-                          ? 'var(--crimson)'
-                          : 'var(--ink-faded)',
-                    }}>
-                      {sign}{bonus}
-                    </span>
-                    {/* Ability label */}
-                    <span className="text-xs w-8 text-right" style={{ color: 'var(--ink-faded)' }}>
-                      {ABILITY_LABELS[skill.ability]}
-                    </span>
-                    {/* Advantage toggle */}
-                    <button
-                      onClick={() => toggleAdvantage(skill.key)}
-                      title={adv ? 'Tiene ventaja' : 'Sin ventaja'}
-                      className="text-xs px-1.5 py-0.5 rounded"
-                      style={{
-                        background: adv ? 'var(--hp-good)' : 'transparent',
-                        color: adv ? 'white' : 'var(--ink-light)',
-                        border: adv ? 'none' : '1px solid var(--parchment-edge)',
-                        cursor: 'pointer',
-                        fontSize: '0.65rem',
-                        fontFamily: 'var(--font-cinzel, Cinzel, serif)',
-                        letterSpacing: '0.03em',
-                        minWidth: 30,
+                            ? 'var(--crimson)'
+                            : 'var(--ink-faded)',
                       }}>
-                      ADV
-                    </button>
-                  </div>
-                )
-              })}
+                        {sign}{bonus}
+                      </span>
+                      <span className="text-xs w-8 text-right" style={{ color: 'var(--ink-faded)' }}>
+                        {ABILITY_LABELS[skill.ability]}
+                      </span>
+                      <button
+                        onClick={() => toggleAdvantage(skill.key)}
+                        title={adv ? 'Has advantage' : 'No advantage'}
+                        className="text-xs px-1.5 py-0.5 rounded"
+                        style={{
+                          background: adv ? 'var(--hp-good)' : 'transparent',
+                          color: adv ? 'white' : 'var(--ink-light)',
+                          border: adv ? 'none' : '1px solid var(--parchment-edge)',
+                          cursor: 'pointer', fontSize: '0.65rem',
+                          fontFamily: 'var(--font-cinzel, Cinzel, serif)',
+                          letterSpacing: '0.03em', minWidth: 30,
+                        }}>
+                        ADV
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="flex items-center gap-3 mt-3 text-xs" style={{ color: 'var(--ink-faded)' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--parchment-dark)', display: 'inline-block' }} /> None
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent, var(--crimson))', display: 'inline-block' }} /> Proficient
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-gold)', display: 'inline-block' }} /> Expertise
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-3 mt-3 text-xs" style={{ color: 'var(--ink-faded)' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--parchment-dark)', display: 'inline-block' }} /> Ninguna
-              </span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent, var(--crimson))', display: 'inline-block' }} /> Competente
-              </span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-gold)', display: 'inline-block' }} /> Experto
-              </span>
+
+            {/* Right: Suggestions from class/race/background/feats */}
+            <div className="parchment-page rounded-xl p-4" style={{ position: 'sticky', top: '1rem' }}>
+              <h3 className="font-semibold text-sm mb-2" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-cinzel, Cinzel, serif)' }}>
+                Available from your build
+              </h3>
+              {loadingSuggestions ? (
+                <p className="text-xs" style={{ color: 'var(--ink-faded)' }}>Loading...</p>
+              ) : skillSuggestions.length === 0 ? (
+                <p className="text-xs" style={{ color: 'var(--ink-faded)' }}>
+                  No suggestions found. Make sure your class, race, and background are set.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {/* Group by type */}
+                  {(['proficiency', 'choice', 'expertise', 'advantage'] as const).map(type => {
+                    const items = skillSuggestions.filter(s => s.type === type)
+                    if (items.length === 0) return null
+                    const label = type === 'proficiency' ? 'Proficiency (granted)'
+                      : type === 'choice' ? 'Proficiency (choose)'
+                      : type === 'expertise' ? 'Expertise'
+                      : 'Advantage'
+                    const color = type === 'proficiency' ? 'var(--accent, var(--crimson))'
+                      : type === 'choice' ? 'var(--ink)'
+                      : type === 'expertise' ? 'var(--accent-gold)'
+                      : 'var(--hp-good)'
+                    return (
+                      <div key={type}>
+                        <div className="text-xs font-bold uppercase tracking-wide mb-1"
+                          style={{ color, fontFamily: 'var(--font-cinzel, Cinzel, serif)', letterSpacing: '0.05em' }}>
+                          {label}
+                        </div>
+                        {items.map((s, i) => {
+                          const isApplicable = s.type === 'proficiency' || s.type === 'advantage'
+                          const skillKey = s.skill.charAt(0).toUpperCase() + s.skill.slice(1)
+                          const alreadySet = localProfs.some(p => p.name.toLowerCase() === s.skill.toLowerCase() &&
+                            (s.type === 'proficiency' ? p.proficiency_level !== 'none' : s.type === 'advantage' ? p.has_advantage : false))
+                          return (
+                            <div key={`${s.skill}-${s.source}-${i}`}
+                              className="flex items-center gap-1.5 py-0.5"
+                              style={{ borderBottom: '1px solid var(--parchment-edge)' }}>
+                              <span className="flex-1 text-xs" style={{
+                                color: alreadySet ? 'var(--ink-light)' : 'var(--text-primary)',
+                                textDecoration: alreadySet ? 'line-through' : 'none',
+                              }}>
+                                {skillKey}
+                              </span>
+                              <span className="text-xs" style={{ color: 'var(--ink-faded)', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {s.source}
+                              </span>
+                              {isApplicable && !alreadySet && (
+                                <button
+                                  onClick={() => {
+                                    if (s.type === 'proficiency') {
+                                      const existing = getSkillProf(s.skill.charAt(0).toUpperCase() + s.skill.slice(1))
+                                        ?? getSkillProf(s.skill)
+                                        ?? getSkillProf(skillKey)
+                                      // Find the matching SKILLS key
+                                      const match = SKILLS.find(sk => sk.key.toLowerCase() === s.skill.toLowerCase())
+                                      const key = match?.key ?? skillKey
+                                      if (!existing || existing.proficiency_level === 'none') {
+                                        if (!existing) {
+                                          setLocalProfs(prev => [...prev, {
+                                            id: `new_${key}`,
+                                            character_id: character.id,
+                                            type: 'skill' as const,
+                                            name: key,
+                                            proficiency_level: 'proficient',
+                                            has_advantage: false,
+                                          }])
+                                        } else {
+                                          setLocalProfs(prev => prev.map(p => p.name === key ? { ...p, proficiency_level: 'proficient' as const } : p))
+                                        }
+                                      }
+                                    } else if (s.type === 'advantage') {
+                                      const match = SKILLS.find(sk => sk.key.toLowerCase() === s.skill.toLowerCase())
+                                      const key = match?.key ?? skillKey
+                                      toggleAdvantage(key)
+                                    }
+                                  }}
+                                  className="text-xs px-1.5 py-0.5 rounded"
+                                  style={{
+                                    background: color, color: 'white', border: 'none',
+                                    cursor: 'pointer', fontSize: '0.6rem', fontWeight: 700,
+                                  }}>
+                                  +
+                                </button>
+                              )}
+                              {alreadySet && (
+                                <span className="text-xs" style={{ color: 'var(--hp-good)' }}>✓</span>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
