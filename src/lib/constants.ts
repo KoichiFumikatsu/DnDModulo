@@ -23,3 +23,15 @@ export const SKILLS = [
 export const ABILITY_NAMES: Record<string, string> = {
   str: 'STR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'WIS', cha: 'CHA',
 }
+
+/** Skills grouped by ability for the character sheet layout */
+export const SKILLS_BY_ABILITY: Record<string, typeof SKILLS[number][]> = {
+  str: SKILLS.filter(s => s.ability === 'str'),
+  dex: SKILLS.filter(s => s.ability === 'dex'),
+  con: [],  // CON has no associated skills in D&D 5e
+  int: SKILLS.filter(s => s.ability === 'int'),
+  wis: SKILLS.filter(s => s.ability === 'wis'),
+  cha: SKILLS.filter(s => s.ability === 'cha'),
+}
+
+export const ABILITY_ORDER = ['str', 'dex', 'con', 'int', 'wis', 'cha'] as const

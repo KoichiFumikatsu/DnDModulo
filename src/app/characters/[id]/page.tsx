@@ -1,26 +1,26 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import QuickStats from '@/modules/characters/components/QuickStats'
-import SkillsPanel from '@/components/ui/SkillsPanel'
 import { getXPProgress } from '@/lib/5etools/xp'
-import { ABILITY_NAMES } from '@/lib/constants'
+import { ABILITY_NAMES, SKILLS_BY_ABILITY, ABILITY_ORDER } from '@/lib/constants'
 
-function mod(score: number) {
-  const m = Math.floor((score - 10) / 2)
-  return m >= 0 ? `+${m}` : `${m}`
+/* ── Helpers ── */
+
+function modNum(score: number) { return Math.floor((score - 10) / 2) }
+function sign(n: number) { return n >= 0 ? `+${n}` : `${n}` }
+
+function passiveScore(
+  abilityScore: number, profBonus: number,
+  skillKey: string, profs: { name: string; proficiency_level: string }[],
+) {
+  const m = modNum(abilityScore)
+  const p = profs.find(p => p.name === skillKey)
+  const bonus = p?.proficiency_level === 'expertise' ? profBonus * 2
+    : p?.proficiency_level === 'proficient' ? profBonus : 0
+  return 10 + m + bonus
 }
 
-function AbilityBox({ label, score }: { label: string; score: number }) {
-  return (
-    <div className="stat-box">
-      <span className="text-xs font-bold uppercase tracking-wide mb-1"
-        style={{ color: 'var(--text-muted)' }}>{label}</span>
-      <span className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{score}</span>
-      <span className="text-sm font-semibold" style={{ color: 'var(--accent-gold)' }}>{mod(score)}</span>
-    </div>
-  )
-}
+/* ══════════════════════════════════════════════════════════════ */
 
 export default async function CharacterPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -29,12 +29,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
   if (!user) redirect('/auth/login')
 
   const { data: character } = await supabase
-    .from('characters')
-    .select('*')
-    .eq('id', id)
-    .eq('user_id', user.id)
-    .single()
-
+    .from('characters').select('*').eq('id', id).eq('user_id', user.id).single()
   if (!character) notFound()
 
   const [
@@ -42,322 +37,357 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
     { data: spellSlots },
     { data: spells },
     { data: weapons },
-    { data: equipment },
     { data: features },
     { data: proficiencies },
-    { data: classResources },
-    { data: customStats },
   ] = await Promise.all([
     supabase.from('character_classes').select('*').eq('character_id', id),
     supabase.from('character_spell_slots').select('*').eq('character_id', id),
     supabase.from('character_spells').select('*').eq('character_id', id).order('sort_order'),
     supabase.from('character_weapons').select('*').eq('character_id', id).order('sort_order'),
-    supabase.from('character_equipment').select('*').eq('character_id', id).order('sort_order'),
     supabase.from('character_features').select('*').eq('character_id', id).order('sort_order'),
     supabase.from('character_proficiencies').select('*').eq('character_id', id),
-    supabase.from('character_class_resources').select('*').eq('character_id', id).order('sort_order'),
-    supabase.from('character_custom_stats').select('*').eq('character_id', id).order('sort_order'),
   ])
 
   const classLabel = (classes ?? []).map(c => `${c.class_name} ${c.level}`).join(' / ')
   const xpData = getXPProgress(character.experience_points ?? 0)
+  const skillProfs = (proficiencies ?? []).filter(p => p.type === 'skill')
+  const langProfs = (proficiencies ?? []).filter(p => p.type === 'language')
+  const saveProfs = (proficiencies ?? []).filter(p => p.type === 'saving_throw')
 
-  type ClassRow = NonNullable<typeof classes>[number]
   type SpellRow = NonNullable<typeof spells>[number]
-  const spellsByClass: Record<string, { class: ClassRow; spells: SpellRow[] }> = {}
+  type ClassRow = NonNullable<typeof classes>[number]
+  const spellsByClass: Record<string, { cls: ClassRow; spells: SpellRow[] }> = {}
   for (const cls of (classes ?? [])) {
-    const classSpells = (spells ?? []).filter(s => s.class_id === cls.id)
-    if (classSpells.length > 0) {
-      spellsByClass[cls.id] = { class: cls, spells: classSpells }
-    }
+    const cs = (spells ?? []).filter(s => s.class_id === cls.id)
+    if (cs.length > 0) spellsByClass[cls.id] = { cls, spells: cs }
   }
 
-  const langProfs = (proficiencies ?? []).filter(p => p.type === 'language')
-  const skillProfs = (proficiencies ?? []).filter(p => p.type === 'skill')
+  const abilities: Record<string, number> = {
+    str: character.str, dex: character.dex, con: character.con,
+    int: character.int, wis: character.wis, cha: character.cha,
+  }
+  const profBonus = character.proficiency_bonus
+  const hitDie = (classes ?? [])[0]?.level ? `d${(classes ?? [])[0]?.level}` : ''
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--cover)' }}>
-      {/* Header estilo grimorio */}
+    <div className="min-h-screen cs-page">
+      {/* ── Nav bar (dark, unchanged) ── */}
       <div className="book-nav px-6 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
             <Link href="/dashboard"
-              style={{ color: 'var(--gold-light)', fontSize: '0.8rem', textDecoration: 'none', opacity: 0.7, fontFamily: 'var(--font-cinzel, serif)' }}>
+              style={{ color: 'var(--gold-light)', fontSize: '0.8rem', textDecoration: 'none', opacity: 0.7, fontFamily: 'Cinzel, serif' }}>
               ← Grimorio
             </Link>
             <div>
-              <h1 style={{ fontFamily: 'var(--font-cinzel, serif)', color: 'var(--gold)', fontSize: '1.2rem', lineHeight: 1.1 }}>
+              <h1 style={{ fontFamily: 'Cinzel, serif', color: 'var(--gold)', fontSize: '1.2rem', lineHeight: 1.1 }}>
                 {character.name}
               </h1>
               <p style={{ color: 'var(--gold-light)', fontSize: '0.78rem', opacity: 0.75, fontStyle: 'italic' }}>
-                {character.race} · {classLabel} · <span style={{ color: 'var(--gold)' }}>Nivel {xpData.level}</span>
+                {character.race} · {classLabel} · Level {xpData.level}
               </p>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <Link href={`/characters/${id}/play`} className="btn-crimson"
-              style={{ textDecoration: 'none', fontSize: '0.8rem' }}>
-              ⚡ Modo Mesa
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <Link href={`/characters/${id}/play`} className="btn-crimson" style={{ textDecoration: 'none', fontSize: '0.8rem' }}>
+              Modo Mesa
             </Link>
-            <Link href={`/characters/${id}/edit`} className="btn-parchment"
-              style={{ textDecoration: 'none', fontSize: '0.8rem' }}>
+            <Link href={`/characters/${id}/edit`} className="btn-parchment" style={{ textDecoration: 'none', fontSize: '0.8rem' }}>
               Editar
             </Link>
           </div>
         </div>
       </div>
 
-      {/* XP bar */}
-      <div style={{ background: 'var(--cover-mid)', borderBottom: '1px solid var(--gold-dark)', padding: '0.4rem 1.5rem' }}>
-        <div className="max-w-7xl mx-auto" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span style={{ fontFamily: 'var(--font-cinzel, serif)', color: 'var(--gold-light)', fontSize: '0.7rem', letterSpacing: '0.1em', whiteSpace: 'nowrap' }}>
-            XP
-          </span>
-          <div style={{ flex: 1, maxWidth: 300 }}>
-            <div className="ancient-bar-track" style={{ height: 6 }}>
-              {xpData.nextLevelXP && (
-                <div className="ancient-bar-fill" style={{
-                  width: `${xpData.pct}%`,
-                  background: 'linear-gradient(90deg, var(--gold-dark), var(--gold))',
-                }} />
-              )}
+      {/* ── Main content ── */}
+      <div className="max-w-6xl mx-auto px-4 py-6">
+
+        {/* ═══ TOP: Level / Prof / XP ═══ */}
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'end', gap: '2rem', marginBottom: '1.5rem' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div className="cs-heading">Prof</div>
+            <div style={{ fontFamily: 'Cinzel, serif', fontSize: '1.5rem', fontWeight: 700, color: 'var(--cs-accent)' }}>
+              +{profBonus}
             </div>
           </div>
-          <span style={{ color: 'var(--gold-light)', fontSize: '0.75rem', fontStyle: 'italic', whiteSpace: 'nowrap' }}>
-            {character.experience_points.toLocaleString()}
-            {xpData.nextLevelXP
-              ? ` / ${xpData.nextLevelXP.toLocaleString()} para nivel ${xpData.level + 1}`
-              : ' — nivel máximo'}
-          </span>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Left Column */}
-        <div className="space-y-4">
-          {/* Portrait */}
-          <div className="parchment-page ornate-border overflow-hidden">
-            <div className="aspect-square flex items-center justify-center"
-              style={{ background: 'var(--bg-secondary)' }}>
-              {character.image_url ? (
-                <img src={character.image_url} alt={character.name}
-                  className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-6xl">🧙</span>
-              )}
+          <div className="cs-shield cs-shield--lg">
+            <span className="cs-shield-label">Level</span>
+            <span className="cs-shield-value">{xpData.level}</span>
+            <span className="cs-shield-sub">{character.experience_points.toLocaleString()} XP</span>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div className="cs-heading">Speed</div>
+            <div style={{ fontFamily: 'Cinzel, serif', fontSize: '1.5rem', fontWeight: 700, color: 'var(--cs-accent)' }}>
+              {character.speed}
             </div>
-            <div className="p-4 space-y-2 text-sm">
+          </div>
+        </div>
+
+        {/* ═══ COMBAT ROW: Ini / HP / AC / Hit Die ═══ */}
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'end', gap: '1.5rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div className="cs-heading">Ini</div>
+            <div style={{ fontFamily: 'Cinzel, serif', fontSize: '1.2rem', fontWeight: 700, color: 'var(--cs-text)' }}>
+              {sign(modNum(character.dex) + (character.initiative_bonus ?? 0))}
+            </div>
+          </div>
+
+          <div className="cs-shield cs-shield--lg">
+            <span className="cs-shield-label">HP</span>
+            <span className="cs-shield-value">{character.hp_current}</span>
+            <span className="cs-shield-sub">/ {character.hp_max}{character.hp_temp > 0 ? ` +${character.hp_temp}` : ''}</span>
+          </div>
+
+          <div className="cs-shield">
+            <span className="cs-shield-label">AC</span>
+            <span className="cs-shield-value">{character.ac}</span>
+          </div>
+
+          <div style={{ textAlign: 'center' }}>
+            <div className="cs-heading">Hit Die</div>
+            <div style={{ fontFamily: 'Cinzel, serif', fontSize: '1.2rem', fontWeight: 700, color: 'var(--cs-text)' }}>
+              {character.hit_dice_total || '—'}
+            </div>
+          </div>
+        </div>
+
+        {/* ═══ PASSIVE SCORES ═══ */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+          {[
+            { label: 'Passive Perception', key: 'Perception', ab: 'wis' },
+            { label: 'Passive Investigation', key: 'Investigation', ab: 'int' },
+            { label: 'Passive Insight', key: 'Insight', ab: 'wis' },
+          ].map(({ label, key, ab }) => (
+            <div key={key} className="cs-passive">
+              <div className="cs-passive-label">{label}</div>
+              <div className="cs-passive-value">{passiveScore(abilities[ab], profBonus, key, skillProfs)}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="cs-divider" />
+
+        {/* ═══ 3-COLUMN LAYOUT ═══ */}
+        <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr 260px', gap: '1.5rem', marginTop: '1.5rem' }}>
+
+          {/* ── LEFT: Portrait + Money + Languages ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {/* Portrait */}
+            <div className="cs-frame cs-frame-corners" style={{ position: 'relative', border: '2px solid var(--cs-gold)' }}>
+              <div style={{ aspectRatio: '3/4', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--cs-bg)', overflow: 'hidden' }}>
+                {character.image_url ? (
+                  <img src={character.image_url} alt={character.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <span style={{ fontSize: '4rem' }}>🧙</span>
+                )}
+              </div>
+              <div style={{
+                position: 'absolute', bottom: 0, left: 0, right: 0,
+                background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
+                padding: '2rem 0.75rem 0.75rem', color: 'white',
+              }}>
+                <div style={{ fontFamily: 'Cinzel, serif', fontSize: '1rem', fontWeight: 700 }}>
+                  {character.name}
+                </div>
+                <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                  {character.race} · {classLabel}
+                </div>
+              </div>
+            </div>
+
+            {/* Money */}
+            <div className="cs-card">
+              <h3 className="cs-heading" style={{ marginBottom: '0.5rem' }}>Money</h3>
               {[
-                ['Raza', character.race],
-                ['Trasfondo', character.background],
-                ['Alineamiento', character.alignment],
-                ['Velocidad', character.speed ? `${character.speed} ft` : null],
-                ['Nivel', `${xpData.level}`],
-                ['XP', `${character.experience_points?.toLocaleString()}${xpData.nextLevelXP ? ` / ${xpData.nextLevelXP.toLocaleString()}` : ''}`],
-              ].map(([label, value]) => value && (
-                <div key={label as string} className="flex justify-between">
-                  <span style={{ color: 'var(--text-muted)' }}>{label}</span>
-                  <span style={{ color: 'var(--text-primary)' }}>{value}</span>
+                { label: 'Copper Coins', value: character.cp, color: '#b87333' },
+                { label: 'Silver Coins', value: character.sp, color: '#C0C0C0' },
+                { label: 'Gold Coins', value: character.gp, color: '#D4A017' },
+                { label: 'Platinum Coins', value: character.pp, color: '#E5E4E2' },
+              ].map(({ label, value, color }) => (
+                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.2rem 0', borderBottom: '1px solid var(--cs-gold)', fontSize: '0.85rem' }}>
+                  <span style={{ color: 'var(--cs-text)' }}>{label}</span>
+                  <span style={{ fontFamily: 'Cinzel, serif', fontWeight: 700, color, fontSize: '1rem' }}>
+                    {String(value ?? 0).padStart(2, '0')}
+                  </span>
                 </div>
               ))}
             </div>
+
+            {/* Languages */}
+            {langProfs.length > 0 && (
+              <div className="cs-card">
+                <h3 className="cs-heading" style={{ marginBottom: '0.5rem' }}>Languages</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                  {langProfs.map(p => (
+                    <span key={p.id} style={{ fontSize: '0.85rem', color: 'var(--cs-text)' }}>
+                      {p.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Physical */}
-          {(character.age || character.height || character.eyes) && (
-            <div className="rounded-xl border p-4"
-              style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-              <h3 className="text-xs font-bold uppercase tracking-wide mb-3"
-                style={{ color: 'var(--text-muted)' }}>Apariencia</h3>
-              <div className="space-y-2 text-sm">
-                {[
-                  ['Edad', character.age],
-                  ['Altura', character.height],
-                  ['Peso', character.weight],
-                  ['Ojos', character.eyes],
-                  ['Piel', character.skin],
-                  ['Cabello', character.hair],
-                ].map(([label, value]) => value && (
-                  <div key={label as string} className="flex justify-between">
-                    <span style={{ color: 'var(--text-muted)' }}>{label}</span>
-                    <span style={{ color: 'var(--text-primary)' }}>{value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* ── CENTER: Abilities grouped with skills ── */}
+          <div>
+            {/* 2x3 grid of ability groups */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              {ABILITY_ORDER.map(ab => {
+                const score = abilities[ab]
+                const m = modNum(score)
+                const hasSave = saveProfs.some(p => p.name === ab)
+                const saveMod = hasSave ? m + profBonus : m
+                const skills = SKILLS_BY_ABILITY[ab]
 
-          {/* Languages */}
-          {langProfs.length > 0 && (
-            <div className="rounded-xl border p-4"
-              style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-              <h3 className="text-xs font-bold uppercase tracking-wide mb-3"
-                style={{ color: 'var(--text-muted)' }}>Idiomas</h3>
-              <div className="flex flex-wrap gap-2">
-                {langProfs.map(p => (
-                  <span key={p.id} className="px-2 py-1 rounded text-xs"
-                    style={{ background: 'var(--bg-secondary)', color: 'var(--on-dark)' }}>
-                    {p.name}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Center Column */}
-        <div className="space-y-4">
-          {/* Ability Scores */}
-          <div className="grid grid-cols-3 gap-2">
-            {(['str', 'dex', 'con', 'int', 'wis', 'cha'] as const).map(ab => (
-              <AbilityBox key={ab}
-                label={ABILITY_NAMES[ab]}
-                score={character[ab]} />
-            ))}
-          </div>
-
-          {/* Combat Stats */}
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { label: 'CA', value: character.ac },
-              { label: 'Iniciativa', value: mod(character.dex + (character.initiative_bonus ?? 0)) },
-              { label: 'Bonus Prof.', value: `+${character.proficiency_bonus}` },
-            ].map(({ label, value }) => (
-              <div key={label} className="stat-box">
-                <div className="text-xs font-bold uppercase tracking-wide mb-1"
-                  style={{ color: 'var(--text-muted)' }}>{label}</div>
-                <div className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>{value}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Skills */}
-          <SkillsPanel
-            abilities={{
-              str: character.str, dex: character.dex, con: character.con,
-              int: character.int, wis: character.wis, cha: character.cha,
-            }}
-            proficiencyBonus={character.proficiency_bonus}
-            skillProfs={skillProfs}
-          />
-
-          {/* Weapons */}
-          {weapons && weapons.length > 0 && (
-            <div className="rounded-xl border p-4"
-              style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-              <h3 className="text-xs font-bold uppercase tracking-wide mb-3"
-                style={{ color: 'var(--text-muted)' }}>Ataques</h3>
-              <div className="space-y-2">
-                {weapons.map(w => (
-                  <div key={w.id} className="flex items-center gap-3 text-sm py-1 border-b last:border-0"
-                    style={{ borderColor: 'var(--border)' }}>
-                    <span className="flex-1 font-medium" style={{ color: 'var(--text-primary)' }}>{w.name}</span>
-                    <span style={{ color: 'var(--accent-gold)' }}>{w.atk_bonus}</span>
-                    <span style={{ color: 'var(--text-muted)' }}>{w.damage}</span>
-                    {w.range && <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{w.range}</span>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Right Column */}
-        <div className="space-y-4">
-          {/* Quick Stats */}
-          <QuickStats
-            character={character}
-            classResources={classResources ?? []}
-            spellSlots={spellSlots ?? []}
-            classes={classes ?? []}
-            customStats={customStats ?? []}
-          />
-
-          {/* Spells */}
-          {Object.values(spellsByClass).map(({ class: cls, spells: clsSpells }) => {
-            const byLevel: Record<number, typeof clsSpells> = {}
-            clsSpells.forEach(s => {
-              if (!byLevel[s.spell_level]) byLevel[s.spell_level] = []
-              byLevel[s.spell_level].push(s)
-            })
-            return (
-              <div key={cls.id} className="rounded-xl border p-4"
-                style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-                <h3 className="text-xs font-bold uppercase tracking-wide mb-1"
-                  style={{ color: 'var(--text-muted)' }}>
-                  Hechizos — {cls.class_name}
-                </h3>
-                <p className="text-xs mb-3"
-                  style={{ color: 'var(--accent-gold)' }}>
-                  DC {cls.spell_save_dc} · Ataque +{cls.spell_attack_mod} · {cls.spellcasting_ability?.toUpperCase()}
-                </p>
-                {Object.entries(byLevel).sort(([a], [b]) => Number(a) - Number(b)).map(([level, spellList]) => (
-                  <div key={level} className="mb-3">
-                    <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
-                      {level === '0' ? 'Trucos' : `Nivel ${level}`}
-                    </div>
-                    {spellList.map(s => (
-                      <div key={s.id} className="flex items-start gap-2 py-1 text-sm border-b last:border-0"
-                        style={{ borderColor: 'var(--border)' }}>
-                        <span className="flex-1 font-medium" style={{ color: 'var(--text-primary)' }}>
-                          {s.name}
-                        </span>
-                        {s.custom_notes && (
-                          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                            {s.custom_notes}
-                          </span>
-                        )}
+                return (
+                  <div key={ab} className="cs-ability-row" style={{ display: 'flex', gap: '0.6rem', padding: '0.6rem', border: '1px solid var(--cs-gold)', background: 'var(--cs-card)' }}>
+                    {/* Shield */}
+                    <div style={{ textAlign: 'center', minWidth: 65, flexShrink: 0 }}>
+                      <div className="cs-heading" style={{ marginBottom: 2 }}>{ABILITY_NAMES[ab]}</div>
+                      <div style={{ fontFamily: 'Cinzel, serif', fontSize: '1.8rem', fontWeight: 700, color: 'var(--cs-accent)', lineHeight: 1 }}>
+                        {sign(m)}
                       </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            )
-          })}
+                      <div style={{ fontSize: '0.75rem', color: 'var(--cs-text-muted)' }}>{score}</div>
+                      <div style={{ fontSize: '0.65rem', color: 'var(--cs-text-muted)', marginTop: 2 }}>
+                        Save {sign(saveMod)}
+                      </div>
+                      {hasSave && (
+                        <span className="cs-dot cs-dot--proficient" style={{ marginTop: 2 }} />
+                      )}
+                    </div>
 
-          {/* Features */}
-          {features && features.length > 0 && (
-            <div className="rounded-xl border p-4"
-              style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-              <h3 className="text-xs font-bold uppercase tracking-wide mb-3"
-                style={{ color: 'var(--text-muted)' }}>Rasgos y habilidades</h3>
-              <div className="space-y-3">
-                {features.map(f => (
-                  <div key={f.id}>
-                    <p className="font-semibold text-sm" style={{ color: 'var(--accent-gold)' }}>
-                      {f.name}
-                      {f.source && <span className="text-xs font-normal ml-2" style={{ color: 'var(--text-muted)' }}>({f.source})</span>}
-                    </p>
-                    {f.description && (
-                      <p className="text-xs mt-1 leading-relaxed" style={{ color: 'var(--text-primary)' }}>
-                        {f.description}
-                      </p>
+                    {/* Skills list */}
+                    {skills.length > 0 ? (
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1, justifyContent: 'center' }}>
+                        {skills.map(skill => {
+                          const prof = skillProfs.find(p => p.name === skill.key)
+                          const level = prof?.proficiency_level ?? 'none'
+                          const bonus = m + (level === 'expertise' ? profBonus * 2 : level === 'proficient' ? profBonus : 0)
+                          return (
+                            <div key={skill.key} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.78rem' }}>
+                              <span className={`cs-dot cs-dot--${level}`} />
+                              <span style={{
+                                flex: 1,
+                                color: level !== 'none' ? 'var(--cs-text)' : 'var(--cs-text-muted)',
+                                fontWeight: level !== 'none' ? 600 : 400,
+                              }}>
+                                {skill.name}
+                              </span>
+                              <span style={{
+                                fontWeight: 600, minWidth: 20, textAlign: 'right',
+                                color: level === 'expertise' ? 'var(--cs-gold)' : level === 'proficient' ? 'var(--cs-accent)' : 'var(--cs-text-muted)',
+                              }}>
+                                {sign(bonus)}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      /* CON — show hit die instead */
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                        <div className="cs-heading" style={{ fontSize: '0.6rem' }}>Hit Die</div>
+                        <div style={{ fontFamily: 'Cinzel, serif', fontSize: '1.2rem', fontWeight: 700, color: 'var(--cs-accent)' }}>
+                          {character.hit_dice_total || '—'}
+                        </div>
+                      </div>
                     )}
                   </div>
+                )
+              })}
+            </div>
+
+            {/* Weapons */}
+            {weapons && weapons.length > 0 && (
+              <div className="cs-card" style={{ marginTop: '1rem' }}>
+                <h3 className="cs-heading" style={{ marginBottom: '0.5rem' }}>Weapons</h3>
+                {weapons.map(w => (
+                  <div key={w.id} style={{ display: 'flex', gap: '1rem', padding: '0.3rem 0', borderBottom: '1px solid var(--cs-gold)', fontSize: '0.85rem' }}>
+                    <span style={{ flex: 1, fontWeight: 600, color: 'var(--cs-accent)' }}>{w.name}</span>
+                    <span style={{ color: 'var(--cs-text-muted)' }}>{w.atk_bonus}</span>
+                    <span style={{ color: 'var(--cs-text-muted)' }}>{w.damage}</span>
+                    {w.range && <span style={{ color: 'var(--cs-text-muted)', fontSize: '0.75rem' }}>{w.range}</span>}
+                  </div>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
-          {/* Roleplay */}
-          {(character.personality || character.ideals || character.bonds || character.flaws) && (
-            <div className="rounded-xl border p-4"
-              style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-              <h3 className="text-xs font-bold uppercase tracking-wide mb-3"
-                style={{ color: 'var(--text-muted)' }}>Personalidad</h3>
-              {[
-                ['Rasgos', character.personality],
-                ['Ideales', character.ideals],
-                ['Vínculos', character.bonds],
-                ['Defectos', character.flaws],
-              ].map(([label, value]) => value && (
-                <div key={label as string} className="mb-3">
-                  <p className="text-xs font-semibold mb-1" style={{ color: 'var(--accent-gold)' }}>{label}</p>
-                  <p className="text-sm" style={{ color: 'var(--text-primary)' }}>{value}</p>
+          {/* ── RIGHT: Features + Spells + Personality ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+            {/* Spells */}
+            {Object.values(spellsByClass).map(({ cls, spells: clsSpells }) => {
+              const byLevel: Record<number, typeof clsSpells> = {}
+              clsSpells.forEach(s => {
+                if (!byLevel[s.spell_level]) byLevel[s.spell_level] = []
+                byLevel[s.spell_level].push(s)
+              })
+              return (
+                <div key={cls.id} className="cs-card">
+                  <h3 className="cs-heading" style={{ marginBottom: '0.25rem' }}>
+                    Spells — {cls.class_name}
+                  </h3>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--cs-accent)', marginBottom: '0.5rem' }}>
+                    DC {cls.spell_save_dc} · Atk +{cls.spell_attack_mod} · {cls.spellcasting_ability?.toUpperCase()}
+                  </div>
+                  {Object.entries(byLevel).sort(([a], [b]) => Number(a) - Number(b)).map(([level, list]) => (
+                    <div key={level} style={{ marginBottom: '0.5rem' }}>
+                      <div className="cs-heading" style={{ fontSize: '0.6rem', marginBottom: 2 }}>
+                        {level === '0' ? 'Cantrips' : `Level ${level}`}
+                      </div>
+                      {list.map(s => (
+                        <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.15rem 0', borderBottom: '1px solid var(--cs-gold)' }}>
+                          <span style={{ color: 'var(--cs-accent)', fontWeight: 500 }}>{s.name}</span>
+                          {s.custom_notes && <span style={{ color: 'var(--cs-text-muted)', fontSize: '0.7rem' }}>{s.custom_notes}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
+              )
+            })}
+
+            {/* Features */}
+            {features && features.length > 0 && (
+              <div className="cs-frame cs-frame-corners" style={{ position: 'relative', border: '1px solid var(--cs-gold)', background: 'var(--cs-card)' }}>
+                <h3 className="cs-heading" style={{ marginBottom: '0.75rem' }}>Features & Traits</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                  {features.map(f => (
+                    <div key={f.id}>
+                      <p style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--cs-accent)', fontStyle: 'italic' }}>
+                        {f.name}
+                      </p>
+                      {f.description && (
+                        <p style={{ fontSize: '0.78rem', color: 'var(--cs-text)', lineHeight: 1.4, marginTop: '0.15rem' }}>
+                          {f.description}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Personality */}
+            {(character.personality || character.ideals || character.bonds || character.flaws) && (
+              <div className="cs-card">
+                <h3 className="cs-heading" style={{ marginBottom: '0.5rem' }}>Personality</h3>
+                {[
+                  ['Traits', character.personality],
+                  ['Ideals', character.ideals],
+                  ['Bonds', character.bonds],
+                  ['Flaws', character.flaws],
+                ].map(([label, value]) => value && (
+                  <div key={label as string} style={{ marginBottom: '0.4rem' }}>
+                    <p style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--cs-gold-dk)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</p>
+                    <p style={{ fontSize: '0.82rem', color: 'var(--cs-text)' }}>{value}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -402,3 +402,156 @@ h1, h2, h3, h4 {
   background: linear-gradient(180deg, var(--cover-mid) 0%, var(--cover-light) 100%);
   color: var(--gold);
 }
+
+/* ============================================================
+   CHARACTER SHEET PAGE — Light cream redesign (scoped)
+   ============================================================ */
+.cs-page {
+  --cs-bg:         #FBF3E4;
+  --cs-card:       #FBF3E4;
+  --cs-accent:     #8b1a1a;
+  --cs-accent-lt:  #b52020;
+  --cs-gold:       #C8A855;
+  --cs-gold-dk:    #A08030;
+  --cs-text:       #2C1810;
+  --cs-text-muted: #6B4C3B;
+  --cs-border:     #C8A855;
+  background: var(--cs-bg) !important;
+  color: var(--cs-text);
+}
+
+/* Shield badge — pentagon clip-path */
+.cs-shield {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0.6rem 0.75rem 1.2rem;
+  background: var(--cs-card);
+  border: 2px solid var(--cs-gold);
+  clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%);
+  min-width: 70px;
+}
+.cs-shield--lg {
+  padding: 0.8rem 1.2rem 1.8rem;
+  min-width: 100px;
+}
+.cs-shield .cs-shield-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--cs-text-muted);
+}
+.cs-shield .cs-shield-value {
+  font-family: 'Cinzel', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--cs-accent);
+  line-height: 1.1;
+}
+.cs-shield--lg .cs-shield-value {
+  font-size: 2.2rem;
+}
+.cs-shield .cs-shield-sub {
+  font-size: 0.7rem;
+  color: var(--cs-text-muted);
+}
+
+/* Gold ornamental 4-corner frame */
+.cs-frame {
+  position: relative;
+  padding: 1.25rem;
+}
+.cs-frame::before,
+.cs-frame::after {
+  content: '';
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-color: var(--cs-gold);
+  border-style: solid;
+  pointer-events: none;
+}
+.cs-frame::before { top: 0; left: 0; border-width: 3px 0 0 3px; }
+.cs-frame::after  { bottom: 0; right: 0; border-width: 0 3px 3px 0; }
+.cs-frame-corners::before,
+.cs-frame-corners::after {
+  content: '';
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-color: var(--cs-gold);
+  border-style: solid;
+  pointer-events: none;
+}
+.cs-frame-corners::before { top: 0; right: 0; border-width: 3px 3px 0 0; }
+.cs-frame-corners::after  { bottom: 0; left: 0; border-width: 0 0 3px 3px; }
+
+/* Card / section */
+.cs-card {
+  background: var(--cs-card);
+  border: 1px solid var(--cs-gold);
+  padding: 1rem;
+}
+
+/* Headings */
+.cs-heading {
+  font-family: 'Cinzel', serif;
+  color: var(--cs-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+/* Gold divider */
+.cs-divider {
+  height: 2px;
+  background: linear-gradient(to right, transparent, var(--cs-gold), transparent);
+  margin: 0.75rem 0;
+}
+
+/* Proficiency dots */
+.cs-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  display: inline-block;
+}
+.cs-dot--none       { background: transparent; border: 1.5px solid var(--cs-text-muted); }
+.cs-dot--proficient { background: var(--cs-accent); border: none; }
+.cs-dot--expertise  { background: var(--cs-gold); border: none; }
+
+/* Ability + skills group */
+.cs-ability-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+  align-items: start;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--cs-gold);
+}
+.cs-ability-row:last-child { border-bottom: none; }
+
+/* Passive score badge */
+.cs-passive {
+  text-align: center;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--cs-gold);
+  background: var(--cs-card);
+}
+.cs-passive-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--cs-text-muted);
+  letter-spacing: 0.05em;
+}
+.cs-passive-value {
+  font-family: 'Cinzel', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--cs-accent);
+}
