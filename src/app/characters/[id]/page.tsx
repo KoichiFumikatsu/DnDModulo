@@ -2,8 +2,9 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getXPProgress } from '@/lib/5etools/xp'
-import { ABILITY_NAMES, SKILLS_BY_ABILITY, ABILITY_ORDER } from '@/lib/constants'
 import AbilitySkillsGrid from '@/components/ui/AbilitySkillsGrid'
+import CharacterPortrait from '@/components/ui/CharacterPortrait'
+import FeaturesCompact from '@/components/ui/FeaturesCompact'
 
 /* ── Helpers ── */
 
@@ -31,13 +32,26 @@ function ShieldSvg() {
         stroke="var(--cs-gold, #C8A855)"
         strokeWidth="2.5"
       />
-      {/* inner decorative line */}
       <path
         d="M8,6 L92,6 Q94,6 94,8 L94,63 Q94,77 50,111 Q6,77 6,63 L6,8 Q6,6 8,6 Z"
         fill="none"
         stroke="var(--cs-gold, #C8A855)"
         strokeWidth="0.7"
         opacity="0.5"
+      />
+    </svg>
+  )
+}
+
+/* Small shield for secondary stats */
+function ShieldSmallSvg() {
+  return (
+    <svg className="cs-shield-svg" viewBox="0 0 100 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M4,2 L96,2 Q98,2 98,4 L98,65 Q98,80 50,116 Q2,80 2,65 L2,4 Q2,2 4,2 Z"
+        fill="var(--cs-card, #FBF3E4)"
+        stroke="var(--cs-gold, #C8A855)"
+        strokeWidth="3"
       />
     </svg>
   )
@@ -62,6 +76,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
     { data: weapons },
     { data: features },
     { data: proficiencies },
+    { data: charImages },
   ] = await Promise.all([
     supabase.from('character_classes').select('*').eq('character_id', id),
     supabase.from('character_spell_slots').select('*').eq('character_id', id),
@@ -69,6 +84,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
     supabase.from('character_weapons').select('*').eq('character_id', id).order('sort_order'),
     supabase.from('character_features').select('*').eq('character_id', id).order('sort_order'),
     supabase.from('character_proficiencies').select('*').eq('character_id', id),
+    supabase.from('character_images').select('*').eq('character_id', id).order('sort_order'),
   ])
 
   const classLabel = (classes ?? []).map(c => `${c.class_name} ${c.level}`).join(' / ')
@@ -90,7 +106,6 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
     int: character.int, wis: character.wis, cha: character.cha,
   }
   const profBonus = character.proficiency_bonus
-  const hitDie = (classes ?? [])[0]?.level ? `d${(classes ?? [])[0]?.level}` : ''
 
   return (
     <div className="min-h-screen cs-page">
@@ -125,35 +140,18 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
       {/* ── Main content ── */}
       <div className="max-w-6xl mx-auto px-4 py-6">
 
-        {/* ═══ TOP: Level / Prof / XP ═══ */}
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'end', gap: '2rem', marginBottom: '1.5rem' }}>
-          <div style={{ textAlign: 'center' }}>
-            <div className="cs-heading">Prof</div>
-            <div style={{ fontFamily: 'Cinzel, serif', fontSize: '1.5rem', fontWeight: 700, color: 'var(--cs-accent)' }}>
-              +{profBonus}
-            </div>
+        {/* ═══ COMBAT ROW: all shields ═══ */}
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'end', gap: '1rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+          <div className="cs-shield cs-shield--sm">
+            <ShieldSmallSvg />
+            <span className="cs-shield-label">Ini</span>
+            <span className="cs-shield-value">{sign(modNum(character.dex) + (character.initiative_bonus ?? 0))}</span>
           </div>
-          <div className="cs-shield cs-shield--lg">
-            <ShieldSvg />
-            <span className="cs-shield-label">Level</span>
-            <span className="cs-shield-value">{xpData.level}</span>
-            <span className="cs-shield-sub">{character.experience_points.toLocaleString()} XP</span>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div className="cs-heading">Speed</div>
-            <div style={{ fontFamily: 'Cinzel, serif', fontSize: '1.5rem', fontWeight: 700, color: 'var(--cs-accent)' }}>
-              {character.speed}
-            </div>
-          </div>
-        </div>
 
-        {/* ═══ COMBAT ROW: Ini / HP / AC / Hit Die ═══ */}
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'end', gap: '1.5rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
-          <div style={{ textAlign: 'center' }}>
-            <div className="cs-heading">Ini</div>
-            <div style={{ fontFamily: 'Cinzel, serif', fontSize: '1.2rem', fontWeight: 700, color: 'var(--cs-text)' }}>
-              {sign(modNum(character.dex) + (character.initiative_bonus ?? 0))}
-            </div>
+          <div className="cs-shield cs-shield--sm">
+            <ShieldSmallSvg />
+            <span className="cs-shield-label">Prof</span>
+            <span className="cs-shield-value">+{profBonus}</span>
           </div>
 
           <div className="cs-shield cs-shield--lg">
@@ -169,11 +167,23 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
             <span className="cs-shield-value">{character.ac}</span>
           </div>
 
-          <div style={{ textAlign: 'center' }}>
-            <div className="cs-heading">Hit Die</div>
-            <div style={{ fontFamily: 'Cinzel, serif', fontSize: '1.2rem', fontWeight: 700, color: 'var(--cs-text)' }}>
-              {character.hit_dice_total || '—'}
-            </div>
+          <div className="cs-shield cs-shield--sm">
+            <ShieldSmallSvg />
+            <span className="cs-shield-label">Speed</span>
+            <span className="cs-shield-value">{character.speed}</span>
+          </div>
+
+          <div className="cs-shield cs-shield--sm">
+            <ShieldSmallSvg />
+            <span className="cs-shield-label">Hit Die</span>
+            <span className="cs-shield-value" style={{ fontSize: '0.9rem' }}>{character.hit_dice_total || '—'}</span>
+          </div>
+
+          <div className="cs-shield cs-shield--lg">
+            <ShieldSvg />
+            <span className="cs-shield-label">Level</span>
+            <span className="cs-shield-value">{xpData.level}</span>
+            <span className="cs-shield-sub">{character.experience_points.toLocaleString()} XP</span>
           </div>
         </div>
 
@@ -198,38 +208,29 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
 
           {/* ── LEFT: Portrait + Money + Languages ── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {/* Portrait */}
-            <div className="cs-frame cs-frame-corners" style={{ position: 'relative', border: '2px solid var(--cs-gold)' }}>
-              <div style={{ aspectRatio: '3/4', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--cs-bg)', overflow: 'hidden' }}>
-                {character.image_url ? (
-                  <img src={character.image_url} alt={character.name}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  <span style={{ fontSize: '4rem' }}>🧙</span>
-                )}
-              </div>
-              <div style={{
-                position: 'absolute', bottom: 0, left: 0, right: 0,
-                background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
-                padding: '2rem 0.75rem 0.75rem', color: 'white',
-              }}>
-                <div style={{ fontFamily: 'Cinzel, serif', fontSize: '1rem', fontWeight: 700 }}>
-                  {character.name}
-                </div>
-                <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>
-                  {character.race} · {classLabel}
-                </div>
-              </div>
-            </div>
+            <CharacterPortrait
+              characterId={id}
+              characterName={character.name}
+              classLabel={classLabel}
+              race={character.race}
+              mainImageUrl={character.image_url}
+              images={(charImages ?? []).map(img => ({
+                id: img.id,
+                image_url: img.image_url,
+                label: img.label,
+                sort_order: img.sort_order,
+                is_active: img.is_active,
+              }))}
+            />
 
             {/* Money */}
-            <div className="cs-card">
+            <div className="cs-card--notched">
               <h3 className="cs-heading" style={{ marginBottom: '0.5rem' }}>Money</h3>
               {[
-                { label: 'Copper Coins', value: character.cp, color: '#b87333' },
-                { label: 'Silver Coins', value: character.sp, color: '#C0C0C0' },
-                { label: 'Gold Coins', value: character.gp, color: '#D4A017' },
-                { label: 'Platinum Coins', value: character.pp, color: '#E5E4E2' },
+                { label: 'CP', value: character.cp, color: '#b87333' },
+                { label: 'SP', value: character.sp, color: '#C0C0C0' },
+                { label: 'GP', value: character.gp, color: '#D4A017' },
+                { label: 'PP', value: character.pp, color: '#E5E4E2' },
               ].map(({ label, value, color }) => (
                 <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.2rem 0', borderBottom: '1px solid var(--cs-gold)', fontSize: '0.85rem' }}>
                   <span style={{ color: 'var(--cs-text)' }}>{label}</span>
@@ -242,7 +243,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
 
             {/* Languages */}
             {langProfs.length > 0 && (
-              <div className="cs-card">
+              <div className="cs-card--notched">
                 <h3 className="cs-heading" style={{ marginBottom: '0.5rem' }}>Languages</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                   {langProfs.map(p => (
@@ -267,7 +268,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
 
             {/* Weapons */}
             {weapons && weapons.length > 0 && (
-              <div className="cs-card" style={{ marginTop: '1rem' }}>
+              <div className="cs-card--notched" style={{ marginTop: '1rem' }}>
                 <h3 className="cs-heading" style={{ marginBottom: '0.5rem' }}>Weapons</h3>
                 {weapons.map(w => (
                   <div key={w.id} style={{ display: 'flex', gap: '1rem', padding: '0.3rem 0', borderBottom: '1px solid var(--cs-gold)', fontSize: '0.85rem' }}>
@@ -292,7 +293,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
                 byLevel[s.spell_level].push(s)
               })
               return (
-                <div key={cls.id} className="cs-card">
+                <div key={cls.id} className="cs-card--notched">
                   <h3 className="cs-heading" style={{ marginBottom: '0.25rem' }}>
                     Spells — {cls.class_name}
                   </h3>
@@ -316,30 +317,20 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
               )
             })}
 
-            {/* Features */}
-            {features && features.length > 0 && (
-              <div className="cs-frame cs-frame-corners" style={{ position: 'relative', border: '1px solid var(--cs-gold)', background: 'var(--cs-card)' }}>
-                <h3 className="cs-heading" style={{ marginBottom: '0.75rem' }}>Features & Traits</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                  {features.map(f => (
-                    <div key={f.id}>
-                      <p style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--cs-accent)', fontStyle: 'italic' }}>
-                        {f.name}
-                      </p>
-                      {f.description && (
-                        <p style={{ fontSize: '0.78rem', color: 'var(--cs-text)', lineHeight: 1.4, marginTop: '0.15rem' }}>
-                          {f.description}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Features — compact with click-to-expand modal */}
+            <FeaturesCompact
+              features={(features ?? []).map(f => ({
+                id: f.id,
+                name: f.name,
+                description: f.description,
+                source: f.source,
+                summary: f.summary ?? null,
+              }))}
+            />
 
             {/* Personality */}
             {(character.personality || character.ideals || character.bonds || character.flaws) && (
-              <div className="cs-card">
+              <div className="cs-card--notched">
                 <h3 className="cs-heading" style={{ marginBottom: '0.5rem' }}>Personality</h3>
                 {[
                   ['Traits', character.personality],

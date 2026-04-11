@@ -70,6 +70,17 @@ export interface CharacterFeature {
   name: string
   description: string
   source: string | null
+  summary: string | null
+  sort_order?: number
+}
+
+export interface CharacterImage {
+  id: string
+  character_id: string
+  image_url: string
+  label: string
+  sort_order: number
+  is_active: boolean
 }
 
 export interface CharacterProficiency {

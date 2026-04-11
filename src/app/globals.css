@@ -437,6 +437,17 @@ h1, h2, h3, h4 {
   min-height: 120px;
   padding: 0.5rem 0.8rem 1.4rem;
 }
+.cs-shield--sm {
+  min-width: 65px;
+  min-height: 80px;
+  padding: 0.3rem 0.5rem 0.9rem;
+}
+.cs-shield--sm .cs-shield-value {
+  font-size: 1.1rem;
+}
+.cs-shield--sm .cs-shield-label {
+  font-size: 0.5rem;
+}
 .cs-shield .cs-shield-svg {
   position: absolute;
   inset: 0;
