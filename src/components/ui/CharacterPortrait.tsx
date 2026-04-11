@@ -13,6 +13,7 @@ interface ImageEntry {
 
 interface Props {
   characterId: string
+  userId: string
   characterName: string
   classLabel: string
   race: string | null
@@ -20,7 +21,7 @@ interface Props {
   images: ImageEntry[]
 }
 
-export default function CharacterPortrait({ characterId, characterName, classLabel, race, mainImageUrl, images }: Props) {
+export default function CharacterPortrait({ characterId, userId, characterName, classLabel, race, mainImageUrl, images }: Props) {
   const [entries, setEntries] = useState<ImageEntry[]>(images)
   const [activeIdx, setActiveIdx] = useState(() => {
     const idx = entries.findIndex(e => e.is_active)
@@ -30,20 +31,20 @@ export default function CharacterPortrait({ characterId, characterName, classLab
   const [newUrl, setNewUrl] = useState('')
   const [newLabel, setNewLabel] = useState('')
   const [saving, setSaving] = useState(false)
+  const [uploadError, setUploadError] = useState('')
+  const [mode, setMode] = useState<'file' | 'url'>('file')
+  const fileRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
-  // Current displayed image: from entries if available, else fallback to mainImageUrl
   const currentImage = entries.length > 0
     ? entries[activeIdx]?.image_url
     : mainImageUrl
 
-  async function addImage() {
-    if (!newUrl.trim()) return
-    setSaving(true)
+  async function saveImageEntry(imageUrl: string) {
     const label = newLabel.trim() || 'Default'
     const { data, error } = await supabase.from('character_images').insert({
       character_id: characterId,
-      image_url: newUrl.trim(),
+      image_url: imageUrl,
       label,
       sort_order: entries.length,
       is_active: entries.length === 0,
@@ -52,20 +53,69 @@ export default function CharacterPortrait({ characterId, characterName, classLab
       const updated = [...entries, data as ImageEntry]
       setEntries(updated)
       setActiveIdx(updated.length - 1)
-      // Also update character.image_url to latest
-      await supabase.from('characters').update({ image_url: newUrl.trim() }).eq('id', characterId)
+      await supabase.from('characters').update({ image_url: imageUrl }).eq('id', characterId)
     }
     setNewUrl('')
     setNewLabel('')
     setSaving(false)
     setEditing(false)
+    setUploadError('')
+  }
+
+  async function addFromUrl() {
+    if (!newUrl.trim()) return
+    setSaving(true)
+    await saveImageEntry(newUrl.trim())
+  }
+
+  async function uploadFile(file: File) {
+    setSaving(true)
+    setUploadError('')
+
+    // Validate type
+    const allowed = ['image/png', 'image/jpeg', 'image/webp', 'image/gif']
+    if (!allowed.includes(file.type)) {
+      setUploadError('Only PNG, JPEG, WebP, GIF allowed')
+      setSaving(false)
+      return
+    }
+    // Validate size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('Max file size: 5MB')
+      setSaving(false)
+      return
+    }
+
+    const ext = file.name.split('.').pop() || 'png'
+    const fileName = `${userId}/${characterId}-${Date.now()}.${ext}`
+
+    const { error: uploadErr } = await supabase.storage
+      .from('character-portraits')
+      .upload(fileName, file, { contentType: file.type, upsert: false })
+
+    if (uploadErr) {
+      setUploadError(uploadErr.message)
+      setSaving(false)
+      return
+    }
+
+    const { data: urlData } = supabase.storage
+      .from('character-portraits')
+      .getPublicUrl(fileName)
+
+    await saveImageEntry(urlData.publicUrl)
+    if (fileRef.current) fileRef.current.value = ''
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (file) uploadFile(file)
   }
 
   async function switchImage(idx: number) {
     setActiveIdx(idx)
     const entry = entries[idx]
     if (!entry) return
-    // Update is_active flags
     await supabase.from('character_images').update({ is_active: false }).eq('character_id', characterId)
     await supabase.from('character_images').update({ is_active: true }).eq('id', entry.id)
     await supabase.from('characters').update({ image_url: entry.image_url }).eq('id', characterId)
@@ -80,24 +130,25 @@ export default function CharacterPortrait({ characterId, characterName, classLab
     if (activeIdx >= updated.length) setActiveIdx(Math.max(0, updated.length - 1))
   }
 
+  const inputStyle = {
+    width: '100%', marginBottom: '0.3rem', padding: '0.3rem 0.5rem',
+    fontSize: '0.8rem', border: '1px solid var(--cs-gold)', background: 'var(--cs-bg)',
+    color: 'var(--cs-text)', fontFamily: 'Crimson Text, serif',
+  } as const
+
   return (
     <div style={{ position: 'relative' }}>
       {/* Medieval portrait frame */}
       <div style={{ position: 'relative', overflow: 'hidden' }}>
         <svg viewBox="0 0 200 280" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 2 }} preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-          {/* Outer frame */}
           <rect x="2" y="2" width="196" height="276" rx="6" fill="none" stroke="var(--cs-gold, #C8A855)" strokeWidth="3" />
-          {/* Inner frame */}
           <rect x="7" y="7" width="186" height="266" rx="3" fill="none" stroke="var(--cs-gold, #C8A855)" strokeWidth="0.8" opacity="0.5" />
-          {/* Top arch decoration */}
           <path d="M70,2 Q100,-10 130,2" fill="none" stroke="var(--cs-gold, #C8A855)" strokeWidth="2.5" />
           <circle cx="100" cy="-2" r="3" fill="var(--cs-gold, #C8A855)" />
-          {/* Corner flourishes */}
           <path d="M2,20 Q2,2 20,2" fill="none" stroke="var(--cs-gold, #C8A855)" strokeWidth="3" />
           <path d="M180,2 Q198,2 198,20" fill="none" stroke="var(--cs-gold, #C8A855)" strokeWidth="3" />
           <path d="M2,260 Q2,278 20,278" fill="none" stroke="var(--cs-gold, #C8A855)" strokeWidth="3" />
           <path d="M180,278 Q198,278 198,260" fill="none" stroke="var(--cs-gold, #C8A855)" strokeWidth="3" />
-          {/* Small diamond decorations at midpoints */}
           <polygon points="100,0 103,4 100,8 97,4" fill="var(--cs-gold, #C8A855)" />
           <polygon points="100,272 103,276 100,280 97,276" fill="var(--cs-gold, #C8A855)" />
         </svg>
@@ -177,49 +228,105 @@ export default function CharacterPortrait({ characterId, characterName, classLab
           <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--cs-accent)', fontFamily: 'Cinzel, serif', marginBottom: '0.4rem' }}>
             ADD IMAGE
           </div>
+
+          {/* Label input (shared) */}
           <input
             value={newLabel}
             onChange={e => setNewLabel(e.target.value)}
             placeholder="Label (e.g. Rage, Polymorphed)"
-            style={{
-              width: '100%', marginBottom: '0.3rem', padding: '0.3rem 0.5rem',
-              fontSize: '0.8rem', border: '1px solid var(--cs-gold)', background: 'var(--cs-bg)',
-              color: 'var(--cs-text)', fontFamily: 'Crimson Text, serif',
-            }}
+            style={inputStyle}
           />
-          <input
-            value={newUrl}
-            onChange={e => setNewUrl(e.target.value)}
-            placeholder="Image URL"
-            style={{
-              width: '100%', marginBottom: '0.3rem', padding: '0.3rem 0.5rem',
-              fontSize: '0.8rem', border: '1px solid var(--cs-gold)', background: 'var(--cs-bg)',
-              color: 'var(--cs-text)', fontFamily: 'Crimson Text, serif',
-            }}
-          />
-          <div style={{ display: 'flex', gap: '0.3rem' }}>
+
+          {/* Mode toggle */}
+          <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '0.4rem' }}>
             <button
-              onClick={addImage}
-              disabled={saving || !newUrl.trim()}
+              onClick={() => setMode('file')}
               style={{
-                flex: 1, padding: '0.3rem', fontSize: '0.75rem', fontFamily: 'Cinzel, serif',
-                background: 'var(--cs-accent)', color: 'white', border: '1px solid var(--cs-gold)',
-                cursor: saving ? 'wait' : 'pointer', opacity: saving || !newUrl.trim() ? 0.5 : 1,
+                flex: 1, padding: '0.25rem', fontSize: '0.7rem', fontFamily: 'Cinzel, serif',
+                background: mode === 'file' ? 'var(--cs-accent)' : 'transparent',
+                color: mode === 'file' ? 'white' : 'var(--cs-text-muted)',
+                border: '1px solid var(--cs-gold)', cursor: 'pointer',
               }}>
-              {saving ? 'Saving...' : 'Add'}
+              Upload File
             </button>
-            {entries.length > 0 && activeIdx < entries.length && (
-              <button
-                onClick={() => removeImage(activeIdx)}
-                style={{
-                  padding: '0.3rem 0.6rem', fontSize: '0.75rem', fontFamily: 'Cinzel, serif',
-                  background: 'none', color: 'var(--cs-accent)', border: '1px solid var(--cs-accent)',
-                  cursor: 'pointer',
-                }}>
-                Remove Current
-              </button>
-            )}
+            <button
+              onClick={() => setMode('url')}
+              style={{
+                flex: 1, padding: '0.25rem', fontSize: '0.7rem', fontFamily: 'Cinzel, serif',
+                background: mode === 'url' ? 'var(--cs-accent)' : 'transparent',
+                color: mode === 'url' ? 'white' : 'var(--cs-text-muted)',
+                border: '1px solid var(--cs-gold)', cursor: 'pointer',
+              }}>
+              Paste URL
+            </button>
           </div>
+
+          {mode === 'file' ? (
+            <div>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                onChange={handleFileChange}
+                disabled={saving}
+                style={{
+                  width: '100%', marginBottom: '0.3rem', padding: '0.25rem',
+                  fontSize: '0.75rem', border: '1px solid var(--cs-gold)',
+                  background: 'var(--cs-bg)', color: 'var(--cs-text)',
+                }}
+              />
+              <div style={{ fontSize: '0.65rem', color: 'var(--cs-text-muted)' }}>
+                PNG, JPEG, WebP, GIF — Max 5MB
+              </div>
+            </div>
+          ) : (
+            <>
+              <input
+                value={newUrl}
+                onChange={e => setNewUrl(e.target.value)}
+                placeholder="https://..."
+                style={inputStyle}
+              />
+              <button
+                onClick={addFromUrl}
+                disabled={saving || !newUrl.trim()}
+                style={{
+                  width: '100%', padding: '0.3rem', fontSize: '0.75rem', fontFamily: 'Cinzel, serif',
+                  background: 'var(--cs-accent)', color: 'white', border: '1px solid var(--cs-gold)',
+                  cursor: saving ? 'wait' : 'pointer', opacity: saving || !newUrl.trim() ? 0.5 : 1,
+                }}>
+                {saving ? 'Saving...' : 'Add URL'}
+              </button>
+            </>
+          )}
+
+          {/* Error message */}
+          {uploadError && (
+            <div style={{ fontSize: '0.75rem', color: '#c33', marginTop: '0.3rem', fontWeight: 600 }}>
+              {uploadError}
+            </div>
+          )}
+
+          {/* Saving indicator */}
+          {saving && (
+            <div style={{ fontSize: '0.75rem', color: 'var(--cs-accent)', marginTop: '0.3rem', fontStyle: 'italic' }}>
+              Uploading...
+            </div>
+          )}
+
+          {/* Remove current button */}
+          {entries.length > 0 && activeIdx < entries.length && (
+            <button
+              onClick={() => removeImage(activeIdx)}
+              style={{
+                width: '100%', marginTop: '0.4rem',
+                padding: '0.3rem 0.6rem', fontSize: '0.7rem', fontFamily: 'Cinzel, serif',
+                background: 'none', color: 'var(--cs-accent)', border: '1px solid var(--cs-accent)',
+                cursor: 'pointer',
+              }}>
+              Remove Current Image
+            </button>
+          )}
         </div>
       )}
     </div>

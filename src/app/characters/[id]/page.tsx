@@ -210,6 +210,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <CharacterPortrait
               characterId={id}
+              userId={user.id}
               characterName={character.name}
               classLabel={classLabel}
               race={character.race}
