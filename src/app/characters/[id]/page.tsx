@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getXPProgress } from '@/lib/5etools/xp'
 import { ABILITY_NAMES, SKILLS_BY_ABILITY, ABILITY_ORDER } from '@/lib/constants'
+import AbilitySkillsGrid from '@/components/ui/AbilitySkillsGrid'
 
 /* ── Helpers ── */
 
@@ -18,6 +19,28 @@ function passiveScore(
   const bonus = p?.proficiency_level === 'expertise' ? profBonus * 2
     : p?.proficiency_level === 'proficient' ? profBonus : 0
   return 10 + m + bonus
+}
+
+/* SVG medieval shield outline */
+function ShieldSvg() {
+  return (
+    <svg className="cs-shield-svg" viewBox="0 0 100 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M4,2 L96,2 Q98,2 98,4 L98,65 Q98,80 50,116 Q2,80 2,65 L2,4 Q2,2 4,2 Z"
+        fill="var(--cs-card, #FBF3E4)"
+        stroke="var(--cs-gold, #C8A855)"
+        strokeWidth="2.5"
+      />
+      {/* inner decorative line */}
+      <path
+        d="M8,6 L92,6 Q94,6 94,8 L94,63 Q94,77 50,111 Q6,77 6,63 L6,8 Q6,6 8,6 Z"
+        fill="none"
+        stroke="var(--cs-gold, #C8A855)"
+        strokeWidth="0.7"
+        opacity="0.5"
+      />
+    </svg>
+  )
 }
 
 /* ══════════════════════════════════════════════════════════════ */
@@ -111,6 +134,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
             </div>
           </div>
           <div className="cs-shield cs-shield--lg">
+            <ShieldSvg />
             <span className="cs-shield-label">Level</span>
             <span className="cs-shield-value">{xpData.level}</span>
             <span className="cs-shield-sub">{character.experience_points.toLocaleString()} XP</span>
@@ -133,12 +157,14 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
           </div>
 
           <div className="cs-shield cs-shield--lg">
+            <ShieldSvg />
             <span className="cs-shield-label">HP</span>
             <span className="cs-shield-value">{character.hp_current}</span>
             <span className="cs-shield-sub">/ {character.hp_max}{character.hp_temp > 0 ? ` +${character.hp_temp}` : ''}</span>
           </div>
 
           <div className="cs-shield">
+            <ShieldSvg />
             <span className="cs-shield-label">AC</span>
             <span className="cs-shield-value">{character.ac}</span>
           </div>
@@ -229,74 +255,15 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
             )}
           </div>
 
-          {/* ── CENTER: Abilities grouped with skills ── */}
+          {/* ── CENTER: Abilities grouped with skills + dice roller ── */}
           <div>
-            {/* 2x3 grid of ability groups */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-              {ABILITY_ORDER.map(ab => {
-                const score = abilities[ab]
-                const m = modNum(score)
-                const hasSave = saveProfs.some(p => p.name === ab)
-                const saveMod = hasSave ? m + profBonus : m
-                const skills = SKILLS_BY_ABILITY[ab]
-
-                return (
-                  <div key={ab} className="cs-ability-row" style={{ display: 'flex', gap: '0.6rem', padding: '0.6rem', border: '1px solid var(--cs-gold)', background: 'var(--cs-card)' }}>
-                    {/* Shield */}
-                    <div style={{ textAlign: 'center', minWidth: 65, flexShrink: 0 }}>
-                      <div className="cs-heading" style={{ marginBottom: 2 }}>{ABILITY_NAMES[ab]}</div>
-                      <div style={{ fontFamily: 'Cinzel, serif', fontSize: '1.8rem', fontWeight: 700, color: 'var(--cs-accent)', lineHeight: 1 }}>
-                        {sign(m)}
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--cs-text-muted)' }}>{score}</div>
-                      <div style={{ fontSize: '0.65rem', color: 'var(--cs-text-muted)', marginTop: 2 }}>
-                        Save {sign(saveMod)}
-                      </div>
-                      {hasSave && (
-                        <span className="cs-dot cs-dot--proficient" style={{ marginTop: 2 }} />
-                      )}
-                    </div>
-
-                    {/* Skills list */}
-                    {skills.length > 0 ? (
-                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1, justifyContent: 'center' }}>
-                        {skills.map(skill => {
-                          const prof = skillProfs.find(p => p.name === skill.key)
-                          const level = prof?.proficiency_level ?? 'none'
-                          const bonus = m + (level === 'expertise' ? profBonus * 2 : level === 'proficient' ? profBonus : 0)
-                          return (
-                            <div key={skill.key} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.78rem' }}>
-                              <span className={`cs-dot cs-dot--${level}`} />
-                              <span style={{
-                                flex: 1,
-                                color: level !== 'none' ? 'var(--cs-text)' : 'var(--cs-text-muted)',
-                                fontWeight: level !== 'none' ? 600 : 400,
-                              }}>
-                                {skill.name}
-                              </span>
-                              <span style={{
-                                fontWeight: 600, minWidth: 20, textAlign: 'right',
-                                color: level === 'expertise' ? 'var(--cs-gold)' : level === 'proficient' ? 'var(--cs-accent)' : 'var(--cs-text-muted)',
-                              }}>
-                                {sign(bonus)}
-                              </span>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    ) : (
-                      /* CON — show hit die instead */
-                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                        <div className="cs-heading" style={{ fontSize: '0.6rem' }}>Hit Die</div>
-                        <div style={{ fontFamily: 'Cinzel, serif', fontSize: '1.2rem', fontWeight: 700, color: 'var(--cs-accent)' }}>
-                          {character.hit_dice_total || '—'}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
+            <AbilitySkillsGrid
+              abilities={abilities}
+              proficiencyBonus={profBonus}
+              skillProfs={skillProfs.map(p => ({ name: p.name, proficiency_level: p.proficiency_level, has_advantage: p.has_advantage }))}
+              saveProfs={saveProfs.map(p => ({ name: p.name }))}
+              hitDiceTotal={character.hit_dice_total || ''}
+            />
 
             {/* Weapons */}
             {weapons && weapons.length > 0 && (

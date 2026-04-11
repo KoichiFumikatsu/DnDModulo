@@ -420,7 +420,7 @@ h1, h2, h3, h4 {
   color: var(--cs-text);
 }
 
-/* Shield badge — pentagon clip-path */
+/* Shield badge — SVG-based medieval shape (content positioned over SVG) */
 .cs-shield {
   position: relative;
   display: flex;
@@ -428,17 +428,24 @@ h1, h2, h3, h4 {
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 0.6rem 0.75rem 1.2rem;
-  background: var(--cs-card);
-  border: 2px solid var(--cs-gold);
-  clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%);
-  min-width: 70px;
+  min-width: 80px;
+  min-height: 90px;
+  padding: 0.4rem 0.6rem 1rem;
 }
 .cs-shield--lg {
-  padding: 0.8rem 1.2rem 1.8rem;
-  min-width: 100px;
+  min-width: 110px;
+  min-height: 120px;
+  padding: 0.5rem 0.8rem 1.4rem;
+}
+.cs-shield .cs-shield-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 .cs-shield .cs-shield-label {
+  position: relative;
   font-family: 'Cinzel', serif;
   font-size: 0.6rem;
   font-weight: 700;
@@ -447,6 +454,7 @@ h1, h2, h3, h4 {
   color: var(--cs-text-muted);
 }
 .cs-shield .cs-shield-value {
+  position: relative;
   font-family: 'Cinzel', serif;
   font-size: 1.5rem;
   font-weight: 700;
@@ -457,11 +465,12 @@ h1, h2, h3, h4 {
   font-size: 2.2rem;
 }
 .cs-shield .cs-shield-sub {
+  position: relative;
   font-size: 0.7rem;
   color: var(--cs-text-muted);
 }
 
-/* Gold ornamental 4-corner frame */
+/* Gold ornamental 4-corner frame — medieval fleur-de-lis style */
 .cs-frame {
   position: relative;
   padding: 1.25rem;
@@ -470,26 +479,26 @@ h1, h2, h3, h4 {
 .cs-frame::after {
   content: '';
   position: absolute;
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   border-color: var(--cs-gold);
-  border-style: solid;
+  border-style: double;
   pointer-events: none;
 }
-.cs-frame::before { top: 0; left: 0; border-width: 3px 0 0 3px; }
-.cs-frame::after  { bottom: 0; right: 0; border-width: 0 3px 3px 0; }
+.cs-frame::before { top: -2px; left: -2px; border-width: 4px 0 0 4px; border-radius: 4px 0 0 0; }
+.cs-frame::after  { bottom: -2px; right: -2px; border-width: 0 4px 4px 0; border-radius: 0 0 4px 0; }
 .cs-frame-corners::before,
 .cs-frame-corners::after {
   content: '';
   position: absolute;
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   border-color: var(--cs-gold);
-  border-style: solid;
+  border-style: double;
   pointer-events: none;
 }
-.cs-frame-corners::before { top: 0; right: 0; border-width: 3px 3px 0 0; }
-.cs-frame-corners::after  { bottom: 0; left: 0; border-width: 0 0 3px 3px; }
+.cs-frame-corners::before { top: -2px; right: -2px; border-width: 4px 4px 0 0; border-radius: 0 4px 0 0; }
+.cs-frame-corners::after  { bottom: -2px; left: -2px; border-width: 0 0 4px 4px; border-radius: 0 0 0 4px; }
 
 /* Card / section */
 .cs-card {
@@ -535,12 +544,18 @@ h1, h2, h3, h4 {
 }
 .cs-ability-row:last-child { border-bottom: none; }
 
-/* Passive score badge */
+/* Passive score badge — medieval notched frame */
 .cs-passive {
   text-align: center;
-  padding: 0.4rem 0.75rem;
-  border: 1px solid var(--cs-gold);
+  padding: 0.5rem 1rem;
+  border: 2px solid var(--cs-gold);
   background: var(--cs-card);
+  position: relative;
+  clip-path: polygon(
+    8px 0, calc(100% - 8px) 0, 100% 8px,
+    100% calc(100% - 8px), calc(100% - 8px) 100%,
+    8px 100%, 0 calc(100% - 8px), 0 8px
+  );
 }
 .cs-passive-label {
   font-family: 'Cinzel', serif;
@@ -554,4 +569,47 @@ h1, h2, h3, h4 {
   font-size: 1.1rem;
   font-weight: 700;
   color: var(--cs-accent);
+}
+
+/* Dice roll buttons in character sheet */
+.cs-page .cs-dice-btn {
+  background: none;
+  border: 1px solid var(--cs-gold);
+  cursor: pointer;
+  padding: 1px 4px;
+  font-size: 0.65rem;
+  line-height: 1.2;
+  color: var(--cs-text-muted);
+  transition: background 0.15s, color 0.15s;
+}
+.cs-page .cs-dice-btn:hover {
+  background: var(--cs-gold);
+  color: var(--cs-bg);
+}
+.cs-page .cs-dice-btn--adv { color: #2d5a2d; border-color: #2d5a2d; font-weight: 700; }
+.cs-page .cs-dice-btn--adv:hover { background: #2d5a2d; color: white; }
+.cs-page .cs-dice-btn--dis { color: #7a5500; border-color: #7a5500; font-weight: 700; }
+.cs-page .cs-dice-btn--dis:hover { background: #7a5500; color: white; }
+
+/* Roll result banner */
+.cs-roll-banner {
+  padding: 0.4rem 0.75rem;
+  background: var(--cs-card);
+  border: 2px solid var(--cs-gold);
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
+.cs-roll-banner--nat20 { border-color: var(--cs-gold); background: #fdf8e8; }
+.cs-roll-banner--nat1  { border-color: var(--cs-accent); background: #fdf0f0; }
+
+/* Card with notched corners (cs-card variant) */
+.cs-card--notched {
+  background: var(--cs-card);
+  border: 1px solid var(--cs-gold);
+  padding: 1rem;
+  clip-path: polygon(
+    10px 0, calc(100% - 10px) 0, 100% 10px,
+    100% calc(100% - 10px), calc(100% - 10px) 100%,
+    10px 100%, 0 calc(100% - 10px), 0 10px
+  );
 }
