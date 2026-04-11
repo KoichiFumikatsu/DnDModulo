@@ -2,8 +2,9 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import QuickStats from '@/modules/characters/components/QuickStats'
+import SkillsPanel from '@/components/ui/SkillsPanel'
 import { getXPProgress } from '@/lib/5etools/xp'
-import { SKILLS, ABILITY_NAMES } from '@/lib/constants'
+import { ABILITY_NAMES } from '@/lib/constants'
 
 function mod(score: number) {
   const m = Math.floor((score - 10) / 2)
@@ -231,45 +232,14 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
           </div>
 
           {/* Skills */}
-          <div className="sheet-section ornate-border">
-            <h3 className="chapter-heading text-xs mb-3">Habilidades</h3>
-            <div className="space-y-1">
-              {SKILLS.map(skill => {
-                const prof = skillProfs.find(p => p.name === skill.key)
-                const abilityMod = Math.floor((character[skill.ability as keyof typeof character] as number - 10) / 2)
-                const bonus = prof
-                  ? abilityMod + (prof.proficiency_level === 'expertise' ? character.proficiency_bonus * 2 : character.proficiency_bonus)
-                  : abilityMod
-                const sign = bonus >= 0 ? '+' : ''
-                return (
-                  <div key={skill.key} className="flex items-center gap-2 text-sm py-0.5">
-                    <span className="w-2 h-2 rounded-full flex-shrink-0"
-                      style={{
-                        background: prof
-                          ? prof.proficiency_level === 'expertise'
-                            ? 'var(--accent-gold)'
-                            : 'var(--accent)'
-                          : 'var(--border)',
-                      }} />
-                    <span className="flex-1" style={{ color: 'var(--text-primary)' }}>
-                      {skill.name}
-                      {prof?.has_advantage && (
-                        <span className="ml-1 text-xs" style={{ color: 'var(--hp-good)', fontStyle: 'italic' }}>ADV</span>
-                      )}
-                    </span>
-                    <span className="font-semibold" style={{ color: prof
-                      ? prof.proficiency_level === 'expertise' ? 'var(--accent-gold)' : 'var(--accent)'
-                      : 'var(--accent-gold)' }}>
-                      {sign}{bonus}
-                    </span>
-                    <span className="text-xs w-8 text-right" style={{ color: 'var(--text-muted)' }}>
-                      {ABILITY_NAMES[skill.ability]}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
+          <SkillsPanel
+            abilities={{
+              str: character.str, dex: character.dex, con: character.con,
+              int: character.int, wis: character.wis, cha: character.cha,
+            }}
+            proficiencyBonus={character.proficiency_bonus}
+            skillProfs={skillProfs}
+          />
 
           {/* Weapons */}
           {weapons && weapons.length > 0 && (
