@@ -13,14 +13,14 @@ import {
 import type {
   Character, CharacterClass, SpellSlot, CharacterSpell,
   CharacterWeapon, CharacterEquipment, CharacterFeature,
-  CharacterProficiency, ClassResource, CustomStat, CustomStatType, ResetOn
+  CharacterProficiency, ClassResource, CustomStat, CustomStatType, ResetOn,
+  ProficiencyLevel,
 } from '@/modules/characters/types'
+import { SKILLS, ABILITY_NAMES as AB_LABELS } from '@/lib/constants'
 
 /* ── Constants ── */
 
-const ABILITY_LABELS: Record<string, string> = {
-  str: 'STR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'WIS', cha: 'CHA',
-}
+const ABILITY_LABELS: Record<string, string> = AB_LABELS
 
 const DMG_TYPE_MAP: Record<string, string> = {
   S: 'Cortante', P: 'Perforante', B: 'Contundente',
@@ -28,7 +28,7 @@ const DMG_TYPE_MAP: Record<string, string> = {
   N: 'Necrótico', O: 'Veneno', R: 'Radiante', T: 'Trueno',
 }
 
-type Tab = 'basic' | 'combat' | 'spells' | 'weapons' | 'equipment' | 'features' | 'resources' | 'custom'
+type Tab = 'basic' | 'combat' | 'skills' | 'spells' | 'weapons' | 'equipment' | 'features' | 'resources' | 'custom'
 
 /* ── Helpers ── */
 
@@ -173,6 +173,11 @@ export default function EditCharacterClient({
     name: '', current_value: 0, max_value: 0,
     text_value: '', stat_type: 'counter' as CustomStatType, notes: '',
   })
+
+  /* ── Skills / Proficiencies ── */
+  const [localProfs, setLocalProfs] = useState<CharacterProficiency[]>(
+    proficiencies.filter(p => p.type === 'skill')
+  )
 
   /* ══════════════════════════════════════════════════════════════
      EFFECTS — fetch 5etools data
@@ -490,12 +495,96 @@ export default function EditCharacterClient({
   }
 
   /* ══════════════════════════════════════════════════════════════
+     SKILLS — proficiency cycling + advantage + save
+     ══════════════════════════════════════════════════════════════ */
+
+  function getSkillProf(skillKey: string): CharacterProficiency | undefined {
+    return localProfs.find(p => p.name === skillKey)
+  }
+
+  function cycleProf(skillKey: string) {
+    const existing = getSkillProf(skillKey)
+    const order: ProficiencyLevel[] = ['none', 'proficient', 'expertise']
+    if (!existing) {
+      // Create a local entry (will be saved on "Guardar")
+      setLocalProfs(prev => [...prev, {
+        id: `new_${skillKey}`,
+        character_id: character.id,
+        type: 'skill' as const,
+        name: skillKey,
+        proficiency_level: 'proficient',
+        has_advantage: false,
+      }])
+    } else {
+      const idx = order.indexOf(existing.proficiency_level)
+      const next = order[(idx + 1) % order.length]
+      setLocalProfs(prev => prev.map(p => p.name === skillKey ? { ...p, proficiency_level: next } : p))
+    }
+  }
+
+  function toggleAdvantage(skillKey: string) {
+    const existing = getSkillProf(skillKey)
+    if (!existing) {
+      setLocalProfs(prev => [...prev, {
+        id: `new_${skillKey}`,
+        character_id: character.id,
+        type: 'skill' as const,
+        name: skillKey,
+        proficiency_level: 'none',
+        has_advantage: true,
+      }])
+    } else {
+      setLocalProfs(prev => prev.map(p => p.name === skillKey ? { ...p, has_advantage: !p.has_advantage } : p))
+    }
+  }
+
+  function calcSkillBonus(skillKey: string, ability: string): number {
+    const abilityScore = combat[ability as keyof typeof combat] as number
+    const abilityMod = Math.floor((abilityScore - 10) / 2)
+    const prof = getSkillProf(skillKey)
+    if (!prof || prof.proficiency_level === 'none') return abilityMod
+    if (prof.proficiency_level === 'expertise') return abilityMod + combat.proficiency_bonus * 2
+    return abilityMod + combat.proficiency_bonus
+  }
+
+  async function saveSkills() {
+    setSaving(true)
+    // Delete all existing skill proficiencies for this character
+    await supabase.from('character_proficiencies')
+      .delete()
+      .eq('character_id', character.id)
+      .eq('type', 'skill')
+
+    // Insert all current ones (excluding 'none' with no advantage)
+    const toInsert = localProfs
+      .filter(p => p.proficiency_level !== 'none' || p.has_advantage)
+      .map(p => ({
+        character_id: character.id,
+        type: 'skill' as const,
+        name: p.name,
+        proficiency_level: p.proficiency_level,
+        has_advantage: p.has_advantage ?? false,
+      }))
+
+    if (toInsert.length > 0) {
+      const { data } = await supabase.from('character_proficiencies').insert(toInsert).select()
+      if (data) {
+        setLocalProfs(data as CharacterProficiency[])
+      }
+    } else {
+      setLocalProfs([])
+    }
+    showSaved()
+  }
+
+  /* ══════════════════════════════════════════════════════════════
      TABS CONFIG
      ══════════════════════════════════════════════════════════════ */
 
   const tabs: { key: Tab; label: string }[] = [
     { key: 'basic', label: 'Basico' },
     { key: 'combat', label: 'Combate' },
+    { key: 'skills', label: 'Habilidades' },
     { key: 'spells', label: 'Hechizos' },
     { key: 'weapons', label: 'Armas' },
     { key: 'equipment', label: 'Equipo' },
@@ -696,6 +785,102 @@ export default function EditCharacterClient({
           </div>
 
           <SaveBtn onClick={saveCombat} saving={saving} />
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════════════════════
+         SKILLS TAB — proficiency, expertise, advantage
+         ════════════════════════════════════════════════════════ */}
+      {tab === 'skills' && (
+        <div className="space-y-4">
+          <div className="parchment-page rounded-xl p-4">
+            <h3 className="font-semibold text-sm mb-1" style={{ color: 'var(--text-muted)' }}>
+              Habilidades
+            </h3>
+            <p className="text-xs mb-3" style={{ color: 'var(--ink-faded)' }}>
+              Haz clic en el circulo para cambiar: sin competencia → competente → experto.
+            </p>
+            <div className="space-y-0.5">
+              {SKILLS.map(skill => {
+                const prof = getSkillProf(skill.key)
+                const level = prof?.proficiency_level ?? 'none'
+                const adv = prof?.has_advantage ?? false
+                const bonus = calcSkillBonus(skill.key, skill.ability)
+                const sign = bonus >= 0 ? '+' : ''
+                return (
+                  <div key={skill.key} className="flex items-center gap-2 py-1"
+                    style={{ borderBottom: '1px solid var(--parchment-edge)' }}>
+                    {/* Proficiency dot — clickable to cycle */}
+                    <button
+                      onClick={() => cycleProf(skill.key)}
+                      title={level === 'none' ? 'Sin competencia' : level === 'proficient' ? 'Competente' : 'Experto'}
+                      style={{
+                        width: 14, height: 14, borderRadius: '50%', border: 'none',
+                        cursor: 'pointer', flexShrink: 0,
+                        background: level === 'expertise'
+                          ? 'var(--accent-gold)'
+                          : level === 'proficient'
+                            ? 'var(--accent, var(--crimson))'
+                            : 'var(--parchment-dark)',
+                        boxShadow: level !== 'none' ? '0 0 3px rgba(0,0,0,0.3)' : 'none',
+                      }}
+                    />
+                    {/* Skill name */}
+                    <span className="flex-1 text-sm" style={{
+                      color: level !== 'none' ? 'var(--text-primary)' : 'var(--ink-faded)',
+                      fontWeight: level !== 'none' ? 600 : 400,
+                    }}>
+                      {skill.name}
+                    </span>
+                    {/* Bonus */}
+                    <span className="text-sm font-semibold w-8 text-right" style={{
+                      color: level === 'expertise'
+                        ? 'var(--accent-gold)'
+                        : level === 'proficient'
+                          ? 'var(--crimson)'
+                          : 'var(--ink-faded)',
+                    }}>
+                      {sign}{bonus}
+                    </span>
+                    {/* Ability label */}
+                    <span className="text-xs w-8 text-right" style={{ color: 'var(--ink-faded)' }}>
+                      {ABILITY_LABELS[skill.ability]}
+                    </span>
+                    {/* Advantage toggle */}
+                    <button
+                      onClick={() => toggleAdvantage(skill.key)}
+                      title={adv ? 'Tiene ventaja' : 'Sin ventaja'}
+                      className="text-xs px-1.5 py-0.5 rounded"
+                      style={{
+                        background: adv ? 'var(--hp-good)' : 'transparent',
+                        color: adv ? 'white' : 'var(--ink-light)',
+                        border: adv ? 'none' : '1px solid var(--parchment-edge)',
+                        cursor: 'pointer',
+                        fontSize: '0.65rem',
+                        fontFamily: 'var(--font-cinzel, Cinzel, serif)',
+                        letterSpacing: '0.03em',
+                        minWidth: 30,
+                      }}>
+                      ADV
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="flex items-center gap-3 mt-3 text-xs" style={{ color: 'var(--ink-faded)' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--parchment-dark)', display: 'inline-block' }} /> Ninguna
+              </span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent, var(--crimson))', display: 'inline-block' }} /> Competente
+              </span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-gold)', display: 'inline-block' }} /> Experto
+              </span>
+            </div>
+          </div>
+
+          <SaveBtn onClick={saveSkills} saving={saving} />
         </div>
       )}
 

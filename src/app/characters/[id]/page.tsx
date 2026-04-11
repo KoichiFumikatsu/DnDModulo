@@ -3,29 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import QuickStats from '@/modules/characters/components/QuickStats'
 import { getXPProgress } from '@/lib/5etools/xp'
-
-const ABILITY_NAMES = { str: 'STR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'WIS', cha: 'CHA' }
-const SKILLS = [
-  { name: 'Acrobacias', ability: 'dex', key: 'Acrobatics' },
-  { name: 'Adiestramiento', ability: 'wis', key: 'Animal Handling' },
-  { name: 'Arcanos', ability: 'int', key: 'Arcana' },
-  { name: 'Atletismo', ability: 'str', key: 'Athletics' },
-  { name: 'Engaño', ability: 'cha', key: 'Deception' },
-  { name: 'Historia', ability: 'int', key: 'History' },
-  { name: 'Intuición', ability: 'wis', key: 'Insight' },
-  { name: 'Intimidación', ability: 'cha', key: 'Intimidation' },
-  { name: 'Investigación', ability: 'int', key: 'Investigation' },
-  { name: 'Medicina', ability: 'wis', key: 'Medicine' },
-  { name: 'Naturaleza', ability: 'int', key: 'Nature' },
-  { name: 'Percepción', ability: 'wis', key: 'Perception' },
-  { name: 'Perspicacia', ability: 'wis', key: 'Insight' },
-  { name: 'Persuasión', ability: 'cha', key: 'Persuasion' },
-  { name: 'Religión', ability: 'int', key: 'Religion' },
-  { name: 'Sigilo', ability: 'dex', key: 'Stealth' },
-  { name: 'Juego de Manos', ability: 'dex', key: 'Sleight of Hand' },
-  { name: 'Supervivencia', ability: 'wis', key: 'Survival' },
-  { name: 'Actuación', ability: 'cha', key: 'Performance' },
-]
+import { SKILLS, ABILITY_NAMES } from '@/lib/constants'
 
 function mod(score: number) {
   const m = Math.floor((score - 10) / 2)
@@ -273,12 +251,19 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
                             : 'var(--accent)'
                           : 'var(--border)',
                       }} />
-                    <span className="flex-1" style={{ color: 'var(--text-primary)' }}>{skill.name}</span>
-                    <span className="font-semibold" style={{ color: 'var(--accent-gold)' }}>
+                    <span className="flex-1" style={{ color: 'var(--text-primary)' }}>
+                      {skill.name}
+                      {prof?.has_advantage && (
+                        <span className="ml-1 text-xs" style={{ color: 'var(--hp-good)', fontStyle: 'italic' }}>ADV</span>
+                      )}
+                    </span>
+                    <span className="font-semibold" style={{ color: prof
+                      ? prof.proficiency_level === 'expertise' ? 'var(--accent-gold)' : 'var(--accent)'
+                      : 'var(--accent-gold)' }}>
                       {sign}{bonus}
                     </span>
                     <span className="text-xs w-8 text-right" style={{ color: 'var(--text-muted)' }}>
-                      {ABILITY_NAMES[skill.ability as keyof typeof ABILITY_NAMES]}
+                      {ABILITY_NAMES[skill.ability]}
                     </span>
                   </div>
                 )

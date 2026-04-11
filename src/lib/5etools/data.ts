@@ -76,6 +76,7 @@ let raceTraitsCache: Record<string, TraitEntry[]> = {}
 let racesJsonCache: { race?: unknown[]; subrace?: unknown[] } | null = null
 let classFeaturesCache: Record<string, TraitEntry[]> = {}
 let subclassFeaturesCache: Record<string, TraitEntry[]> = {}
+let spellClassLookupCache: Record<string, Set<string>> | null = null
 
 // ── Races (names) ──
 
@@ -415,9 +416,13 @@ export async function fetchSpells(className: string): Promise<SpellEntry[]> {
 export async function fetchAllSpells(): Promise<SpellEntry[]> {
   if (allSpellsCache) return allSpellsCache
   try {
+    // Fetch spell files + class lookup in parallel
     const spellFiles = ['spells-phb.json', 'spells-xphb.json']
-    const results = await Promise.all(
-      spellFiles.map(async (file) => {
+    const [lookupRes, ...spellResults] = await Promise.all([
+      fetch(`${BASE}/generated/gendata-spell-source-lookup.json`)
+        .then(r => r.json())
+        .catch(() => ({})),
+      ...spellFiles.map(async (file) => {
         try {
           const res = await fetch(`${BASE}/spells/${file}`)
           return res.json()
@@ -425,48 +430,74 @@ export async function fetchAllSpells(): Promise<SpellEntry[]> {
           return { spell: [] }
         }
       })
-    )
+    ])
+
+    // Build spell→classes lookup: { "spell name (lowercase)": Set<className> }
+    if (!spellClassLookupCache) {
+      const lookup: Record<string, Set<string>> = {}
+      for (const sourceSpells of Object.values(lookupRes as Record<string, Record<string, { class?: Record<string, Record<string, boolean>> }>>)) {
+        for (const [spellName, spellData] of Object.entries(sourceSpells)) {
+          const key = spellName.toLowerCase()
+          if (!lookup[key]) lookup[key] = new Set()
+          if (spellData.class) {
+            for (const classSource of Object.values(spellData.class)) {
+              for (const className of Object.keys(classSource)) {
+                lookup[key].add(className)
+              }
+            }
+          }
+        }
+      }
+      spellClassLookupCache = lookup
+    }
 
     const spells: SpellEntry[] = []
     const seen = new Set<string>()
 
-    for (const json of results) {
-      for (const s of json.spell ?? []) {
-        if (!s.name) continue
-        if (seen.has(s.name)) continue
-        seen.add(s.name)
+    for (const json of spellResults) {
+      for (const s of (json as { spell?: unknown[] }).spell ?? []) {
+        const sp = s as Record<string, unknown>
+        if (!sp.name) continue
+        const name = sp.name as string
+        if (seen.has(name)) continue
+        seen.add(name)
 
-        const classList = s.classes?.fromClassList
-        const classNames: string[] = Array.isArray(classList)
-          ? classList.map((c: { name?: string }) => c.name ?? '').filter(Boolean)
-          : []
+        // Get classes from lookup
+        const classSet = spellClassLookupCache[name.toLowerCase()]
+        const classNames: string[] = classSet ? [...classSet].sort() : []
 
         spells.push({
-          name: s.name,
-          level: s.level ?? 0,
-          school: SCHOOL_MAP[s.school] ?? s.school ?? 'Unknown',
-          source: s.source ?? 'PHB',
-          time: Array.isArray(s.time)
-            ? s.time.map((t: { number?: number; unit?: string }) => `${t.number ?? ''} ${t.unit ?? ''}`).join(', ').trim()
+          name,
+          level: (sp.level as number) ?? 0,
+          school: SCHOOL_MAP[sp.school as string] ?? (sp.school as string) ?? 'Unknown',
+          source: (sp.source as string) ?? 'PHB',
+          time: Array.isArray(sp.time)
+            ? sp.time.map((t: { number?: number; unit?: string }) => `${t.number ?? ''} ${t.unit ?? ''}`).join(', ').trim()
             : undefined,
-          range: s.range?.type === 'point'
-            ? (s.range.distance?.type === 'self' ? 'Self' : `${s.range.distance?.amount ?? ''} ${s.range.distance?.type ?? ''}`.trim())
-            : s.range?.type ?? undefined,
-          components: s.components
-            ? [s.components.v ? 'V' : '', s.components.s ? 'S' : '', s.components.m ? 'M' : ''].filter(Boolean).join(', ')
+          range: (sp.range as { type?: string; distance?: { type?: string; amount?: number } })?.type === 'point'
+            ? ((sp.range as { distance?: { type?: string; amount?: number } }).distance?.type === 'self'
+              ? 'Self'
+              : `${(sp.range as { distance?: { amount?: number } }).distance?.amount ?? ''} ${(sp.range as { distance?: { type?: string } }).distance?.type ?? ''}`.trim())
+            : (sp.range as { type?: string })?.type ?? undefined,
+          components: sp.components
+            ? [
+                (sp.components as { v?: boolean }).v ? 'V' : '',
+                (sp.components as { s?: boolean }).s ? 'S' : '',
+                (sp.components as { m?: unknown }).m ? 'M' : '',
+              ].filter(Boolean).join(', ')
             : undefined,
-          duration: Array.isArray(s.duration)
-            ? s.duration.map((d: { type?: string; duration?: { amount?: number; type?: string }; concentration?: boolean }) =>
+          duration: Array.isArray(sp.duration)
+            ? sp.duration.map((d: { type?: string; duration?: { amount?: number; type?: string }; concentration?: boolean }) =>
                 d.type === 'instant' ? 'Instantaneous'
                 : d.type === 'permanent' ? 'Permanent'
                 : d.duration ? `${d.concentration ? 'Concentration, ' : ''}${d.duration.amount ?? ''} ${d.duration.type ?? ''}`.trim()
                 : d.type ?? ''
               ).join(', ')
             : undefined,
-          description: Array.isArray(s.entries) ? flattenEntries(s.entries) : undefined,
-          ritual: s.meta?.ritual ?? false,
-          concentration: Array.isArray(s.duration)
-            ? s.duration.some((d: { concentration?: boolean }) => d.concentration === true)
+          description: Array.isArray(sp.entries) ? flattenEntries(sp.entries as unknown[]) : undefined,
+          ritual: (sp.meta as { ritual?: boolean })?.ritual ?? false,
+          concentration: Array.isArray(sp.duration)
+            ? sp.duration.some((d: { concentration?: boolean }) => d.concentration === true)
             : false,
           classes: classNames,
         })

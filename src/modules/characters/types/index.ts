@@ -78,6 +78,7 @@ export interface CharacterProficiency {
   type: 'skill' | 'weapon' | 'armor' | 'tool' | 'language' | 'saving_throw'
   name: string
   proficiency_level: ProficiencyLevel
+  has_advantage?: boolean
 }
 
 export interface ClassResource {
