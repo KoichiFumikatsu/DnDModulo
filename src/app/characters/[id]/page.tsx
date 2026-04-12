@@ -140,14 +140,8 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
       {/* ── Main content ── */}
       <div className="max-w-6xl mx-auto px-4 py-6">
 
-        {/* ═══ COMBAT ROW: all shields ═══ */}
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'end', gap: '1rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
-          <div className="cs-shield cs-shield--sm">
-            <ShieldSmallSvg />
-            <span className="cs-shield-label">Ini</span>
-            <span className="cs-shield-value">{sign(modNum(character.dex) + (character.initiative_bonus ?? 0))}</span>
-          </div>
-
+        {/* ═══ ROW 1: Prof — Level — Hit Die ═══ */}
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'end', gap: '1.5rem', marginBottom: '0.75rem' }}>
           <div className="cs-shield cs-shield--sm">
             <ShieldSmallSvg />
             <span className="cs-shield-label">Prof</span>
@@ -156,12 +150,37 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
 
           <div className="cs-shield cs-shield--lg">
             <ShieldSvg />
-            <span className="cs-shield-label">HP</span>
-            <span className="cs-shield-value">{character.hp_current}</span>
-            <span className="cs-shield-sub">/ {character.hp_max}{character.hp_temp > 0 ? ` +${character.hp_temp}` : ''}</span>
+            <span className="cs-shield-label">Level</span>
+            <span className="cs-shield-value">{xpData.level}</span>
+            <span className="cs-shield-sub">{character.experience_points.toLocaleString()} XP</span>
           </div>
 
-          <div className="cs-shield">
+          <div className="cs-shield cs-shield--sm">
+            <ShieldSmallSvg />
+            <span className="cs-shield-label">Hit Die</span>
+            <span className="cs-shield-value" style={{ fontSize: '0.85rem' }}>{character.hit_dice_total || '—'}</span>
+          </div>
+        </div>
+
+        {/* ═══ ROW 2: Ini — HP — AC — Spd ═══ */}
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'end', gap: '1rem', marginBottom: '1.25rem' }}>
+          <div className="cs-shield cs-shield--sm">
+            <ShieldSmallSvg />
+            <span className="cs-shield-label">Ini</span>
+            <span className="cs-shield-value">{sign(modNum(character.dex) + (character.initiative_bonus ?? 0))}</span>
+          </div>
+
+          <div className="cs-shield cs-shield--xl">
+            <ShieldSvg />
+            <span className="cs-shield-label">HP</span>
+            <span className="cs-shield-value">{character.hp_current}</span>
+            <div className="cs-shield-details">
+              <span>{character.hp_max}</span>
+              <span>+{character.hp_temp || 0}</span>
+            </div>
+          </div>
+
+          <div className="cs-shield cs-shield--xl">
             <ShieldSvg />
             <span className="cs-shield-label">AC</span>
             <span className="cs-shield-value">{character.ac}</span>
@@ -169,21 +188,8 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
 
           <div className="cs-shield cs-shield--sm">
             <ShieldSmallSvg />
-            <span className="cs-shield-label">Speed</span>
+            <span className="cs-shield-label">Spd</span>
             <span className="cs-shield-value">{character.speed}</span>
-          </div>
-
-          <div className="cs-shield cs-shield--sm">
-            <ShieldSmallSvg />
-            <span className="cs-shield-label">Hit Die</span>
-            <span className="cs-shield-value" style={{ fontSize: '0.9rem' }}>{character.hit_dice_total || '—'}</span>
-          </div>
-
-          <div className="cs-shield cs-shield--lg">
-            <ShieldSvg />
-            <span className="cs-shield-label">Level</span>
-            <span className="cs-shield-value">{xpData.level}</span>
-            <span className="cs-shield-sub">{character.experience_points.toLocaleString()} XP</span>
           </div>
         </div>
 
