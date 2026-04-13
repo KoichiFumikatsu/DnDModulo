@@ -170,7 +170,7 @@ export default function HpManager({
       </div>
 
       {/* Damage / Heal */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.6rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '0.6rem' }}>
         <div style={{ display: 'flex', gap: 4 }}>
           <input style={inputSt} type="number" min={1} value={dmg} placeholder="Daño"
             onChange={e => setDmg(e.target.value)}

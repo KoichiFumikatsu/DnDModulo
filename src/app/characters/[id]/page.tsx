@@ -154,7 +154,7 @@ export default async function CharacterPage({
 
         {/* ════ STATS TAB ════ */}
         {tab === 'stats' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr 210px', gap: '1.5rem', alignItems: 'start' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr 250px', gap: '1.5rem', alignItems: 'start' }}>
 
             {/* LEFT: Portrait */}
             <CharacterPortrait
@@ -229,16 +229,6 @@ export default async function CharacterPage({
                   </div>
                 </div>
 
-                {/* HP Manager */}
-                <HpManager
-                  characterId={id}
-                  hpCurrent={character.hp_current}
-                  hpMax={character.hp_max}
-                  hpTemp={character.hp_temp ?? 0}
-                  deathSuccesses={character.death_saves_successes ?? 0}
-                  deathFailures={character.death_saves_failures ?? 0}
-                />
-
                 {/* Passive scores */}
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
                   {[
@@ -268,8 +258,17 @@ export default async function CharacterPage({
               </div>
             </div>
 
-            {/* RIGHT: Money + Languages + Personality */}
+            {/* RIGHT: HP + Money + Languages + Personality */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <HpManager
+                characterId={id}
+                hpCurrent={character.hp_current}
+                hpMax={character.hp_max}
+                hpTemp={character.hp_temp ?? 0}
+                deathSuccesses={character.death_saves_successes ?? 0}
+                deathFailures={character.death_saves_failures ?? 0}
+              />
+
               <div className="cs-card--notched" style={{ padding: '0.75rem 1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
                   <img src="/assets/dnd/icon-money.svg" alt="" style={{ width: 15, height: 15 }} />
