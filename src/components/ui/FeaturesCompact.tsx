@@ -46,8 +46,8 @@ function autoSummary(name: string, description: string, profBonus: number): stri
     const key = `+${m[1]} ${ab}`
     if (!seen.has(key)) { seen.add(key); tags.push(key) }
   }
-  // Also "your Charisma score increases by 1"
-  const scoreIncrease = /(strength|dexterity|constitution|intelligence|wisdom|charisma)\s+(?:score\s+)?increases?\s+by\s+(\d+)/gi
+  // "your Charisma score increases by 1" or "Increase your Charisma score by 1"
+  const scoreIncrease = /(?:increase\s+your\s+)?(strength|dexterity|constitution|intelligence|wisdom|charisma)\s+(?:score\s+)?(?:increases?\s+)?by\s+(\d+)/gi
   while ((m = scoreIncrease.exec(ldesc)) !== null) {
     const ab = ABILITY_MAP[m[1].toLowerCase()] ?? m[1].toUpperCase().slice(0, 3)
     const key = `+${m[2]} ${ab}`
@@ -66,11 +66,18 @@ function autoSummary(name: string, description: string, profBonus: number): stri
   }
 
   // ── Advantage grants ─────────────────────────────────────────────
-  const advSkillPattern = /advantage\s+on\s+(?:\w+\s+)?(?:checks?\s+(?:using|made\s+with)\s+)?(?:your\s+)?(acrobatics|animal\s+handling|arcana|athletics|deception|history|insight|intimidation|investigation|medicine|nature|perception|performance|persuasion|religion|sleight\s+of\s+hand|stealth|survival)/gi
+  // Extract clause(s) after "advantage on" then find all skill names within them
+  const SKILL_NAMES = 'acrobatics|animal handling|arcana|athletics|deception|history|insight|intimidation|investigation|medicine|nature|perception|performance|persuasion|religion|sleight of hand|stealth|survival'
+  const advClauseRe = /advantage\s+on\s+(.{0,120}?)(?:\.|,|;|$)/gi
   const advSkills: string[] = []
-  while ((m = advSkillPattern.exec(ldesc)) !== null) {
-    const s = m[1].replace(/\s+of\s+/i, ' of ').split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ')
-    if (!advSkills.includes(s)) advSkills.push(s)
+  const skillRe = new RegExp(SKILL_NAMES, 'gi')
+  while ((m = advClauseRe.exec(ldesc)) !== null) {
+    const clause = m[1]
+    let sm
+    while ((sm = skillRe.exec(clause)) !== null) {
+      const s = sm[0].split(' ').map((w: string) => w[0].toUpperCase() + w.slice(1)).join(' ')
+      if (!advSkills.includes(s)) advSkills.push(s)
+    }
   }
   if (advSkills.length > 0) {
     tags.push(`Adv ${advSkills.join('/')}`)
