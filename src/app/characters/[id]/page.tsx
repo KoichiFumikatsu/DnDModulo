@@ -117,7 +117,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
       <div className="max-w-6xl mx-auto px-4 py-6">
 
         {/* ═══ MAIN ROW: Portrait | Combat stats + Ability grid | Additional stats ═══ */}
-        <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr 220px', gap: '1.5rem', alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr 210px', gap: '1.5rem', alignItems: 'start' }}>
 
           {/* ── LEFT: Portrait ── */}
           <CharacterPortrait
@@ -137,9 +137,16 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
           />
 
           {/* ── CENTER: All stats ── */}
-          <div>
+          <div style={{ position: 'relative' }}>
+
+            {/* Dragon ornaments — absolute at top corners of stats area */}
+            <img src="/assets/dnd/dragon-right.svg" alt="" aria-hidden="true"
+              style={{ position: 'absolute', right: 0, top: 0, width: 100, height: 100, pointerEvents: 'none', opacity: 0.9, zIndex: 0 }} />
+            <img src="/assets/dnd/dragon-left.svg" alt="" aria-hidden="true"
+              style={{ position: 'absolute', left: 0, top: 0, width: 100, height: 100, pointerEvents: 'none', opacity: 0.9, zIndex: 0, transform: 'scaleX(-1)' }} />
+
             {/* ROW 1: Prof — Level — Hit Die */}
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: '1.5rem', marginBottom: '0.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: '1.5rem', marginBottom: '0.5rem', position: 'relative', zIndex: 1 }}>
               <div className="cs-shield cs-shield--sm">
                 <ShieldSm />
                 <span className="cs-shield-label">Prof</span>
@@ -159,7 +166,7 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
             </div>
 
             {/* ROW 2: Ini — HP — AC — Spd */}
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: '1rem', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: '1rem', marginBottom: '1rem', position: 'relative', zIndex: 1 }}>
               <div className="cs-shield cs-shield--sm">
                 <ShieldSm />
                 <span className="cs-shield-label">Ini</span>
