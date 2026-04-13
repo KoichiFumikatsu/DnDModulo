@@ -137,7 +137,7 @@ export default function SpellsTab({ classes, slots, spells }: Props) {
       )}
 
       {/* Spell list */}
-      <div className="cs-frame cs-frame-corners" style={{ border: '1px solid var(--cs-gold)', background: 'var(--cs-card)', padding: '1.5rem 2rem' }}>
+      <div style={{ border: '1px solid var(--cs-gold)', background: 'var(--cs-card)', padding: '1.5rem 2rem' }}>
         {spells.length === 0 ? (
           <p style={{ textAlign: 'center', color: 'var(--cs-text-muted)', fontFamily: 'var(--font-montaga)', fontSize: '0.9rem', padding: '2rem 0' }}>
             No spells added yet.

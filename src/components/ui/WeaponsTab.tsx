@@ -38,7 +38,7 @@ export default function WeaponsTab({ weapons }: Props) {
       </div>
 
       {/* Table frame */}
-      <div className="cs-frame cs-frame-corners" style={{
+      <div style={{
         border: '1px solid var(--cs-gold)',
         background: 'var(--cs-card)',
         padding: '1.5rem 2rem',
