@@ -22,39 +22,15 @@ function passiveScore(
   return 10 + m + bonus
 }
 
-/* SVG medieval shield outline */
-function ShieldSvg() {
-  return (
-    <svg className="cs-shield-svg" viewBox="0 0 100 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M4,2 L96,2 Q98,2 98,4 L98,65 Q98,80 50,116 Q2,80 2,65 L2,4 Q2,2 4,2 Z"
-        fill="var(--cs-card, #FBF3E4)"
-        stroke="var(--cs-gold, #C8A855)"
-        strokeWidth="2.5"
-      />
-      <path
-        d="M8,6 L92,6 Q94,6 94,8 L94,63 Q94,77 50,111 Q6,77 6,63 L6,8 Q6,6 8,6 Z"
-        fill="none"
-        stroke="var(--cs-gold, #C8A855)"
-        strokeWidth="0.7"
-        opacity="0.5"
-      />
-    </svg>
-  )
+/* Figma shield assets */
+function ShieldXl() {
+  return <img className="cs-shield-svg" src="/assets/dnd/shield-md.svg" alt="" aria-hidden="true" />
 }
-
-/* Small shield for secondary stats */
-function ShieldSmallSvg() {
-  return (
-    <svg className="cs-shield-svg" viewBox="0 0 100 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M4,2 L96,2 Q98,2 98,4 L98,65 Q98,80 50,116 Q2,80 2,65 L2,4 Q2,2 4,2 Z"
-        fill="var(--cs-card, #FBF3E4)"
-        stroke="var(--cs-gold, #C8A855)"
-        strokeWidth="3"
-      />
-    </svg>
-  )
+function ShieldLg() {
+  return <img className="cs-shield-svg" src="/assets/dnd/shield-sm.svg" alt="" aria-hidden="true" />
+}
+function ShieldSm() {
+  return <img className="cs-shield-svg" src="/assets/dnd/shield-sm.svg" alt="" aria-hidden="true" />
 }
 
 /* ══════════════════════════════════════════════════════════════ */
@@ -141,55 +117,55 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
       <div className="max-w-6xl mx-auto px-4 py-6">
 
         {/* ═══ ROW 1: Prof — Level — Hit Die ═══ */}
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'end', gap: '1.5rem', marginBottom: '0.75rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: '1.5rem', marginBottom: '0.5rem' }}>
           <div className="cs-shield cs-shield--sm">
-            <ShieldSmallSvg />
+            <ShieldSm />
             <span className="cs-shield-label">Prof</span>
-            <span className="cs-shield-value">+{profBonus}</span>
+            <span className="cs-shield-value cs-num">+{profBonus}</span>
           </div>
 
           <div className="cs-shield cs-shield--lg">
-            <ShieldSvg />
+            <ShieldLg />
             <span className="cs-shield-label">Level</span>
-            <span className="cs-shield-value">{xpData.level}</span>
+            <span className="cs-shield-value cs-num">{xpData.level}</span>
             <span className="cs-shield-sub">{character.experience_points.toLocaleString()} XP</span>
           </div>
 
           <div className="cs-shield cs-shield--sm">
-            <ShieldSmallSvg />
+            <ShieldSm />
             <span className="cs-shield-label">Hit Die</span>
-            <span className="cs-shield-value" style={{ fontSize: '0.85rem' }}>{character.hit_dice_total || '—'}</span>
+            <span className="cs-shield-value cs-num" style={{ fontSize: '0.85rem' }}>{character.hit_dice_total || '—'}</span>
           </div>
         </div>
 
         {/* ═══ ROW 2: Ini — HP — AC — Spd ═══ */}
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'end', gap: '1rem', marginBottom: '1.25rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: '1rem', marginBottom: '1.25rem' }}>
           <div className="cs-shield cs-shield--sm">
-            <ShieldSmallSvg />
+            <ShieldSm />
             <span className="cs-shield-label">Ini</span>
-            <span className="cs-shield-value">{sign(modNum(character.dex) + (character.initiative_bonus ?? 0))}</span>
+            <span className="cs-shield-value cs-num">{sign(modNum(character.dex) + (character.initiative_bonus ?? 0))}</span>
           </div>
 
           <div className="cs-shield cs-shield--xl">
-            <ShieldSvg />
+            <ShieldXl />
             <span className="cs-shield-label">HP</span>
-            <span className="cs-shield-value">{character.hp_current}</span>
+            <span className="cs-shield-value cs-num">{character.hp_current}</span>
             <div className="cs-shield-details">
-              <span>{character.hp_max}</span>
-              <span>+{character.hp_temp || 0}</span>
+              <span style={{ fontFamily: 'var(--font-montaga)' }}>{character.hp_max}</span>
+              <span style={{ fontFamily: 'var(--font-montaga)' }}>+{character.hp_temp || 0}</span>
             </div>
           </div>
 
           <div className="cs-shield cs-shield--xl">
-            <ShieldSvg />
+            <ShieldXl />
             <span className="cs-shield-label">AC</span>
-            <span className="cs-shield-value">{character.ac}</span>
+            <span className="cs-shield-value cs-num">{character.ac}</span>
           </div>
 
           <div className="cs-shield cs-shield--sm">
-            <ShieldSmallSvg />
+            <ShieldSm />
             <span className="cs-shield-label">Spd</span>
-            <span className="cs-shield-value">{character.speed}</span>
+            <span className="cs-shield-value cs-num">{character.speed}</span>
           </div>
         </div>
 
@@ -201,8 +177,8 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
             { label: 'Passive Insight', key: 'Insight', ab: 'wis' },
           ].map(({ label, key, ab }) => (
             <div key={key} className="cs-passive">
-              <div className="cs-passive-label">{label}</div>
-              <div className="cs-passive-value">{passiveScore(abilities[ab], profBonus, key, skillProfs)}</div>
+              <div className="cs-passive-label" style={{ fontFamily: 'var(--font-montaga, Georgia, serif)' }}>{label}</div>
+              <div className="cs-passive-value cs-num">{passiveScore(abilities[ab], profBonus, key, skillProfs)}</div>
             </div>
           ))}
         </div>
@@ -231,17 +207,23 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
             />
 
             {/* Money */}
-            <div className="cs-card--notched">
-              <h3 className="cs-heading" style={{ marginBottom: '0.5rem' }}>Money</h3>
+            <div className="cs-card--notched" style={{ padding: '0.75rem 1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
+                <img src="/assets/dnd/icon-money.svg" alt="" style={{ width: 15, height: 15 }} />
+                <span className="cs-section-title">Money</span>
+              </div>
+              <div style={{ height: 2, background: 'var(--cs-gold)', borderRadius: 4, marginBottom: '0.5rem' }} />
               {[
-                { label: 'CP', value: character.cp, color: '#b87333' },
-                { label: 'SP', value: character.sp, color: '#C0C0C0' },
-                { label: 'GP', value: character.gp, color: '#D4A017' },
-                { label: 'PP', value: character.pp, color: '#E5E4E2' },
-              ].map(({ label, value, color }) => (
-                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.2rem 0', borderBottom: '1px solid var(--cs-gold)', fontSize: '0.85rem' }}>
-                  <span style={{ color: 'var(--cs-text)' }}>{label}</span>
-                  <span style={{ fontFamily: 'Cinzel, serif', fontWeight: 700, color, fontSize: '1rem' }}>
+                { label: 'Copper Coins', value: character.cp, icon: '/assets/dnd/icon-coin-cp.svg' },
+                { label: 'Silver Coins', value: character.sp, icon: '/assets/dnd/icon-coin-sp.svg' },
+                { label: 'Electrum Coins', value: character.gp, icon: '/assets/dnd/icon-coin-ep.svg' },
+                { label: 'Gold Coins', value: character.gp, icon: '/assets/dnd/icon-coin-gp.svg' },
+                { label: 'Platinum Coins', value: character.pp, icon: '/assets/dnd/icon-coin-pp.svg' },
+              ].map(({ label, value, icon }) => (
+                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.15rem 0' }}>
+                  <img src={icon} alt="" style={{ width: 14, height: 14, flexShrink: 0 }} />
+                  <span style={{ flex: 1, fontFamily: 'var(--font-montaga)', fontSize: '0.8rem', color: 'var(--cs-text)' }}>{label}</span>
+                  <span className="cs-num" style={{ fontSize: '1.1rem', minWidth: 28, textAlign: 'right' }}>
                     {String(value ?? 0).padStart(2, '0')}
                   </span>
                 </div>

@@ -404,20 +404,120 @@ h1, h2, h3, h4 {
 }
 
 /* ============================================================
-   CHARACTER SHEET PAGE — Light cream redesign (scoped)
+   CHARACTER SHEET PAGE — Figma "El Horror del Olvido" design
    ============================================================ */
 .cs-page {
-  --cs-bg:         #FBF3E4;
-  --cs-card:       #FBF3E4;
-  --cs-accent:     #8b1a1a;
+  /* exact Figma values */
+  --cs-bg:         #fdf1dc;
+  --cs-card:       #fdf1dc;
+  --cs-accent:     #7d2216;
   --cs-accent-lt:  #b52020;
-  --cs-gold:       #C8A855;
-  --cs-gold-dk:    #A08030;
-  --cs-text:       #2C1810;
-  --cs-text-muted: #6B4C3B;
-  --cs-border:     #C8A855;
+  --cs-gold:       #c9ad6a;
+  --cs-gold-dk:    #c27a2c;
+  --cs-text:       #1a0a00;
+  --cs-text-muted: #5a3a2a;
+  --cs-border:     #c9ad6a;
+
+  /* Gradient for numbers (New Rocker font) */
+  --cs-num-gradient: linear-gradient(
+    24.33deg,
+    rgb(159,0,0) 8.5%,
+    rgb(234,9,9) 15.07%,
+    rgb(181,0,0) 24.67%,
+    rgb(249,17,17) 29.42%,
+    rgb(181,13,13) 34.44%,
+    rgb(255,53,53) 54.73%,
+    rgb(239,0,0) 68.62%,
+    rgb(255,27,27) 73.09%,
+    rgb(181,7,7) 80.95%,
+    rgb(147,1,1) 90.33%
+  );
+  /* Gold gradient for portrait frame */
+  --cs-gold-gradient: linear-gradient(
+    135.63deg,
+    rgb(194,122,44) 0.23%,
+    rgb(238,178,71) 8.05%,
+    rgb(203,130,43) 19.5%,
+    rgb(231,149,49) 25.17%,
+    rgb(205,140,48) 31.17%,
+    rgb(250,248,190) 55.37%,
+    rgb(231,182,91) 71.95%,
+    rgb(254,226,106) 77.29%,
+    rgb(208,144,52) 86.67%,
+    rgb(186,114,40) 97.86%
+  );
+
   background: var(--cs-bg) !important;
   color: var(--cs-text);
+  font-family: var(--font-montaga, 'Georgia', serif);
+}
+
+/* Gradient text for numbers — New Rocker font */
+.cs-num {
+  font-family: var(--font-new-rocker, 'Cinzel', serif);
+  background-image: var(--cs-num-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-style: normal;
+}
+
+/* Section header title */
+.cs-section-title {
+  font-family: var(--font-new-rocker, 'Cinzel', serif);
+  color: var(--cs-accent);
+  font-size: 1rem;
+  letter-spacing: 0.03em;
+  line-height: 1;
+}
+
+/* Section panel with corner SVG decorations */
+.cs-panel {
+  position: relative;
+  background: var(--cs-card);
+  padding: 1rem 1.25rem;
+}
+.cs-panel::before,
+.cs-panel::after {
+  content: '';
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+.cs-panel::before {
+  top: -4px; left: -4px;
+  background-image: url('/assets/dnd/section-divider-corner-tl.svg');
+}
+.cs-panel::after {
+  top: -4px; right: -4px;
+  background-image: url('/assets/dnd/section-divider-corner-tr.svg');
+}
+
+/* Card with notched corners (for money, languages, etc.) */
+.cs-card--notched {
+  position: relative;
+  background: var(--cs-card);
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--cs-gold);
+}
+.cs-card--notched::before,
+.cs-card--notched::after {
+  content: '';
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+.cs-card--notched::before {
+  bottom: -4px; left: -4px;
+  background-image: url('/assets/dnd/section-divider-corner-bl.svg');
+}
+.cs-card--notched::after {
+  bottom: -4px; right: -4px;
+  background-image: url('/assets/dnd/section-divider-corner-br.svg');
 }
 
 /* Shield badge — SVG-based medieval shape (content positioned over SVG) */

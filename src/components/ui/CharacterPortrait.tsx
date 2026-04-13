@@ -140,18 +140,17 @@ export default function CharacterPortrait({ characterId, userId, characterName, 
     <div style={{ position: 'relative' }}>
       {/* Medieval portrait frame */}
       <div style={{ position: 'relative', overflow: 'hidden' }}>
-        <svg viewBox="0 0 200 280" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 2 }} preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="2" y="2" width="196" height="276" rx="6" fill="none" stroke="var(--cs-gold, #C8A855)" strokeWidth="3" />
-          <rect x="7" y="7" width="186" height="266" rx="3" fill="none" stroke="var(--cs-gold, #C8A855)" strokeWidth="0.8" opacity="0.5" />
-          <path d="M70,2 Q100,-10 130,2" fill="none" stroke="var(--cs-gold, #C8A855)" strokeWidth="2.5" />
-          <circle cx="100" cy="-2" r="3" fill="var(--cs-gold, #C8A855)" />
-          <path d="M2,20 Q2,2 20,2" fill="none" stroke="var(--cs-gold, #C8A855)" strokeWidth="3" />
-          <path d="M180,2 Q198,2 198,20" fill="none" stroke="var(--cs-gold, #C8A855)" strokeWidth="3" />
-          <path d="M2,260 Q2,278 20,278" fill="none" stroke="var(--cs-gold, #C8A855)" strokeWidth="3" />
-          <path d="M180,278 Q198,278 198,260" fill="none" stroke="var(--cs-gold, #C8A855)" strokeWidth="3" />
-          <polygon points="100,0 103,4 100,8 97,4" fill="var(--cs-gold, #C8A855)" />
-          <polygon points="100,272 103,276 100,280 97,276" fill="var(--cs-gold, #C8A855)" />
-        </svg>
+        {/* Figma portrait frame: corners + edges */}
+        <img src="/assets/dnd/portrait-corner-l.svg" alt="" style={{ position: 'absolute', top: 0, left: 0, width: 80, height: 'auto', pointerEvents: 'none', zIndex: 3 }} />
+        <img src="/assets/dnd/portrait-corner-r.svg" alt="" style={{ position: 'absolute', top: 0, right: 0, width: 80, height: 'auto', pointerEvents: 'none', zIndex: 3 }} />
+        <img src="/assets/dnd/portrait-corner-l.svg" alt="" style={{ position: 'absolute', bottom: 0, left: 0, width: 80, height: 'auto', pointerEvents: 'none', zIndex: 3, transform: 'scaleY(-1)' }} />
+        <img src="/assets/dnd/portrait-corner-r.svg" alt="" style={{ position: 'absolute', bottom: 0, right: 0, width: 80, height: 'auto', pointerEvents: 'none', zIndex: 3, transform: 'scaleY(-1)' }} />
+        {/* Gold horizontal lines top */}
+        <div style={{ position: 'absolute', top: 3, left: 0, right: 0, height: 5, background: 'var(--cs-gold-gradient, var(--cs-gold))', zIndex: 2, pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: 12, left: 0, right: 0, height: 5, background: 'var(--cs-gold-gradient, var(--cs-gold))', opacity: 0.6, zIndex: 2, pointerEvents: 'none' }} />
+        {/* Gold horizontal lines bottom */}
+        <div style={{ position: 'absolute', bottom: 3, left: 0, right: 0, height: 5, background: 'var(--cs-gold-gradient, var(--cs-gold))', zIndex: 2, pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: 12, left: 0, right: 0, height: 5, background: 'var(--cs-gold-gradient, var(--cs-gold))', opacity: 0.6, zIndex: 2, pointerEvents: 'none' }} />
 
         <div style={{ aspectRatio: '5/7', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--cs-bg)', overflow: 'hidden', padding: '8px' }}>
           {currentImage ? (
@@ -169,17 +168,23 @@ export default function CharacterPortrait({ characterId, userId, characterName, 
           )}
         </div>
 
-        {/* Name overlay */}
+        {/* Name overlay — Figma Bona Nova SC style */}
         <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 3,
-          background: 'linear-gradient(transparent, rgba(0,0,0,0.75))',
-          padding: '2rem 0.75rem 0.75rem', color: 'white',
+          position: 'absolute', bottom: 20, left: 0, right: 0, zIndex: 4,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
         }}>
-          <div style={{ fontFamily: 'Cinzel, serif', fontSize: '1rem', fontWeight: 700 }}>
-            {characterName}
+          <div style={{
+            border: '3px solid #c27a2c', borderRadius: 58,
+            background: 'rgba(0,0,0,0.5)',
+            padding: '2px 20px',
+          }}>
+            <span style={{ fontFamily: 'var(--font-cinzel, Cinzel, serif)', fontSize: '1.4rem', fontWeight: 700, color: 'white', letterSpacing: '0.04em' }}>
+              {characterName}
+            </span>
           </div>
-          <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>
-            {race} · {classLabel}
+          <div style={{ display: 'flex', gap: 8, fontFamily: 'var(--font-cinzel, Cinzel, serif)', fontSize: '0.8rem', color: 'white', opacity: 0.9 }}>
+            <span>{race}</span>
+            <span>{classLabel}</span>
           </div>
         </div>
 

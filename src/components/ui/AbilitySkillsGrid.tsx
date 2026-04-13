@@ -101,18 +101,24 @@ export default function AbilitySkillsGrid({ abilities, proficiencyBonus, skillPr
           const skills = SKILLS_BY_ABILITY[ab]
 
           return (
-            <div key={ab} style={{ display: 'flex', gap: '0.6rem', padding: '0.6rem', border: '1px solid var(--cs-gold)', background: 'var(--cs-card)' }}>
-              {/* Ability column */}
-              <div style={{ textAlign: 'center', minWidth: 65, flexShrink: 0 }}>
-                <div className="cs-heading" style={{ marginBottom: 2 }}>{ABILITY_NAMES[ab]}</div>
-                <div style={{ fontFamily: 'Cinzel, serif', fontSize: '1.8rem', fontWeight: 700, color: 'var(--cs-accent)', lineHeight: 1 }}>
-                  {sign(m)}
+            <div key={ab} style={{ display: 'flex', gap: '0.5rem', padding: '0.5rem', border: '1px solid var(--cs-gold)', background: 'var(--cs-card)' }}>
+              {/* Ability shield badge — Figma SVG asset */}
+              <div style={{ textAlign: 'center', minWidth: 58, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ position: 'relative', width: 58, height: 60, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <img src="/assets/dnd/shield-ability.svg" alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }} />
+                  <span style={{ position: 'relative', fontFamily: 'var(--font-new-rocker, Cinzel, serif)', fontSize: '0.5rem', color: 'var(--cs-accent)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 5 }}>
+                    {ABILITY_NAMES[ab]}
+                  </span>
+                  <span className="cs-num" style={{ position: 'relative', fontSize: '1.35rem', lineHeight: 1 }}>
+                    {sign(m)}
+                  </span>
+                  <span style={{ position: 'relative', fontFamily: 'var(--font-montaga, Georgia, serif)', fontSize: '0.58rem', color: 'var(--cs-text-muted)' }}>
+                    {score}
+                  </span>
                 </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--cs-text-muted)' }}>{score}</div>
-                <div style={{ fontSize: '0.65rem', color: 'var(--cs-text-muted)', marginTop: 2 }}>
-                  Save {sign(saveMod)}
+                <div style={{ fontSize: '0.58rem', fontFamily: 'var(--font-montaga, Georgia, serif)', color: 'var(--cs-text-muted)', marginTop: 2 }}>
+                  Save {sign(saveMod)}{hasSave ? ' ●' : ''}
                 </div>
-                {hasSave && <span className="cs-dot cs-dot--proficient" style={{ marginTop: 2 }} />}
               </div>
 
               {/* Skills list */}
