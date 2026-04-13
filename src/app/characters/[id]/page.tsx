@@ -235,6 +235,8 @@ export default async function CharacterPage({
                   hpCurrent={character.hp_current}
                   hpMax={character.hp_max}
                   hpTemp={character.hp_temp ?? 0}
+                  deathSuccesses={character.death_saves_successes ?? 0}
+                  deathFailures={character.death_saves_failures ?? 0}
                 />
 
                 {/* Passive scores */}
