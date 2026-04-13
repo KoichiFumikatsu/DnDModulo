@@ -136,23 +136,51 @@ export default function CharacterPortrait({ characterId, userId, characterName, 
     color: 'var(--cs-text)', fontFamily: 'Crimson Text, serif',
   } as const
 
+  const goldGrad = 'linear-gradient(90deg, rgb(194,122,44), rgb(250,248,190) 50%, rgb(186,114,40))'
+
   return (
     <div style={{ position: 'relative' }}>
-      {/* Medieval portrait frame */}
-      <div style={{ position: 'relative', overflow: 'hidden' }}>
-        {/* Figma portrait frame: corners + edges */}
-        <img src="/assets/dnd/portrait-corner-l.svg" alt="" style={{ position: 'absolute', top: 0, left: 0, width: 80, height: 'auto', pointerEvents: 'none', zIndex: 3 }} />
-        <img src="/assets/dnd/portrait-corner-r.svg" alt="" style={{ position: 'absolute', top: 0, right: 0, width: 80, height: 'auto', pointerEvents: 'none', zIndex: 3 }} />
-        <img src="/assets/dnd/portrait-corner-l.svg" alt="" style={{ position: 'absolute', bottom: 0, left: 0, width: 80, height: 'auto', pointerEvents: 'none', zIndex: 3, transform: 'scaleY(-1)' }} />
-        <img src="/assets/dnd/portrait-corner-r.svg" alt="" style={{ position: 'absolute', bottom: 0, right: 0, width: 80, height: 'auto', pointerEvents: 'none', zIndex: 3, transform: 'scaleY(-1)' }} />
-        {/* Gold horizontal lines top */}
-        <div style={{ position: 'absolute', top: 3, left: 0, right: 0, height: 5, background: 'var(--cs-gold-gradient, var(--cs-gold))', zIndex: 2, pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', top: 12, left: 0, right: 0, height: 5, background: 'var(--cs-gold-gradient, var(--cs-gold))', opacity: 0.6, zIndex: 2, pointerEvents: 'none' }} />
-        {/* Gold horizontal lines bottom */}
-        <div style={{ position: 'absolute', bottom: 3, left: 0, right: 0, height: 5, background: 'var(--cs-gold-gradient, var(--cs-gold))', zIndex: 2, pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: 12, left: 0, right: 0, height: 5, background: 'var(--cs-gold-gradient, var(--cs-gold))', opacity: 0.6, zIndex: 2, pointerEvents: 'none' }} />
+      {/* Portrait frame — double gold border with corner ornaments */}
+      <div style={{
+        position: 'relative',
+        padding: '6px',
+        background: `
+          linear-gradient(var(--cs-bg), var(--cs-bg)) padding-box,
+          ${goldGrad} border-box
+        `,
+        border: '3px solid transparent',
+        borderRadius: 6,
+      }}>
+        {/* Inner border line */}
+        <div style={{
+          position: 'absolute', inset: 10,
+          border: '1px solid rgba(201,173,106,0.45)',
+          borderRadius: 3,
+          pointerEvents: 'none', zIndex: 1,
+        }} />
 
-        <div style={{ aspectRatio: '5/7', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--cs-bg)', overflow: 'hidden', padding: '8px' }}>
+        {/* Corner ornaments — L-bracket style */}
+        {[
+          { top: 2, left: 2 },
+          { top: 2, right: 2, transform: 'scaleX(-1)' },
+          { bottom: 2, left: 2, transform: 'scaleY(-1)' },
+          { bottom: 2, right: 2, transform: 'scale(-1,-1)' },
+        ].map((pos, i) => (
+          <svg key={i} width="22" height="22" viewBox="0 0 22 22" fill="none"
+            style={{ position: 'absolute', pointerEvents: 'none', zIndex: 2, ...pos }}>
+            <path d="M2 20 L2 4 Q2 2 4 2 L20 2" stroke="url(#cg)" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+            <circle cx="2" cy="2" r="1.5" fill="url(#cg)" />
+            <defs>
+              <linearGradient id="cg" x1="0" y1="0" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#e6a028"/>
+                <stop offset="0.5" stopColor="#faf8be"/>
+                <stop offset="1" stopColor="#ba7228"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        ))}
+
+        <div style={{ aspectRatio: '5/7', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--cs-bg)', overflow: 'hidden', borderRadius: 3 }}>
           {currentImage ? (
             <img src={currentImage} alt={characterName}
               style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '3px' }} />
@@ -193,7 +221,7 @@ export default function CharacterPortrait({ characterId, userId, characterName, 
           <button
             onClick={() => setEditing(!editing)}
             style={{
-              position: 'absolute', top: 12, right: 12, zIndex: 4,
+              position: 'absolute', top: 14, right: 14, zIndex: 4,
               background: 'rgba(0,0,0,0.5)', border: '1px solid var(--cs-gold)',
               color: 'var(--cs-gold)', cursor: 'pointer', padding: '4px 8px',
               fontSize: '0.7rem', fontFamily: 'Cinzel, serif',
@@ -201,7 +229,7 @@ export default function CharacterPortrait({ characterId, userId, characterName, 
             {editing ? '✕' : '✎'}
           </button>
         )}
-      </div>
+      </div>{/* end portrait frame */}
 
       {/* Image selector tabs */}
       {entries.length > 1 && (
