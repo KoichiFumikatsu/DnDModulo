@@ -357,6 +357,7 @@ export default async function CharacterPage({
                 id: f.id, name: f.name, description: f.description,
                 source: f.source, summary: f.summary ?? null,
               }))}
+              proficiencyBonus={profBonus}
             />
           </div>
         )}
