@@ -7,6 +7,7 @@ import CharacterPortrait from '@/components/ui/CharacterPortrait'
 import FeaturesCompact from '@/components/ui/FeaturesCompact'
 import WeaponsTab from '@/components/ui/WeaponsTab'
 import SpellsTab from '@/components/ui/SpellsTab'
+import HpManager from '@/components/ui/HpManager'
 
 /* ── Helpers ── */
 
@@ -112,9 +113,6 @@ export default async function CharacterPage({
             </div>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <Link href={`/characters/${id}/play`} className="btn-crimson" style={{ textDecoration: 'none', fontSize: '0.8rem' }}>
-              Modo Mesa
-            </Link>
             <Link href={`/characters/${id}/edit`} className="btn-parchment" style={{ textDecoration: 'none', fontSize: '0.8rem' }}>
               Editar
             </Link>
@@ -230,6 +228,14 @@ export default async function CharacterPage({
                     <span className="cs-shield-value cs-num">{character.speed}</span>
                   </div>
                 </div>
+
+                {/* HP Manager */}
+                <HpManager
+                  characterId={id}
+                  hpCurrent={character.hp_current}
+                  hpMax={character.hp_max}
+                  hpTemp={character.hp_temp ?? 0}
+                />
 
                 {/* Passive scores */}
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
