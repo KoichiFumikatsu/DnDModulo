@@ -1,5 +1,5 @@
-// Fetch de datos desde 5etools (CDN oficial)
-const BASE = 'https://raw.githubusercontent.com/5etools-mirror-3/5etools-src/master/data'
+// Fetch de datos desde archivos locales (5etools-v2.26.1)
+const BASE = '/api/5etools'
 
 // ── Types ──
 
