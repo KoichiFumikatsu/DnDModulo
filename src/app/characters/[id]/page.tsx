@@ -116,144 +116,102 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
       {/* ── Main content ── */}
       <div className="max-w-6xl mx-auto px-4 py-6">
 
-        {/* ═══ ROW 1: Prof — Level — Hit Die ═══ */}
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: '1.5rem', marginBottom: '0.5rem' }}>
-          <div className="cs-shield cs-shield--sm">
-            <ShieldSm />
-            <span className="cs-shield-label">Prof</span>
-            <span className="cs-shield-value cs-num">+{profBonus}</span>
-          </div>
+        {/* ═══ MAIN ROW: Portrait | Combat stats + Ability grid | Additional stats ═══ */}
+        <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr 220px', gap: '1.5rem', alignItems: 'start' }}>
 
-          <div className="cs-shield cs-shield--lg">
-            <ShieldLg />
-            <span className="cs-shield-label">Level</span>
-            <span className="cs-shield-value cs-num">{xpData.level}</span>
-            <span className="cs-shield-sub">{character.experience_points.toLocaleString()} XP</span>
-          </div>
+          {/* ── LEFT: Portrait ── */}
+          <CharacterPortrait
+            characterId={id}
+            userId={user.id}
+            characterName={character.name}
+            classLabel={classLabel}
+            race={character.race}
+            mainImageUrl={character.image_url}
+            images={(charImages ?? []).map(img => ({
+              id: img.id,
+              image_url: img.image_url,
+              label: img.label,
+              sort_order: img.sort_order,
+              is_active: img.is_active,
+            }))}
+          />
 
-          <div className="cs-shield cs-shield--sm">
-            <ShieldSm />
-            <span className="cs-shield-label">Hit Die</span>
-            <span className="cs-shield-value cs-num" style={{ fontSize: '0.85rem' }}>{character.hit_dice_total || '—'}</span>
-          </div>
-        </div>
-
-        {/* ═══ ROW 2: Ini — HP — AC — Spd ═══ */}
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: '1rem', marginBottom: '1.25rem' }}>
-          <div className="cs-shield cs-shield--sm">
-            <ShieldSm />
-            <span className="cs-shield-label">Ini</span>
-            <span className="cs-shield-value cs-num">{sign(modNum(character.dex) + (character.initiative_bonus ?? 0))}</span>
-          </div>
-
-          <div className="cs-shield cs-shield--xl">
-            <ShieldXl />
-            <span className="cs-shield-label">HP</span>
-            <span className="cs-shield-value cs-num">{character.hp_current}</span>
-            <div className="cs-shield-details">
-              <span style={{ fontFamily: 'var(--font-montaga)' }}>{character.hp_max}</span>
-              <span style={{ fontFamily: 'var(--font-montaga)' }}>+{character.hp_temp || 0}</span>
-            </div>
-          </div>
-
-          <div className="cs-shield cs-shield--xl">
-            <ShieldXl />
-            <span className="cs-shield-label">AC</span>
-            <span className="cs-shield-value cs-num">{character.ac}</span>
-          </div>
-
-          <div className="cs-shield cs-shield--sm">
-            <ShieldSm />
-            <span className="cs-shield-label">Spd</span>
-            <span className="cs-shield-value cs-num">{character.speed}</span>
-          </div>
-        </div>
-
-        {/* ═══ PASSIVE SCORES ═══ */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-          {[
-            { label: 'Passive Perception', key: 'Perception', ab: 'wis' },
-            { label: 'Passive Investigation', key: 'Investigation', ab: 'int' },
-            { label: 'Passive Insight', key: 'Insight', ab: 'wis' },
-          ].map(({ label, key, ab }) => (
-            <div key={key} className="cs-passive">
-              <div className="cs-passive-label" style={{ fontFamily: 'var(--font-montaga, Georgia, serif)' }}>{label}</div>
-              <div className="cs-passive-value cs-num">{passiveScore(abilities[ab], profBonus, key, skillProfs)}</div>
-            </div>
-          ))}
-        </div>
-
-        <div className="cs-divider" />
-
-        {/* ═══ 3-COLUMN LAYOUT ═══ */}
-        <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr 260px', gap: '1.5rem', marginTop: '1.5rem' }}>
-
-          {/* ── LEFT: Portrait + Money + Languages ── */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <CharacterPortrait
-              characterId={id}
-              userId={user.id}
-              characterName={character.name}
-              classLabel={classLabel}
-              race={character.race}
-              mainImageUrl={character.image_url}
-              images={(charImages ?? []).map(img => ({
-                id: img.id,
-                image_url: img.image_url,
-                label: img.label,
-                sort_order: img.sort_order,
-                is_active: img.is_active,
-              }))}
-            />
-
-            {/* Money */}
-            <div className="cs-card--notched" style={{ padding: '0.75rem 1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
-                <img src="/assets/dnd/icon-money.svg" alt="" style={{ width: 15, height: 15 }} />
-                <span className="cs-section-title">Money</span>
+          {/* ── CENTER: All stats ── */}
+          <div>
+            {/* ROW 1: Prof — Level — Hit Die */}
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: '1.5rem', marginBottom: '0.5rem' }}>
+              <div className="cs-shield cs-shield--sm">
+                <ShieldSm />
+                <span className="cs-shield-label">Prof</span>
+                <span className="cs-shield-value cs-num">+{profBonus}</span>
               </div>
-              <div style={{ height: 2, background: 'var(--cs-gold)', borderRadius: 4, marginBottom: '0.5rem' }} />
+              <div className="cs-shield cs-shield--lg">
+                <ShieldLg />
+                <span className="cs-shield-label">Level</span>
+                <span className="cs-shield-value cs-num">{xpData.level}</span>
+                <span className="cs-shield-sub">{character.experience_points.toLocaleString()} XP</span>
+              </div>
+              <div className="cs-shield cs-shield--sm">
+                <ShieldSm />
+                <span className="cs-shield-label">Hit Die</span>
+                <span className="cs-shield-value cs-num" style={{ fontSize: '0.85rem' }}>{character.hit_dice_total || '—'}</span>
+              </div>
+            </div>
+
+            {/* ROW 2: Ini — HP — AC — Spd */}
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: '1rem', marginBottom: '1rem' }}>
+              <div className="cs-shield cs-shield--sm">
+                <ShieldSm />
+                <span className="cs-shield-label">Ini</span>
+                <span className="cs-shield-value cs-num">{sign(modNum(character.dex) + (character.initiative_bonus ?? 0))}</span>
+              </div>
+              <div className="cs-shield cs-shield--xl">
+                <ShieldXl />
+                <span className="cs-shield-label">HP</span>
+                <span className="cs-shield-value cs-num">{character.hp_current}</span>
+                <div className="cs-shield-details">
+                  <span style={{ fontFamily: 'var(--font-montaga)' }}>{character.hp_max}</span>
+                  <span style={{ fontFamily: 'var(--font-montaga)' }}>+{character.hp_temp || 0}</span>
+                </div>
+              </div>
+              <div className="cs-shield cs-shield--xl">
+                <ShieldXl />
+                <span className="cs-shield-label">AC</span>
+                <span className="cs-shield-value cs-num">{character.ac}</span>
+              </div>
+              <div className="cs-shield cs-shield--sm">
+                <ShieldSm />
+                <span className="cs-shield-label">Spd</span>
+                <span className="cs-shield-value cs-num">{character.speed}</span>
+              </div>
+            </div>
+
+            {/* Passive scores */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
               {[
-                { label: 'Copper Coins', value: character.cp, icon: '/assets/dnd/icon-coin-cp.svg' },
-                { label: 'Silver Coins', value: character.sp, icon: '/assets/dnd/icon-coin-sp.svg' },
-                { label: 'Electrum Coins', value: character.gp, icon: '/assets/dnd/icon-coin-ep.svg' },
-                { label: 'Gold Coins', value: character.gp, icon: '/assets/dnd/icon-coin-gp.svg' },
-                { label: 'Platinum Coins', value: character.pp, icon: '/assets/dnd/icon-coin-pp.svg' },
-              ].map(({ label, value, icon }) => (
-                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.15rem 0' }}>
-                  <img src={icon} alt="" style={{ width: 14, height: 14, flexShrink: 0 }} />
-                  <span style={{ flex: 1, fontFamily: 'var(--font-montaga)', fontSize: '0.8rem', color: 'var(--cs-text)' }}>{label}</span>
-                  <span className="cs-num" style={{ fontSize: '1.1rem', minWidth: 28, textAlign: 'right' }}>
-                    {String(value ?? 0).padStart(2, '0')}
-                  </span>
+                { label: 'Passive Perception', key: 'Perception', ab: 'wis' },
+                { label: 'Passive Investigation', key: 'Investigation', ab: 'int' },
+                { label: 'Passive Insight', key: 'Insight', ab: 'wis' },
+              ].map(({ label, key, ab }) => (
+                <div key={key} className="cs-passive">
+                  <div className="cs-passive-label" style={{ fontFamily: 'var(--font-montaga, Georgia, serif)' }}>{label}</div>
+                  <div className="cs-passive-value cs-num">{passiveScore(abilities[ab], profBonus, key, skillProfs)}</div>
                 </div>
               ))}
             </div>
 
-            {/* Languages */}
-            {langProfs.length > 0 && (
-              <div className="cs-card--notched">
-                <h3 className="cs-heading" style={{ marginBottom: '0.5rem' }}>Languages</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                  {langProfs.map(p => (
-                    <span key={p.id} style={{ fontSize: '0.85rem', color: 'var(--cs-text)' }}>
-                      {p.name}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+            <div className="cs-divider" />
 
-          {/* ── CENTER: Abilities grouped with skills + dice roller ── */}
-          <div>
-            <AbilitySkillsGrid
-              abilities={abilities}
-              proficiencyBonus={profBonus}
-              skillProfs={skillProfs.map(p => ({ name: p.name, proficiency_level: p.proficiency_level, has_advantage: p.has_advantage }))}
-              saveProfs={saveProfs.map(p => ({ name: p.name }))}
-              hitDiceTotal={character.hit_dice_total || ''}
-            />
+            {/* Ability grid */}
+            <div style={{ marginTop: '1rem' }}>
+              <AbilitySkillsGrid
+                abilities={abilities}
+                proficiencyBonus={profBonus}
+                skillProfs={skillProfs.map(p => ({ name: p.name, proficiency_level: p.proficiency_level, has_advantage: p.has_advantage }))}
+                saveProfs={saveProfs.map(p => ({ name: p.name }))}
+                hitDiceTotal={character.hit_dice_total || ''}
+              />
+            </div>
 
             {/* Weapons */}
             {weapons && weapons.length > 0 && (
@@ -271,42 +229,49 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
             )}
           </div>
 
-          {/* ── RIGHT: Features + Spells + Personality ── */}
+          {/* ── RIGHT: Money + Languages + Features + Spells ── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
-            {/* Spells */}
-            {Object.values(spellsByClass).map(({ cls, spells: clsSpells }) => {
-              const byLevel: Record<number, typeof clsSpells> = {}
-              clsSpells.forEach(s => {
-                if (!byLevel[s.spell_level]) byLevel[s.spell_level] = []
-                byLevel[s.spell_level].push(s)
-              })
-              return (
-                <div key={cls.id} className="cs-card--notched">
-                  <h3 className="cs-heading" style={{ marginBottom: '0.25rem' }}>
-                    Spells — {cls.class_name}
-                  </h3>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--cs-accent)', marginBottom: '0.5rem' }}>
-                    DC {cls.spell_save_dc} · Atk +{cls.spell_attack_mod} · {cls.spellcasting_ability?.toUpperCase()}
-                  </div>
-                  {Object.entries(byLevel).sort(([a], [b]) => Number(a) - Number(b)).map(([level, list]) => (
-                    <div key={level} style={{ marginBottom: '0.5rem' }}>
-                      <div className="cs-heading" style={{ fontSize: '0.6rem', marginBottom: 2 }}>
-                        {level === '0' ? 'Cantrips' : `Level ${level}`}
-                      </div>
-                      {list.map(s => (
-                        <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.15rem 0', borderBottom: '1px solid var(--cs-gold)' }}>
-                          <span style={{ color: 'var(--cs-accent)', fontWeight: 500 }}>{s.name}</span>
-                          {s.custom_notes && <span style={{ color: 'var(--cs-text-muted)', fontSize: '0.7rem' }}>{s.custom_notes}</span>}
-                        </div>
-                      ))}
-                    </div>
+            {/* Money */}
+            <div className="cs-card--notched" style={{ padding: '0.75rem 1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
+                <img src="/assets/dnd/icon-money.svg" alt="" style={{ width: 15, height: 15 }} />
+                <span className="cs-section-title">Money</span>
+              </div>
+              <div style={{ height: 2, background: 'var(--cs-gold)', borderRadius: 4, marginBottom: '0.5rem' }} />
+              {[
+                { label: 'Copper Coins', value: character.cp, icon: '/assets/dnd/icon-coin-cp.svg' },
+                { label: 'Silver Coins', value: character.sp, icon: '/assets/dnd/icon-coin-sp.svg' },
+                { label: 'Electrum', value: 0, icon: '/assets/dnd/icon-coin-ep.svg' },
+                { label: 'Gold Coins', value: character.gp, icon: '/assets/dnd/icon-coin-gp.svg' },
+                { label: 'Platinum', value: character.pp, icon: '/assets/dnd/icon-coin-pp.svg' },
+              ].map(({ label, value, icon }) => (
+                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.15rem 0' }}>
+                  <img src={icon} alt="" style={{ width: 14, height: 14, flexShrink: 0 }} />
+                  <span style={{ flex: 1, fontFamily: 'var(--font-montaga)', fontSize: '0.78rem', color: 'var(--cs-text)' }}>{label}</span>
+                  <span className="cs-num" style={{ fontSize: '1rem', minWidth: 26, textAlign: 'right' }}>
+                    {String(value ?? 0).padStart(2, '0')}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Languages */}
+            {langProfs.length > 0 && (
+              <div className="cs-card--notched">
+                <span className="cs-section-title">Languages</span>
+                <div style={{ height: 2, background: 'var(--cs-gold)', borderRadius: 4, margin: '0.4rem 0' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                  {langProfs.map(p => (
+                    <span key={p.id} style={{ fontSize: '0.82rem', fontFamily: 'var(--font-montaga)', color: 'var(--cs-text)' }}>
+                      {p.name}
+                    </span>
                   ))}
                 </div>
-              )
-            })}
+              </div>
+            )}
 
-            {/* Features — compact with click-to-expand modal */}
+            {/* Features compact */}
             <FeaturesCompact
               features={(features ?? []).map(f => ({
                 id: f.id,
@@ -317,10 +282,41 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
               }))}
             />
 
+            {/* Spells */}
+            {Object.values(spellsByClass).map(({ cls, spells: clsSpells }) => {
+              const byLevel: Record<number, typeof clsSpells> = {}
+              clsSpells.forEach(s => {
+                if (!byLevel[s.spell_level]) byLevel[s.spell_level] = []
+                byLevel[s.spell_level].push(s)
+              })
+              return (
+                <div key={cls.id} className="cs-card--notched">
+                  <h3 className="cs-heading" style={{ marginBottom: '0.25rem' }}>Spells — {cls.class_name}</h3>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--cs-accent)', marginBottom: '0.4rem' }}>
+                    DC {cls.spell_save_dc} · +{cls.spell_attack_mod} · {cls.spellcasting_ability?.toUpperCase()}
+                  </div>
+                  {Object.entries(byLevel).sort(([a], [b]) => Number(a) - Number(b)).map(([level, list]) => (
+                    <div key={level} style={{ marginBottom: '0.4rem' }}>
+                      <div className="cs-heading" style={{ fontSize: '0.58rem', marginBottom: 2 }}>
+                        {level === '0' ? 'Cantrips' : `Level ${level}`}
+                      </div>
+                      {list.map(s => (
+                        <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', padding: '0.1rem 0', borderBottom: '1px solid var(--cs-gold)' }}>
+                          <span style={{ color: 'var(--cs-accent)', fontWeight: 500 }}>{s.name}</span>
+                          {s.custom_notes && <span style={{ color: 'var(--cs-text-muted)', fontSize: '0.68rem' }}>{s.custom_notes}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )
+            })}
+
             {/* Personality */}
             {(character.personality || character.ideals || character.bonds || character.flaws) && (
               <div className="cs-card--notched">
-                <h3 className="cs-heading" style={{ marginBottom: '0.5rem' }}>Personality</h3>
+                <span className="cs-section-title">Personality</span>
+                <div style={{ height: 2, background: 'var(--cs-gold)', borderRadius: 4, margin: '0.4rem 0' }} />
                 {[
                   ['Traits', character.personality],
                   ['Ideals', character.ideals],
@@ -328,8 +324,8 @@ export default async function CharacterPage({ params }: { params: Promise<{ id: 
                   ['Flaws', character.flaws],
                 ].map(([label, value]) => value && (
                   <div key={label as string} style={{ marginBottom: '0.4rem' }}>
-                    <p style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--cs-gold-dk)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</p>
-                    <p style={{ fontSize: '0.82rem', color: 'var(--cs-text)' }}>{value}</p>
+                    <p style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--cs-gold-dk)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</p>
+                    <p style={{ fontSize: '0.8rem', fontFamily: 'var(--font-montaga)', color: 'var(--cs-text)' }}>{value}</p>
                   </div>
                 ))}
               </div>
