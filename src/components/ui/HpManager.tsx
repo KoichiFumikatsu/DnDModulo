@@ -102,7 +102,7 @@ export default function HpManager({
   // ── Styles ────────────────────────────────────────────────────────
 
   const inputSt: React.CSSProperties = {
-    flex: 1, padding: '0.3rem 0.5rem',
+    width: 56, padding: '0.3rem 0.25rem',
     border: '1px solid var(--cs-gold)',
     background: 'rgba(255,255,255,0.6)',
     color: 'var(--cs-text)',
