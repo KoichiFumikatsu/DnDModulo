@@ -8,6 +8,7 @@ import FeaturesCompact from '@/components/ui/FeaturesCompact'
 import WeaponsTab from '@/components/ui/WeaponsTab'
 import SpellsTab from '@/components/ui/SpellsTab'
 import HpManager from '@/components/ui/HpManager'
+import ResourceTracker from '@/components/ui/ResourceTracker'
 
 /* ── Helpers ── */
 
@@ -63,6 +64,7 @@ export default async function CharacterPage({
     { data: features },
     { data: proficiencies },
     { data: charImages },
+    { data: classResources },
   ] = await Promise.all([
     supabase.from('character_classes').select('*').eq('character_id', id),
     supabase.from('character_spell_slots').select('*').eq('character_id', id),
@@ -71,6 +73,7 @@ export default async function CharacterPage({
     supabase.from('character_features').select('*').eq('character_id', id).order('sort_order'),
     supabase.from('character_proficiencies').select('*').eq('character_id', id),
     supabase.from('character_images').select('*').eq('character_id', id).order('sort_order'),
+    supabase.from('character_class_resources').select('*').eq('character_id', id).order('sort_order'),
   ])
 
   const classLabel = (classes ?? []).map(c => `${c.class_name} ${c.level}`).join(' / ')
@@ -292,10 +295,10 @@ export default async function CharacterPage({
                 ))}
               </div>
 
-              {langProfs.length > 0 && (
-                <div className="cs-card--notched">
-                  <span className="cs-section-title">Languages</span>
-                  <div style={{ height: 2, background: 'var(--cs-gold)', borderRadius: 4, margin: '0.4rem 0' }} />
+              <div className="cs-card--notched">
+                <span className="cs-section-title">Languages</span>
+                <div style={{ height: 2, background: 'var(--cs-gold)', borderRadius: 4, margin: '0.4rem 0' }} />
+                {langProfs.length > 0 ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                     {langProfs.map(p => (
                       <span key={p.id} style={{ fontSize: '0.82rem', fontFamily: 'var(--font-montaga)', color: 'var(--cs-text)' }}>
@@ -303,7 +306,19 @@ export default async function CharacterPage({
                       </span>
                     ))}
                   </div>
-                </div>
+                ) : (
+                  <span style={{ fontSize: '0.78rem', fontFamily: 'var(--font-montaga)', color: 'var(--cs-text-muted)' }}>—</span>
+                )}
+              </div>
+
+              {(classResources ?? []).filter(r => r.maximum > 0).length > 0 && (
+                <ResourceTracker
+                  resources={(classResources ?? []).filter(r => r.maximum > 0).map(r => ({
+                    id: r.id, name: r.name,
+                    current: r.current, maximum: r.maximum,
+                    reset_on: r.reset_on ?? null,
+                  }))}
+                />
               )}
 
               {(character.personality || character.ideals || character.bonds || character.flaws) && (
