@@ -1,6 +1,13 @@
 // Fetch de datos desde archivos locales (5etools-v2.26.1)
 const BASE = '/api/5etools'
 
+// ── Pre-processed static data (committed to git, works on Vercel) ──
+import STATIC_ITEMS from '../5etools-processed/items.json'
+import STATIC_SPELLS from '../5etools-processed/spells.json'
+import STATIC_RACES from '../5etools-processed/races.json'
+import STATIC_BACKGROUNDS from '../5etools-processed/backgrounds.json'
+import STATIC_CLASSES from '../5etools-processed/classes.json'
+
 // ── Types ──
 
 export type ClassMap = Record<string, string[]>
@@ -86,21 +93,8 @@ let raceSkillsCache: Record<string, { fixed: string[]; choose?: { from: string[]
 
 export async function fetchRaces(): Promise<string[]> {
   if (racesCache) return racesCache
-  try {
-    const res = await fetch(`${BASE}/races.json`)
-    const json = await res.json()
-    const names: string[] = []
-    for (const r of json.race ?? []) {
-      if (r.name) names.push(r.name)
-    }
-    for (const r of json.subrace ?? []) {
-      if (r.name && r.raceName) names.push(`${r.name} (${r.raceName})`)
-    }
-    racesCache = [...new Set(names)].sort()
-    return racesCache
-  } catch {
-    return FALLBACK_RACES
-  }
+  racesCache = STATIC_RACES as string[]
+  return racesCache
 }
 
 // ── Race Ability Bonuses ──
@@ -162,15 +156,8 @@ function parseAbility(ab: Record<string, unknown>): RaceAbility {
 
 export async function fetchBackgrounds(): Promise<string[]> {
   if (backgroundsCache) return backgroundsCache
-  try {
-    const res = await fetch(`${BASE}/backgrounds.json`)
-    const json = await res.json()
-    const names = (json.background ?? []).map((b: { name: string }) => b.name).filter(Boolean)
-    backgroundsCache = [...new Set(names as string[])].sort()
-    return backgroundsCache
-  } catch {
-    return FALLBACK_BACKGROUNDS
-  }
+  backgroundsCache = STATIC_BACKGROUNDS as string[]
+  return backgroundsCache
 }
 
 // ── Background Skill Proficiencies ──
@@ -244,38 +231,8 @@ export async function fetchRaceSkills(): Promise<Record<string, RaceSkillProf>> 
 
 export async function fetchClasses(): Promise<ClassMap> {
   if (classesCache) return classesCache
-  try {
-    const indexRes = await fetch(`${BASE}/class/index.json`)
-    const index: Record<string, string> = await indexRes.json()
-    const entries = Object.entries(index)
-    const results = await Promise.all(
-      entries.map(async ([, file]) => {
-        const res = await fetch(`${BASE}/class/${file}`)
-        return res.json()
-      })
-    )
-
-    const map: ClassMap = {}
-    for (const json of results) {
-      for (const cls of json.class ?? []) {
-        if (cls.source !== 'PHB' || !cls.name) continue
-        if (!map[cls.name]) map[cls.name] = []
-      }
-      for (const sc of json.subclass ?? []) {
-        if (!sc.name || !sc.className) continue
-        if (!map[sc.className]) continue
-        if (!map[sc.className].includes(sc.name)) {
-          map[sc.className].push(sc.name)
-        }
-      }
-    }
-    for (const key of Object.keys(map)) map[key].sort()
-
-    classesCache = map
-    return classesCache
-  } catch {
-    return FALLBACK_CLASSES
-  }
+  classesCache = STATIC_CLASSES as ClassMap
+  return classesCache
 }
 
 // ── Class Details (hit dice, ASI levels, subclasses) ──
@@ -501,8 +458,13 @@ export async function fetchSpells(className: string): Promise<SpellEntry[]> {
 
 export async function fetchAllSpells(): Promise<SpellEntry[]> {
   if (allSpellsCache) return allSpellsCache
+  allSpellsCache = STATIC_SPELLS as SpellEntry[]
+  return allSpellsCache
+}
+
+/** @deprecated kept for reference */
+async function _fetchAllSpellsFromAPI(): Promise<SpellEntry[]> {
   try {
-    // Fetch spell files + class lookup in parallel
     const spellFiles = ['spells-phb.json', 'spells-xphb.json']
     const [lookupRes, ...spellResults] = await Promise.all([
       fetch(`${BASE}/generated/gendata-spell-source-lookup.json`)
@@ -602,35 +564,8 @@ export async function fetchAllSpells(): Promise<SpellEntry[]> {
 
 export async function fetchEquipmentItems(): Promise<EquipmentItem[]> {
   if (equipmentCache) return equipmentCache
-  try {
-    const res = await fetch(`${BASE}/items-base.json`)
-    const json = await res.json()
-    const items: EquipmentItem[] = []
-
-    for (const item of json.baseitem ?? json.item ?? []) {
-      if (!item.name || item.source !== 'PHB') continue
-      items.push({
-        name: item.name,
-        type: item.type ?? 'Other',
-        weight: item.weight ?? undefined,
-        value: typeof item.value === 'number' ? item.value / 100 : undefined,
-        source: item.source,
-        ac: item.ac ?? undefined,
-        damage: item.dmg1 ?? undefined,
-        damageType: item.dmgType ?? undefined,
-        range: item.range ? `${item.range}` : undefined,
-        properties: Array.isArray(item.property) ? item.property : undefined,
-        weaponCategory: item.weaponCategory ?? undefined,
-        rarity: item.rarity ?? undefined,
-      })
-    }
-
-    items.sort((a, b) => a.name.localeCompare(b.name))
-    equipmentCache = items
-    return equipmentCache
-  } catch {
-    return FALLBACK_EQUIPMENT
-  }
+  equipmentCache = STATIC_ITEMS as EquipmentItem[]
+  return equipmentCache
 }
 
 // ── Race Traits ──
