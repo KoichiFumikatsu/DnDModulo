@@ -32,8 +32,10 @@ function loadItems(): EquipmentItem[] {
         rarity: item.rarity as string | undefined,
       })
     }
+    console.log(`[loadItems] loaded ${items.length} items`)
     return items.sort((a, b) => (a.name as string).localeCompare(b.name as string))
-  } catch {
+  } catch (err) {
+    console.error('[loadItems] failed:', err)
     return []
   }
 }
@@ -143,8 +145,10 @@ function loadSpells(): SpellEntry[] {
     }
 
     spells.sort((a, b) => a.level - b.level || a.name.localeCompare(b.name))
+    console.log(`[loadSpells] loaded ${spells.length} spells`)
     return spells
-  } catch {
+  } catch (err) {
+    console.error('[loadSpells] failed:', err)
     return []
   }
 }
