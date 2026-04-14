@@ -25,136 +25,157 @@ export default async function DashboardPage() {
   }, {} as Record<string, string[]>)
 
   return (
-    <main className="flex-1 p-6 max-w-6xl mx-auto w-full">
+    <main className="cs-page flex-1 p-6 max-w-6xl mx-auto w-full">
       {/* Encabezado */}
-      <div className="flex items-start justify-between mb-8">
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '2rem' }}>
         <div>
-          <h1 style={{ fontFamily: 'var(--font-cinzel, serif)', color: 'var(--gold)', fontSize: '1.8rem' }}>
+          <h1 style={{ fontFamily: 'var(--font-cinzel, serif)', color: 'var(--cs-accent)', fontSize: '1.8rem', letterSpacing: '0.05em' }}>
             Mis Aventureros
           </h1>
-          <div className="ornate-divider" style={{ margin: '0.5rem 0 0' }}>
-            <span style={{ color: 'var(--on-dark-muted)', fontSize: '0.8rem', fontStyle: 'italic' }}>
-              {characters?.length ?? 0} personaje{(characters?.length ?? 0) !== 1 ? 's' : ''} en el grimorio
-            </span>
-          </div>
+          <div style={{ height: 1, background: 'var(--cs-gold)', margin: '0.4rem 0 0.3rem' }} />
+          <p style={{ color: 'var(--cs-text-muted)', fontSize: '0.8rem', fontStyle: 'italic', fontFamily: 'var(--font-montaga, Georgia, serif)' }}>
+            {characters?.length ?? 0} personaje{(characters?.length ?? 0) !== 1 ? 's' : ''} en el grimorio
+          </p>
         </div>
-        <Link href="/characters/new" className="btn-crimson" style={{ textDecoration: 'none', display: 'inline-block' }}>
+        <Link href="/characters/new" style={{
+          textDecoration: 'none', display: 'inline-block',
+          padding: '0.45rem 1.1rem',
+          background: 'var(--cs-accent)', color: '#fff',
+          fontFamily: 'var(--font-cinzel, serif)', fontSize: '0.78rem',
+          fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
+          border: '1px solid var(--cs-accent)', borderRadius: 2,
+        }}>
           + Nuevo Personaje
         </Link>
       </div>
 
       {!characters?.length ? (
-        <div className="parchment-page ornate-border text-center py-20 px-8 rounded-sm">
+        <div style={{
+          background: 'var(--cs-card)', border: '1px solid var(--cs-gold)',
+          textAlign: 'center', padding: '4rem 2rem', borderRadius: 2,
+        }}>
           <p style={{ fontSize: '3rem', marginBottom: '1rem' }}>📜</p>
-          <p style={{ fontFamily: 'var(--font-cinzel, serif)', fontSize: '1.2rem', color: 'var(--crimson)', marginBottom: '0.5rem' }}>
+          <p style={{ fontFamily: 'var(--font-cinzel, serif)', fontSize: '1.2rem', color: 'var(--cs-accent)', marginBottom: '0.5rem' }}>
             El grimorio está vacío
           </p>
-          <p style={{ color: 'var(--ink-faded)', marginBottom: '1.5rem', fontStyle: 'italic' }}>
+          <p style={{ color: 'var(--cs-text-muted)', marginBottom: '1.5rem', fontStyle: 'italic', fontFamily: 'var(--font-montaga, Georgia, serif)' }}>
             Escribe tu primer aventurero en estas páginas
           </p>
-          <Link href="/characters/new" className="btn-crimson" style={{ textDecoration: 'none', display: 'inline-block' }}>
+          <Link href="/characters/new" style={{
+            textDecoration: 'none', display: 'inline-block',
+            padding: '0.5rem 1.25rem',
+            background: 'var(--cs-accent)', color: '#fff',
+            fontFamily: 'var(--font-cinzel, serif)', fontSize: '0.82rem',
+            fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
+            borderRadius: 2,
+          }}>
             Crear Personaje
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
           {characters.map(character => {
             const xpData = getXPProgress(character.experience_points ?? 0)
             const hpPct = Math.max(0, Math.min(100, (character.hp_current / character.hp_max) * 100))
-            const hpColor = hpPct > 50 ? 'var(--hp-good)' : hpPct > 25 ? 'var(--hp-warn)' : 'var(--hp-danger)'
+            const hpColor = hpPct > 50 ? '#2d6a2d' : hpPct > 25 ? '#b06000' : 'var(--cs-accent)'
             const classNames = classesByChar[character.id] ?? []
 
             return (
-              <Link
-                key={character.id}
-                href={`/characters/${character.id}`}
-                className="parchment-page char-card"
-                style={{
-                  textDecoration: 'none',
-                  display: 'block',
-                  borderRadius: '2px',
-                  padding: '1.25rem',
-                  position: 'relative',
-                }}
-              >
+              <div key={character.id} style={{ position: 'relative' }}>
                 <DeleteCharacterButton characterId={character.id} characterName={character.name} />
-                {/* Nombre + nivel */}
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="flex-1 min-w-0">
-                    <h2 style={{
-                      fontFamily: 'var(--font-cinzel, serif)',
-                      color: 'var(--crimson)',
-                      fontSize: '1.1rem',
-                      lineHeight: 1.2,
-                      marginBottom: '0.25rem',
-                    }}>
-                      {character.name}
-                    </h2>
-                    <p style={{ color: 'var(--ink-faded)', fontSize: '0.85rem', fontStyle: 'italic' }}>
-                      {character.race}
-                      {classNames.length > 0 && ` · ${classNames.join(' / ')}`}
-                    </p>
-                  </div>
-                  <div style={{ textAlign: 'center', flexShrink: 0 }}>
-                    {character.image_url ? (
-                      <img
-                        src={character.image_url}
-                        alt={character.name}
-                        style={{ width: 52, height: 52, objectFit: 'cover', border: '2px solid var(--gold-dark)', borderRadius: '2px' }}
-                      />
-                    ) : (
-                      <div style={{
-                        width: 52, height: 52,
-                        background: 'var(--parchment-dark)',
-                        border: '2px solid var(--gold-dark)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '1.5rem',
-                        borderRadius: '2px',
+                <Link
+                  href={`/characters/${character.id}`}
+                  style={{
+                    textDecoration: 'none', display: 'block',
+                    background: 'var(--cs-card)',
+                    border: '1px solid var(--cs-gold)',
+                    borderRadius: 2, padding: '1.1rem',
+                    transition: 'box-shadow 0.2s',
+                  }}
+                >
+                  {/* Nombre + retrato */}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.85rem' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <h2 style={{
+                        fontFamily: 'var(--font-cinzel, serif)',
+                        color: 'var(--cs-accent)', fontSize: '1.05rem',
+                        lineHeight: 1.2, marginBottom: '0.2rem',
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                       }}>
-                        🧙
+                        {character.name}
+                      </h2>
+                      <p style={{ color: 'var(--cs-text-muted)', fontSize: '0.8rem', fontStyle: 'italic', fontFamily: 'var(--font-montaga, Georgia, serif)' }}>
+                        {character.race}{classNames.length > 0 && ` · ${classNames.join(' / ')}`}
+                      </p>
+                    </div>
+
+                    {/* Retrato + escudo nivel */}
+                    <div style={{ flexShrink: 0, textAlign: 'center' }}>
+                      {character.image_url ? (
+                        <img
+                          src={character.image_url}
+                          alt={character.name}
+                          style={{ width: 52, height: 52, objectFit: 'cover', border: '2px solid var(--cs-gold)', display: 'block' }}
+                        />
+                      ) : (
+                        <div style={{
+                          width: 52, height: 52,
+                          background: 'rgba(201,173,106,0.15)',
+                          border: '2px solid var(--cs-gold)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '1.4rem',
+                        }}>
+                          🧙
+                        </div>
+                      )}
+                      {/* Escudo nivel */}
+                      <div style={{ marginTop: 4, display: 'flex', justifyContent: 'center' }}>
+                        <div className="cs-shield cs-shield--sm" style={{ width: 36, height: 42 }}>
+                          <svg className="cs-shield-svg" viewBox="0 0 36 42" style={{ position: 'absolute', inset: 0 }}>
+                            <path d="M2 2 L34 2 L34 28 L18 40 L2 28 Z"
+                              fill="var(--cs-gold)" stroke="var(--cs-gold-dk)" strokeWidth="1.5" />
+                          </svg>
+                          <span className="cs-shield-value" style={{ position: 'relative', fontSize: '0.72rem', fontWeight: 700, color: 'var(--cs-card)', fontFamily: 'var(--font-cinzel, serif)' }}>
+                            {xpData.level}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ height: 1, background: 'rgba(201,173,106,0.4)', marginBottom: '0.65rem' }} />
+
+                  {/* HP */}
+                  <div style={{ marginBottom: '0.55rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 3 }}>
+                      <span style={{ fontFamily: 'var(--font-cinzel, serif)', fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--cs-text-muted)' }}>PV</span>
+                      <span style={{ fontFamily: 'var(--font-cinzel, serif)', fontSize: '0.8rem', color: hpColor }}>
+                        {character.hp_current}
+                        <span style={{ fontSize: '0.65rem', color: 'var(--cs-text-muted)', fontFamily: 'var(--font-montaga, Georgia, serif)' }}> / {character.hp_max}</span>
+                      </span>
+                    </div>
+                    <div style={{ height: 5, background: 'rgba(201,173,106,0.25)', borderRadius: 3, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${hpPct}%`, background: hpColor, borderRadius: 3, transition: 'width 0.3s' }} />
+                    </div>
+                  </div>
+
+                  {/* XP */}
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 3 }}>
+                      <span style={{ fontFamily: 'var(--font-cinzel, serif)', fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--cs-text-muted)' }}>XP</span>
+                      <span style={{ fontFamily: 'var(--font-montaga, Georgia, serif)', fontSize: '0.75rem', color: 'var(--cs-text-muted)' }}>
+                        {(character.experience_points ?? 0).toLocaleString()}
+                        {xpData.nextLevelXP ? ` / ${xpData.nextLevelXP.toLocaleString()}` : ' (máx)'}
+                      </span>
+                    </div>
+                    {xpData.nextLevelXP && (
+                      <div style={{ height: 5, background: 'rgba(201,173,106,0.25)', borderRadius: 3, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${xpData.pct}%`, background: 'linear-gradient(90deg, var(--cs-gold-dk), var(--cs-gold))', borderRadius: 3, transition: 'width 0.3s' }} />
                       </div>
                     )}
-                    <div className="level-badge" style={{ marginTop: 4 }}>
-                      Nv {xpData.level}
-                    </div>
                   </div>
-                </div>
-
-                {/* HP */}
-                <div style={{ marginBottom: '0.75rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--ink-faded)', marginBottom: 4 }}>
-                    <span style={{ fontFamily: 'var(--font-cinzel, serif)', letterSpacing: '0.05em' }}>PV</span>
-                    <span>{character.hp_current} / {character.hp_max}</span>
-                  </div>
-                  <div className="ancient-bar-track">
-                    <div className="ancient-bar-fill" style={{ width: `${hpPct}%`, background: hpColor }} />
-                  </div>
-                </div>
-
-                {/* XP */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--ink-faded)', marginBottom: 4 }}>
-                    <span style={{ fontFamily: 'var(--font-cinzel, serif)', letterSpacing: '0.05em' }}>XP</span>
-                    <span>
-                      {character.experience_points.toLocaleString()}
-                      {xpData.nextLevelXP
-                        ? ` / ${xpData.nextLevelXP.toLocaleString()}`
-                        : ' (nivel máximo)'}
-                    </span>
-                  </div>
-                  {xpData.nextLevelXP && (
-                    <div className="ancient-bar-track">
-                      <div
-                        className="ancient-bar-fill"
-                        style={{
-                          width: `${xpData.pct}%`,
-                          background: 'linear-gradient(90deg, var(--gold-dark), var(--gold))',
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-              </Link>
+                </Link>
+              </div>
             )
           })}
         </div>
