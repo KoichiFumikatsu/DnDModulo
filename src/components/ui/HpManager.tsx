@@ -129,7 +129,7 @@ export default function HpManager({
   }
 
   return (
-    <div style={{ border: '1px solid var(--cs-gold)', background: 'var(--cs-card)', padding: '0.75rem 1rem', marginBottom: '0.75rem' }}>
+    <div style={{ border: '1px solid var(--cs-gold)', background: 'var(--cs-card)', padding: '0.75rem 1rem', marginBottom: '0.75rem', overflow: 'hidden' }}>
 
       {/* Status banner */}
       {isDead && (
@@ -190,22 +190,20 @@ export default function HpManager({
       </div>
 
       {/* Steppers */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
         {([
-          { label: 'HP actual', val: hp, color: numInput.color as string, min: -hpMax, onChange: setHpDirect, isTemp: false },
-          { label: 'HP temporal', val: temp, color: '#5b8dd9', min: 0, onChange: setTempDirect, isTemp: true },
+          { label: 'HP actual', val: hp, color: numInput.color as string, min: -hpMax, onChange: setHpDirect },
+          { label: 'HP temporal', val: temp, color: '#5b8dd9', min: 0, onChange: setTempDirect },
         ] as const).map(({ label, val, color, min, onChange }) => (
-          <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{ fontSize: '0.56rem', fontFamily: 'var(--font-cinzel)', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--cs-text-muted)' }}>{label}</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <button style={stepBtn} onClick={() => onChange(val - 1)}>−</button>
-              <input
-                type="number" value={val} min={min} max={hpMax}
-                onChange={e => onChange(parseInt(e.target.value) || 0)}
-                style={{ ...numInput, color, flex: 1, width: 0 }}
-              />
-              <button style={stepBtn} onClick={() => onChange(val + 1)}>+</button>
-            </div>
+          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <span style={{ fontSize: '0.56rem', fontFamily: 'var(--font-cinzel)', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--cs-text-muted)', flex: 1 }}>{label}</span>
+            <button style={stepBtn} onClick={() => onChange(val - 1)}>−</button>
+            <input
+              type="number" value={val} min={min} max={hpMax}
+              onChange={e => onChange(parseInt(e.target.value) || 0)}
+              style={{ ...numInput, color, width: 44 }}
+            />
+            <button style={stepBtn} onClick={() => onChange(val + 1)}>+</button>
           </div>
         ))}
       </div>
