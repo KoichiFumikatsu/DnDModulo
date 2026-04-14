@@ -190,25 +190,24 @@ export default function HpManager({
       </div>
 
       {/* Steppers */}
-      <div style={{ display: 'flex', gap: '1rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1 }}>
-          <span style={{ fontSize: '0.58rem', fontFamily: 'var(--font-cinzel)', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--cs-text-muted)' }}>HP actual</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-            <button style={stepBtn} onClick={() => setHpDirect(hp - 1)}>−</button>
-            <input style={numInput} type="number" value={hp} min={-hpMax} max={hpMax}
-              onChange={e => setHpDirect(parseInt(e.target.value) || 0)} />
-            <button style={stepBtn} onClick={() => setHpDirect(hp + 1)}>+</button>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
+        {([
+          { label: 'HP actual', val: hp, color: numInput.color as string, min: -hpMax, onChange: setHpDirect, isTemp: false },
+          { label: 'HP temporal', val: temp, color: '#5b8dd9', min: 0, onChange: setTempDirect, isTemp: true },
+        ] as const).map(({ label, val, color, min, onChange }) => (
+          <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <span style={{ fontSize: '0.56rem', fontFamily: 'var(--font-cinzel)', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--cs-text-muted)' }}>{label}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <button style={stepBtn} onClick={() => onChange(val - 1)}>−</button>
+              <input
+                type="number" value={val} min={min} max={hpMax}
+                onChange={e => onChange(parseInt(e.target.value) || 0)}
+                style={{ ...numInput, color, flex: 1, width: 0 }}
+              />
+              <button style={stepBtn} onClick={() => onChange(val + 1)}>+</button>
+            </div>
           </div>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1 }}>
-          <span style={{ fontSize: '0.58rem', fontFamily: 'var(--font-cinzel)', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--cs-text-muted)' }}>HP temporal</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-            <button style={stepBtn} onClick={() => setTempDirect(temp - 1)}>−</button>
-            <input style={{ ...numInput, color: '#5b8dd9' }} type="number" value={temp} min={0}
-              onChange={e => setTempDirect(parseInt(e.target.value) || 0)} />
-            <button style={stepBtn} onClick={() => setTempDirect(temp + 1)}>+</button>
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Death saves — shown when HP ≤ 0 */}
