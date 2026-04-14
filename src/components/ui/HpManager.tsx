@@ -171,19 +171,19 @@ export default function HpManager({
 
       {/* Damage / Heal */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '0.6rem' }}>
-        <div style={{ display: 'flex', gap: 4 }}>
-          <input style={inputSt} type="number" min={1} value={dmg} placeholder="Daño"
+        <div style={{ display: 'flex', gap: 4, width: '100%' }}>
+          <input style={{ ...inputSt, flex: 1, minWidth: 0 }} type="number" min={1} value={dmg} placeholder="Daño"
             onChange={e => setDmg(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && applyDamage()} />
-          <button onClick={applyDamage} style={{ padding: '0.3rem 0.75rem', background: 'var(--cs-accent)', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-cinzel)', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.05em', borderRadius: 2 }}>
+          <button onClick={applyDamage} style={{ flexShrink: 0, padding: '0.3rem 0.6rem', background: 'var(--cs-accent)', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-cinzel)', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.05em', borderRadius: 2 }}>
             Daño
           </button>
         </div>
-        <div style={{ display: 'flex', gap: 4 }}>
-          <input style={inputSt} type="number" min={1} value={heal} placeholder="Curar"
+        <div style={{ display: 'flex', gap: 4, width: '100%' }}>
+          <input style={{ ...inputSt, flex: 1, minWidth: 0 }} type="number" min={1} value={heal} placeholder="Curar"
             onChange={e => setHeal(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && applyHeal()} />
-          <button onClick={applyHeal} style={{ padding: '0.3rem 0.75rem', background: '#2d6a2d', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-cinzel)', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.05em', borderRadius: 2 }}>
+          <button onClick={applyHeal} style={{ flexShrink: 0, padding: '0.3rem 0.6rem', background: '#2d6a2d', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-cinzel)', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.05em', borderRadius: 2 }}>
             Curar
           </button>
         </div>
