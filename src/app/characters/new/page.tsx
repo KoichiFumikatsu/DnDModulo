@@ -53,7 +53,7 @@ function L({ children }: { children: React.ReactNode }) {
     <label style={{
       display: 'block', fontSize: '0.82rem', marginBottom: '0.35rem',
       fontFamily: 'var(--font-cinzel, serif)', letterSpacing: '0.05em',
-      color: 'var(--on-dark)',
+      color: 'var(--cs-text)',
     }}>{children}</label>
   )
 }
@@ -392,14 +392,14 @@ export default function NewCharacterPage() {
   // ── Styles ──
   const darkInput: React.CSSProperties = {
     width: '100%', padding: '0.45rem 0.75rem',
-    background: 'rgba(245,233,204,0.12)', border: '1px solid var(--gold-dark)',
-    color: 'var(--on-dark)', fontFamily: 'var(--font-crimson, serif)', fontSize: '1rem',
+    background: 'rgba(255,255,255,0.6)', border: '1px solid var(--cs-gold-dk)',
+    color: 'var(--cs-text)', fontFamily: 'var(--font-crimson, serif)', fontSize: '1rem',
     outline: 'none', borderRadius: '2px',
   }
   const darkSelect: React.CSSProperties = { ...darkInput, cursor: 'pointer', appearance: 'auto' as const }
   const sectionBox: React.CSSProperties = {
-    padding: '0.75rem 1rem', background: 'rgba(245,233,204,0.08)',
-    border: '1px solid var(--gold-dark)',
+    padding: '0.75rem 1rem', background: 'rgba(201,173,106,0.08)',
+    border: '1px solid var(--cs-gold)',
   }
 
   const STEPS = ['Básico', 'Clases', 'Stats', 'Personalidad']
@@ -410,14 +410,14 @@ export default function NewCharacterPage() {
   const hasNoRacialData = race.length > 0 && !currentRacialAbility
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--cover)' }}>
+    <div className="cs-page min-h-screen">
       {/* Header */}
       <div className="book-nav px-6 py-3 flex items-center gap-4">
         <Link href="/dashboard"
-          style={{ color: 'var(--on-dark-muted)', fontSize: '0.82rem', textDecoration: 'none', fontFamily: 'var(--font-cinzel, serif)' }}>
+          style={{ color: 'var(--cs-text-muted)', fontSize: '0.82rem', textDecoration: 'none', fontFamily: 'var(--font-cinzel, serif)' }}>
           ← Grimorio
         </Link>
-        <h1 style={{ fontFamily: 'var(--font-cinzel, serif)', color: 'var(--gold)', fontSize: '1.1rem' }}>
+        <h1 style={{ fontFamily: 'var(--font-cinzel, serif)', color: 'var(--cs-accent)', fontSize: '1.1rem' }}>
           Nuevo Personaje
         </h1>
       </div>
@@ -435,7 +435,7 @@ export default function NewCharacterPage() {
 
       <div style={{ maxWidth: 760, margin: '0 auto', padding: '1.5rem' }}>
         {error && (
-          <div style={{ background: '#3d0a0a', color: '#f5c0c0', padding: '0.6rem 1rem', marginBottom: '1rem', border: '1px solid #8b1a1a', fontSize: '0.9rem' }}>
+          <div style={{ background: 'rgba(125,34,22,0.1)', color: 'var(--cs-accent)', padding: '0.6rem 1rem', marginBottom: '1rem', border: '1px solid var(--cs-accent)', fontSize: '0.9rem' }}>
             {error}
           </div>
         )}
@@ -443,7 +443,7 @@ export default function NewCharacterPage() {
         {/* ── PASO 1: BÁSICO ── */}
         {step === 1 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <h2 style={{ fontFamily: 'var(--font-cinzel, serif)', color: 'var(--gold)', fontSize: '1.1rem' }}>
+            <h2 style={{ fontFamily: 'var(--font-cinzel, serif)', color: 'var(--cs-accent)', fontSize: '1.1rem' }}>
               Información Básica
             </h2>
             <Field label="Nombre del personaje *">
@@ -466,7 +466,7 @@ export default function NewCharacterPage() {
             </div>
             <Field label="Experiencia (XP)">
               <input type="number" value={xp} onChange={e => setXp(parseInt(e.target.value) || 0)} style={darkInput} min={0} />
-              <div style={{ marginTop: '0.4rem', fontSize: '0.85rem', color: 'var(--gold-light)', fontFamily: 'var(--font-cinzel, serif)' }}>
+              <div style={{ marginTop: '0.4rem', fontSize: '0.85rem', color: 'var(--cs-gold)', fontFamily: 'var(--font-cinzel, serif)' }}>
                 Nivel {totalLevel} — Bonus de proficiencia +{profBonus}
               </div>
             </Field>
@@ -477,10 +477,10 @@ export default function NewCharacterPage() {
         {step === 2 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: '0.5rem' }}>
-              <h2 style={{ fontFamily: 'var(--font-cinzel, serif)', color: 'var(--gold)', fontSize: '1.1rem', margin: 0 }}>Clases</h2>
+              <h2 style={{ fontFamily: 'var(--font-cinzel, serif)', color: 'var(--cs-accent)', fontSize: '1.1rem', margin: 0 }}>Clases</h2>
               <div style={{ fontSize: '0.85rem', fontFamily: 'var(--font-cinzel, serif)' }}>
-                <span style={{ color: 'var(--on-dark-muted)' }}>Nivel total: {totalLevel}</span>
-                {remainingLevels > 0 && <span style={{ color: 'var(--gold-light)', marginLeft: '0.75rem' }}>Por asignar: {remainingLevels}</span>}
+                <span style={{ color: 'var(--cs-text-muted)' }}>Nivel total: {totalLevel}</span>
+                {remainingLevels > 0 && <span style={{ color: 'var(--cs-gold)', marginLeft: '0.75rem' }}>Por asignar: {remainingLevels}</span>}
                 {remainingLevels < 0 && <span style={{ color: '#f87171', marginLeft: '0.75rem' }}>Excedido: {Math.abs(remainingLevels)}</span>}
               </div>
             </div>
@@ -489,14 +489,14 @@ export default function NewCharacterPage() {
               const subOpts = classMap[cls.class_name] ?? []
               const maxLvl = cls.level + Math.max(0, remainingLevels)
               return (
-                <div key={i} style={{ border: '1px solid var(--gold-dark)', padding: '1rem', background: 'rgba(255,255,255,0.05)' }}>
+                <div key={i} style={{ border: '1px solid var(--cs-gold-dk)', padding: '1rem', background: 'rgba(201,173,106,0.08)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                    <span style={{ color: 'var(--on-dark-muted)', fontSize: '0.82rem', fontFamily: 'var(--font-cinzel, serif)' }}>
+                    <span style={{ color: 'var(--cs-text-muted)', fontSize: '0.82rem', fontFamily: 'var(--font-cinzel, serif)' }}>
                       Clase {i + 1} {cls.is_primary && '(principal)'}
                     </span>
                     <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer', fontSize: '0.82rem', color: 'var(--on-dark-muted)', fontFamily: 'var(--font-cinzel, serif)' }}>
-                        <input type="checkbox" checked={cls.is_homebrew} onChange={e => updateClass(i, 'is_homebrew', e.target.checked)} style={{ accentColor: 'var(--gold)' }} />
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer', fontSize: '0.82rem', color: 'var(--cs-text-muted)', fontFamily: 'var(--font-cinzel, serif)' }}>
+                        <input type="checkbox" checked={cls.is_homebrew} onChange={e => updateClass(i, 'is_homebrew', e.target.checked)} style={{ accentColor: 'var(--cs-gold)' }} />
                         Homebrew
                       </label>
                       {classes.length > 1 && (
@@ -533,8 +533,8 @@ export default function NewCharacterPage() {
             })}
 
             <button onClick={addClassEntry} style={{
-              padding: '0.6rem', border: '1px dashed var(--gold-dark)',
-              color: 'var(--on-dark-muted)', background: 'transparent', cursor: 'pointer',
+              padding: '0.6rem', border: '1px dashed var(--cs-gold-dk)',
+              color: 'var(--cs-text-muted)', background: 'transparent', cursor: 'pointer',
               fontFamily: 'var(--font-cinzel, serif)', fontSize: '0.82rem', letterSpacing: '0.05em',
             }}>+ Agregar multiclase</button>
           </div>
@@ -544,7 +544,7 @@ export default function NewCharacterPage() {
         {step === 3 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-              <h2 style={{ fontFamily: 'var(--font-cinzel, serif)', color: 'var(--gold)', fontSize: '1.1rem', margin: 0 }}>
+              <h2 style={{ fontFamily: 'var(--font-cinzel, serif)', color: 'var(--cs-accent)', fontSize: '1.1rem', margin: 0 }}>
                 Estadísticas
               </h2>
               <button onClick={rollAllAbilities} className="btn-dice">
@@ -563,8 +563,8 @@ export default function NewCharacterPage() {
                 const hasBonus = racialB > 0 || asiB > 0
 
                 return (
-                  <div key={abKey} style={{ border: '1px solid var(--gold-dark)', padding: '0.6rem', textAlign: 'center', background: 'rgba(255,255,255,0.05)' }}>
-                    <div style={{ fontFamily: 'var(--font-cinzel, serif)', fontSize: '0.75rem', color: 'var(--on-dark-muted)', marginBottom: '0.4rem', letterSpacing: '0.1em' }}>
+                  <div key={abKey} style={{ border: '1px solid var(--cs-gold-dk)', padding: '0.6rem', textAlign: 'center', background: 'rgba(201,173,106,0.08)' }}>
+                    <div style={{ fontFamily: 'var(--font-cinzel, serif)', fontSize: '0.75rem', color: 'var(--cs-text-muted)', marginBottom: '0.4rem', letterSpacing: '0.1em' }}>
                       {abKey.toUpperCase()}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', justifyContent: 'center' }}>
@@ -576,7 +576,7 @@ export default function NewCharacterPage() {
                       </button>
                     </div>
                     {roll && (
-                      <div style={{ fontSize: '0.72rem', color: 'var(--on-dark-muted)', marginTop: '0.2rem' }}>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--cs-text-muted)', marginTop: '0.2rem' }}>
                         {roll.dice.map((d, i) => (
                           <span key={i} style={{ textDecoration: d === roll.dropped && roll.dice.indexOf(d) === roll.dice.findIndex(x => x === roll.dropped) ? 'line-through' : 'none', opacity: d === roll.dropped ? 0.5 : 1, marginRight: '0.2rem' }}>
                             {d}
@@ -585,11 +585,11 @@ export default function NewCharacterPage() {
                       </div>
                     )}
                     {hasBonus && (
-                      <div style={{ fontSize: '0.72rem', color: 'var(--gold)', marginTop: '0.15rem' }}>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--cs-gold)', marginTop: '0.15rem' }}>
                         {base}{racialB > 0 && <span> +{racialB}r</span>}{asiB > 0 && <span> +{asiB}a</span>} = {final}
                       </div>
                     )}
-                    <div style={{ color: 'var(--gold-light)', fontWeight: 700, marginTop: '0.2rem', fontSize: '0.9rem' }}>
+                    <div style={{ color: 'var(--cs-gold)', fontWeight: 700, marginTop: '0.2rem', fontSize: '0.9rem' }}>
                       {modStr(final)}
                     </div>
                   </div>
@@ -600,27 +600,27 @@ export default function NewCharacterPage() {
             {/* Racial Bonuses */}
             {race && (
               <div style={sectionBox}>
-                <div style={{ fontSize: '0.85rem', fontFamily: 'var(--font-cinzel, serif)', color: 'var(--on-dark-muted)', marginBottom: '0.4rem' }}>
+                <div style={{ fontSize: '0.85rem', fontFamily: 'var(--font-cinzel, serif)', color: 'var(--cs-text-muted)', marginBottom: '0.4rem' }}>
                   Bonuses raciales ({race})
                 </div>
                 {currentRacialAbility && (
-                  <div style={{ fontSize: '0.9rem', color: 'var(--gold-light)' }}>
+                  <div style={{ fontSize: '0.9rem', color: 'var(--cs-gold)' }}>
                     {Object.entries(currentRacialAbility.fixed).map(([k, v]) => (
                       <span key={k} style={{ marginRight: '0.75rem' }}>{k.toUpperCase()} +{v}</span>
                     ))}
                     {!hasRacialChoice && Object.keys(currentRacialAbility.fixed).length === 0 && (
-                      <span style={{ color: 'var(--on-dark-muted)', fontSize: '0.85rem' }}>Sin bonuses fijos</span>
+                      <span style={{ color: 'var(--cs-text-muted)', fontSize: '0.85rem' }}>Sin bonuses fijos</span>
                     )}
                   </div>
                 )}
                 {hasRacialChoice && (
                   <div style={{ marginTop: '0.5rem' }}>
-                    <div style={{ fontSize: '0.82rem', color: 'var(--on-dark-muted)', marginBottom: '0.3rem' }}>
+                    <div style={{ fontSize: '0.82rem', color: 'var(--cs-text-muted)', marginBottom: '0.3rem' }}>
                       Elige {currentRacialAbility!.choose!.count} stat(s) para +1:
                     </div>
                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                       {currentRacialAbility!.choose!.from.map(stat => (
-                        <label key={stat} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem', color: 'var(--on-dark)', cursor: 'pointer' }}>
+                        <label key={stat} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem', color: 'var(--cs-text)', cursor: 'pointer' }}>
                           <input type="checkbox"
                             checked={racialChoices.includes(stat as AbKey)}
                             onChange={e => {
@@ -632,7 +632,7 @@ export default function NewCharacterPage() {
                                 setRacialChoices(prev => prev.filter(s => s !== stat))
                               }
                             }}
-                            style={{ accentColor: 'var(--gold)' }}
+                            style={{ accentColor: 'var(--cs-gold)' }}
                           />
                           {stat.toUpperCase()}
                         </label>
@@ -642,12 +642,12 @@ export default function NewCharacterPage() {
                 )}
                 {hasNoRacialData && (
                   <div style={{ marginTop: '0.3rem' }}>
-                    <div style={{ fontSize: '0.82rem', color: 'var(--on-dark-muted)', marginBottom: '0.3rem' }}>
+                    <div style={{ fontSize: '0.82rem', color: 'var(--cs-text-muted)', marginBottom: '0.3rem' }}>
                       Esta raza no tiene bonuses fijos. Elige Custom Origin:
                     </div>
                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                       {AB_KEYS.map(stat => (
-                        <label key={stat} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem', color: 'var(--on-dark)', cursor: 'pointer' }}>
+                        <label key={stat} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem', color: 'var(--cs-text)', cursor: 'pointer' }}>
                           <input type="checkbox"
                             checked={racialChoices.includes(stat)}
                             onChange={e => {
@@ -657,13 +657,13 @@ export default function NewCharacterPage() {
                                 setRacialChoices(prev => prev.filter(s => s !== stat))
                               }
                             }}
-                            style={{ accentColor: 'var(--gold)' }}
+                            style={{ accentColor: 'var(--cs-gold)' }}
                           />
                           {stat.toUpperCase()}
                         </label>
                       ))}
                     </div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--on-dark-muted)', marginTop: '0.2rem' }}>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--cs-text-muted)', marginTop: '0.2rem' }}>
                       +2 al primero, +1 al segundo (o +1/+1 si solo eliges 2)
                     </div>
                   </div>
@@ -674,22 +674,22 @@ export default function NewCharacterPage() {
             {/* ASI / Feat Cards */}
             {totalASIs > 0 && (
               <div>
-                <div style={{ fontSize: '0.85rem', fontFamily: 'var(--font-cinzel, serif)', color: 'var(--on-dark-muted)', marginBottom: '0.5rem' }}>
+                <div style={{ fontSize: '0.85rem', fontFamily: 'var(--font-cinzel, serif)', color: 'var(--cs-text-muted)', marginBottom: '0.5rem' }}>
                   Mejoras de puntuación de característica ({totalASIs})
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   {asiChoices.map((asi, idx) => (
                     <div key={idx} style={{ ...sectionBox, padding: '0.75rem' }}>
                       <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem' }}>
-                        <span style={{ fontSize: '0.82rem', color: 'var(--on-dark-muted)', fontFamily: 'var(--font-cinzel, serif)' }}>
+                        <span style={{ fontSize: '0.82rem', color: 'var(--cs-text-muted)', fontFamily: 'var(--font-cinzel, serif)' }}>
                           ASI #{idx + 1}
                         </span>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--on-dark)' }}>
-                          <input type="radio" name={`asi-${idx}`} checked={asi.type === 'asi'} onChange={() => updateASI(idx, { type: 'asi', asi_mode: '2to1', feat_name: undefined })} style={{ accentColor: 'var(--gold)' }} />
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--cs-text)' }}>
+                          <input type="radio" name={`asi-${idx}`} checked={asi.type === 'asi'} onChange={() => updateASI(idx, { type: 'asi', asi_mode: '2to1', feat_name: undefined })} style={{ accentColor: 'var(--cs-gold)' }} />
                           Aumento de stats
                         </label>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--on-dark)' }}>
-                          <input type="radio" name={`asi-${idx}`} checked={asi.type === 'feat'} onChange={() => openFeatModal(idx)} style={{ accentColor: 'var(--gold)' }} />
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--cs-text)' }}>
+                          <input type="radio" name={`asi-${idx}`} checked={asi.type === 'feat'} onChange={() => openFeatModal(idx)} style={{ accentColor: 'var(--cs-gold)' }} />
                           Feat
                         </label>
                       </div>
@@ -697,12 +697,12 @@ export default function NewCharacterPage() {
                       {asi.type === 'asi' && (
                         <div>
                           <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.82rem', color: 'var(--on-dark)', cursor: 'pointer' }}>
-                              <input type="radio" checked={asi.asi_mode === '2to1'} onChange={() => updateASI(idx, { asi_mode: '2to1', asi_stat2: undefined })} style={{ accentColor: 'var(--gold)' }} />
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.82rem', color: 'var(--cs-text)', cursor: 'pointer' }}>
+                              <input type="radio" checked={asi.asi_mode === '2to1'} onChange={() => updateASI(idx, { asi_mode: '2to1', asi_stat2: undefined })} style={{ accentColor: 'var(--cs-gold)' }} />
                               +2 a uno
                             </label>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.82rem', color: 'var(--on-dark)', cursor: 'pointer' }}>
-                              <input type="radio" checked={asi.asi_mode === '1to2'} onChange={() => updateASI(idx, { asi_mode: '1to2' })} style={{ accentColor: 'var(--gold)' }} />
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.82rem', color: 'var(--cs-text)', cursor: 'pointer' }}>
+                              <input type="radio" checked={asi.asi_mode === '1to2'} onChange={() => updateASI(idx, { asi_mode: '1to2' })} style={{ accentColor: 'var(--cs-gold)' }} />
                               +1 a dos
                             </label>
                           </div>
@@ -724,7 +724,7 @@ export default function NewCharacterPage() {
                       {asi.type === 'feat' && (
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <span style={{ fontSize: '0.9rem', color: asi.feat_name ? 'var(--gold-light)' : 'var(--on-dark-muted)' }}>
+                            <span style={{ fontSize: '0.9rem', color: asi.feat_name ? 'var(--cs-gold)' : 'var(--cs-text-muted)' }}>
                               {asi.feat_name ?? 'Ningún feat seleccionado'}
                             </span>
                             <button onClick={() => openFeatModal(idx)} className="btn-dice" style={{ fontSize: '0.75rem' }}>
@@ -750,12 +750,12 @@ export default function NewCharacterPage() {
                             return (
                               <div style={{ marginTop: '0.35rem', fontSize: '0.82rem' }}>
                                 {directBonuses.length > 0 && (
-                                  <span style={{ color: 'var(--gold-light)', marginRight: '0.75rem' }}>
+                                  <span style={{ color: 'var(--cs-gold)', marginRight: '0.75rem' }}>
                                     {directBonuses.join(', ')}
                                   </span>
                                 )}
                                 {chooseFrom.length > 0 && (
-                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', color: 'var(--on-dark-muted)' }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', color: 'var(--cs-text-muted)' }}>
                                     +{chooseAmount} a:
                                     <select
                                       value={asi.feat_ability_choice ?? ''}
@@ -780,7 +780,7 @@ export default function NewCharacterPage() {
             {/* HP Section */}
             <div style={sectionBox}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
-                <div style={{ fontSize: '0.85rem', fontFamily: 'var(--font-cinzel, serif)', color: 'var(--on-dark-muted)' }}>
+                <div style={{ fontSize: '0.85rem', fontFamily: 'var(--font-cinzel, serif)', color: 'var(--cs-text-muted)' }}>
                   Puntos de vida (HP)
                 </div>
                 {totalLevel > 1 && (
@@ -790,8 +790,8 @@ export default function NewCharacterPage() {
                 )}
               </div>
 
-              <div style={{ fontSize: '0.85rem', color: 'var(--on-dark)', marginBottom: '0.4rem' }}>
-                Nivel 1: {primaryHitDie} (d{primaryHitDie} max) + {conMod >= 0 ? `+${conMod}` : conMod} CON = <strong style={{ color: 'var(--gold-light)' }}>{hpLevel1}</strong>
+              <div style={{ fontSize: '0.85rem', color: 'var(--cs-text)', marginBottom: '0.4rem' }}>
+                Nivel 1: {primaryHitDie} (d{primaryHitDie} max) + {conMod >= 0 ? `+${conMod}` : conMod} CON = <strong style={{ color: 'var(--cs-gold)' }}>{hpLevel1}</strong>
               </div>
 
               {totalLevel > 1 && (
@@ -799,10 +799,10 @@ export default function NewCharacterPage() {
                   {Array.from({ length: totalLevel - 1 }, (_, i) => {
                     const rolled = hpRolls[i]
                     return (
-                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.82rem', color: 'var(--on-dark)' }}>
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.82rem', color: 'var(--cs-text)' }}>
                         <span>Nv{i + 2}:</span>
                         {rolled != null ? (
-                          <span style={{ color: 'var(--gold-light)' }}>{rolled}+{conMod}={rolled + conMod}</span>
+                          <span style={{ color: 'var(--cs-gold)' }}>{rolled}+{conMod}={rolled + conMod}</span>
                         ) : (
                           <button onClick={() => rollHPForLevel(i)} className="btn-dice" style={{ fontSize: '0.7rem', padding: '0.15rem 0.35rem' }}>
                             🎲 d{primaryHitDie}
@@ -815,7 +815,7 @@ export default function NewCharacterPage() {
               )}
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.3rem' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--on-dark-muted)' }}>HP Total:</span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--cs-text-muted)' }}>HP Total:</span>
                 <input type="number" value={hpMax} min={1}
                   onChange={e => setHpManualOverride(parseInt(e.target.value) || 1)}
                   style={{ ...darkInput, width: '5rem', textAlign: 'center', fontSize: '1.1rem', fontWeight: 700 }} />
@@ -829,14 +829,14 @@ export default function NewCharacterPage() {
 
             {/* AC Section */}
             <div style={sectionBox}>
-              <div style={{ fontSize: '0.85rem', fontFamily: 'var(--font-cinzel, serif)', color: 'var(--on-dark-muted)', marginBottom: '0.4rem' }}>
+              <div style={{ fontSize: '0.85rem', fontFamily: 'var(--font-cinzel, serif)', color: 'var(--cs-text-muted)', marginBottom: '0.4rem' }}>
                 Clase de Armadura (CA)
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <input type="number" value={ac} min={1}
                   onChange={e => setAcManual(parseInt(e.target.value) || 10)}
                   style={{ ...darkInput, width: '5rem', textAlign: 'center', fontSize: '1.1rem', fontWeight: 700 }} />
-                <span style={{ fontSize: '0.85rem', color: 'var(--on-dark-muted)' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--cs-text-muted)' }}>
                   10 + {modStr(abilities.dex)} DEX = {autoAC}
                 </span>
                 {acManual !== null && (
@@ -848,8 +848,8 @@ export default function NewCharacterPage() {
             </div>
 
             {/* Prof Bonus */}
-            <div style={{ ...sectionBox, fontSize: '0.9rem', color: 'var(--on-dark-muted)', fontFamily: 'var(--font-cinzel, serif)' }}>
-              Bonus de proficiencia: <span style={{ color: 'var(--gold-light)', fontWeight: 700 }}>+{profBonus}</span>
+            <div style={{ ...sectionBox, fontSize: '0.9rem', color: 'var(--cs-text-muted)', fontFamily: 'var(--font-cinzel, serif)' }}>
+              Bonus de proficiencia: <span style={{ color: 'var(--cs-gold)', fontWeight: 700 }}>+{profBonus}</span>
               <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem', opacity: 0.7 }}>(auto-calculado por nivel)</span>
             </div>
           </div>
@@ -858,7 +858,7 @@ export default function NewCharacterPage() {
         {/* ── PASO 4: PERSONALIDAD ── */}
         {step === 4 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <h2 style={{ fontFamily: 'var(--font-cinzel, serif)', color: 'var(--gold)', fontSize: '1.1rem' }}>
+            <h2 style={{ fontFamily: 'var(--font-cinzel, serif)', color: 'var(--cs-accent)', fontSize: '1.1rem' }}>
               Personalidad
             </h2>
             {[

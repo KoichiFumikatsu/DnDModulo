@@ -43,7 +43,7 @@ export default function Autocomplete({ value, onChange, options, placeholder, la
         <label style={{
           display: 'block', fontSize: '0.82rem', marginBottom: '0.35rem',
           fontFamily: 'var(--font-cinzel, serif)', letterSpacing: '0.05em',
-          color: 'var(--on-dark)',
+          color: 'var(--cs-text, var(--ink))',
         }}>
           {label}
         </label>

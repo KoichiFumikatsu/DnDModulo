@@ -290,6 +290,24 @@ h1, h2, h3, h4 {
   color: var(--on-dark);
 }
 
+/* cs-page overrides for tab-bookmark */
+.cs-page .tab-bookmark.active {
+  background: var(--cs-card);
+  color: var(--cs-text);
+  border-color: var(--cs-gold);
+  border-bottom-color: var(--cs-card);
+}
+.cs-page .tab-bookmark:not(.active) {
+  background: rgba(201,173,106,0.18);
+  color: var(--cs-text-muted);
+  border-color: var(--cs-gold);
+  opacity: 0.7;
+}
+.cs-page .tab-bookmark:not(.active):hover {
+  opacity: 1;
+  color: var(--cs-text);
+}
+
 /* ============================================================
    BADGE DE NIVEL
    ============================================================ */
