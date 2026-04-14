@@ -10,7 +10,8 @@ import {
   fetchEquipmentItems, type EquipmentItem,
   fetchRaceTraits, fetchClassFeatures, fetchSubclassFeatures,
   fetchClassDetails, fetchBackgroundSkills, fetchRaceSkills,
-  type ClassDetail, type RaceSkillProf,
+  fetchRaces, fetchBackgrounds, fetchClasses,
+  type ClassDetail, type RaceSkillProf, type ClassMap,
 } from '@/lib/5etools/data'
 import type {
   Character, CharacterClass, SpellSlot, CharacterSpell,
@@ -96,6 +97,9 @@ export default function EditCharacterClient({
   const [spellList, setSpellList] = useState<SpellEntry[]>([])
   const [equipmentItems, setEquipmentItems] = useState<EquipmentItem[]>([])
   const [weaponItems, setWeaponItems] = useState<EquipmentItem[]>([])
+  const [raceOptions, setRaceOptions] = useState<string[]>([])
+  const [backgroundOptions, setBackgroundOptions] = useState<string[]>([])
+  const [classMap, setClassMap] = useState<ClassMap>({})
   const [loadingTraits, setLoadingTraits] = useState(false)
   const [spellModalOpen, setSpellModalOpen] = useState(false)
   const [expandedFeature, setExpandedFeature] = useState<string | null>(null)
@@ -194,11 +198,12 @@ export default function EditCharacterClient({
      EFFECTS — fetch 5etools data
      ══════════════════════════════════════════════════════════════ */
 
-  // Spells — fetch all spells once (class filtering done in SpellModal)
+  // 5etools catalog data
   useEffect(() => {
-    fetchAllSpells()
-      .then(setSpellList)
-      .catch(() => setSpellList([]))
+    fetchRaces().then(setRaceOptions).catch(() => {})
+    fetchBackgrounds().then(setBackgroundOptions).catch(() => {})
+    fetchClasses().then(setClassMap).catch(() => {})
+    fetchAllSpells().then(setSpellList).catch(() => setSpellList([]))
   }, [])
 
   // Skill suggestions — from class, race, background, features
@@ -743,21 +748,17 @@ export default function EditCharacterClient({
                   onChange={e => setBasic(p => ({ ...p, name: e.target.value }))}
                   className="ifield" />
               </F>
-              <F label="Raza">
-                <input value={basic.race}
-                  onChange={e => setBasic(p => ({ ...p, race: e.target.value }))}
-                  className="ifield" />
-              </F>
+              <Autocomplete label="Raza" value={basic.race}
+                onChange={v => setBasic(p => ({ ...p, race: v }))}
+                options={raceOptions} placeholder="Elf, Human, Tiefling..." />
               <F label="Subraza">
                 <input value={basic.subrace}
                   onChange={e => setBasic(p => ({ ...p, subrace: e.target.value }))}
                   className="ifield" />
               </F>
-              <F label="Trasfondo">
-                <input value={basic.background}
-                  onChange={e => setBasic(p => ({ ...p, background: e.target.value }))}
-                  className="ifield" />
-              </F>
+              <Autocomplete label="Trasfondo" value={basic.background}
+                onChange={v => setBasic(p => ({ ...p, background: v }))}
+                options={backgroundOptions} placeholder="Far Traveler, Sage..." />
               <F label="Alineamiento">
                 <input value={basic.alignment}
                   onChange={e => setBasic(p => ({ ...p, alignment: e.target.value }))}
@@ -826,7 +827,7 @@ export default function EditCharacterClient({
                     className="ifield text-center text-lg font-bold"
                     style={{ padding: '2px 4px', background: 'transparent', border: 'none' }}
                   />
-                  <div className="text-xs font-semibold" style={{ color: 'var(--crimson)' }}>
+                  <div className="text-xs font-semibold" style={{ color: 'var(--cs-accent)' }}>
                     {mod(combat[ab])}
                   </div>
                 </div>
@@ -950,7 +951,7 @@ export default function EditCharacterClient({
                         color: level === 'expertise'
                           ? 'var(--cs-gold)'
                           : level === 'proficient'
-                            ? 'var(--crimson)'
+                            ? 'var(--cs-accent)'
                             : 'var(--cs-text-muted)',
                       }}>
                         {sign}{bonus}
@@ -1448,7 +1449,7 @@ export default function EditCharacterClient({
                       className="text-xs px-2 py-0.5 rounded"
                       style={{
                         background: 'var(--cs-gold-dk)',
-                        color: 'var(--parchment)',
+                        color: 'var(--cs-card)',
                         fontSize: '0.7rem',
                         fontFamily: 'Cinzel, serif',
                         letterSpacing: '0.03em',
@@ -1535,11 +1536,11 @@ export default function EditCharacterClient({
                             background: f.source.startsWith('Raza:') || f.source.startsWith('Race:')
                               ? 'var(--cs-gold-dk)'
                               : f.source.startsWith('Clase:') || f.source.startsWith('Class:')
-                                ? 'var(--crimson)'
+                                ? 'var(--cs-accent)'
                                 : f.source.startsWith('Subclase:') || f.source.startsWith('Subclass:')
-                                  ? 'var(--cover-light)'
-                                  : 'var(--parchment-shadow)',
-                            color: 'var(--parchment)',
+                                  ? 'rgba(201,173,106,0.4)'
+                                  : 'rgba(201,173,106,0.5)',
+                            color: 'var(--cs-card)',
                             fontFamily: 'var(--font-cinzel, Cinzel, serif)',
                             letterSpacing: '0.03em',
                           }}>
