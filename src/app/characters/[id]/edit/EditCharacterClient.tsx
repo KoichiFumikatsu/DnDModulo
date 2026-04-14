@@ -75,6 +75,8 @@ export default function EditCharacterClient({
   proficiencies,
   classResources,
   customStats,
+  catalogItems = [],
+  catalogSpells = [],
 }: {
   character: Character
   classes: CharacterClass[]
@@ -86,6 +88,8 @@ export default function EditCharacterClient({
   proficiencies: CharacterProficiency[]
   classResources: ClassResource[]
   customStats: CustomStat[]
+  catalogItems?: EquipmentItem[]
+  catalogSpells?: SpellEntry[]
 }) {
   const router = useRouter()
   const supabase = createClient()
@@ -94,9 +98,11 @@ export default function EditCharacterClient({
   const [saved, setSaved] = useState(false)
 
   /* ── 5etools data ── */
-  const [spellList, setSpellList] = useState<SpellEntry[]>([])
-  const [equipmentItems, setEquipmentItems] = useState<EquipmentItem[]>([])
-  const [weaponItems, setWeaponItems] = useState<EquipmentItem[]>([])
+  const [spellList, setSpellList] = useState<SpellEntry[]>(catalogSpells)
+  const [equipmentItems, setEquipmentItems] = useState<EquipmentItem[]>(catalogItems)
+  const [weaponItems, setWeaponItems] = useState<EquipmentItem[]>(
+    catalogItems.filter(i => i.weaponCategory || i.damage)
+  )
   const [raceOptions, setRaceOptions] = useState<string[]>([])
   const [backgroundOptions, setBackgroundOptions] = useState<string[]>([])
   const [classMap, setClassMap] = useState<ClassMap>({})
@@ -198,13 +204,16 @@ export default function EditCharacterClient({
      EFFECTS — fetch 5etools data
      ══════════════════════════════════════════════════════════════ */
 
-  // 5etools catalog data
+  // 5etools catalog data (races/backgrounds/classes always fetched client-side)
   useEffect(() => {
     fetchRaces().then(setRaceOptions).catch(() => {})
     fetchBackgrounds().then(setBackgroundOptions).catch(() => {})
     fetchClasses().then(setClassMap).catch(() => {})
-    fetchAllSpells().then(setSpellList).catch(() => setSpellList([]))
-  }, [])
+    // Spells loaded server-side via catalogSpells; fetch as fallback if empty
+    if (catalogSpells.length === 0) {
+      fetchAllSpells().then(setSpellList).catch(() => {})
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Skill suggestions — from class, race, background, features
   useEffect(() => {
@@ -309,18 +318,16 @@ export default function EditCharacterClient({
     loadSuggestions()
   }, [classes, character.background, character.race, character.subrace, features])
 
-  // Equipment & weapons on mount
+  // Equipment & weapons — loaded server-side via catalogItems; fetch as fallback if empty
   useEffect(() => {
+    if (catalogItems.length > 0) return
     fetchEquipmentItems()
       .then(items => {
         setEquipmentItems(items)
         setWeaponItems(items.filter(i => i.weaponCategory || i.damage))
       })
-      .catch(() => {
-        setEquipmentItems([])
-        setWeaponItems([])
-      })
-  }, [])
+      .catch(() => {})
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ══════════════════════════════════════════════════════════════
      SAVE HELPERS
