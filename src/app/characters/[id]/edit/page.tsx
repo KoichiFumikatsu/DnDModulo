@@ -41,13 +41,13 @@ export default async function EditCharacterPage({ params }: { params: Promise<{ 
   ])
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
+    <div className="cs-page min-h-screen">
       <div className="border-b px-6 py-4 flex items-center justify-between"
-        style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
+        style={{ background: 'var(--book-nav-bg, #2a1f14)', borderColor: 'rgba(201,173,106,0.3)' }}>
         <div className="flex items-center gap-4">
           <Link href={`/characters/${id}`} className="text-sm opacity-60 hover:opacity-100"
-            style={{ color: 'var(--text-primary)' }}>← Hoja de {character.name}</Link>
-          <h1 className="text-xl font-bold" style={{ color: 'var(--accent-gold)' }}>
+            style={{ color: 'var(--cs-text-muted)' }}>← Hoja de {character.name}</Link>
+          <h1 className="text-xl font-bold" style={{ color: 'var(--cs-gold)' }}>
             Editar personaje
           </h1>
         </div>

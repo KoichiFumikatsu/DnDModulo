@@ -809,7 +809,7 @@ export default function EditCharacterClient({
         <div className="space-y-4">
           {/* Section: Ability Scores */}
           <h3 className="font-semibold text-sm"
-            style={{ color: 'var(--on-dark-muted)' }}>
+            style={{ color: 'var(--cs-text-muted)' }}>
             Puntuaciones de caracteristica
           </h3>
           <div className="parchment-page rounded-xl p-4">
@@ -817,7 +817,7 @@ export default function EditCharacterClient({
               {(['str', 'dex', 'con', 'int', 'wis', 'cha'] as const).map(ab => (
                 <div key={ab} className="stat-box rounded text-center">
                   <div className="text-[0.65rem] font-bold uppercase tracking-wide mb-1"
-                    style={{ color: 'var(--ink-faded)', fontFamily: 'Cinzel, serif' }}>
+                    style={{ color: 'var(--cs-text-muted)', fontFamily: 'Cinzel, serif' }}>
                     {ABILITY_LABELS[ab]}
                   </div>
                   <input
@@ -836,7 +836,7 @@ export default function EditCharacterClient({
 
           {/* Section: HP / AC / Prof */}
           <h3 className="font-semibold text-sm"
-            style={{ color: 'var(--on-dark-muted)' }}>
+            style={{ color: 'var(--cs-text-muted)' }}>
             Combate
           </h3>
           <div className="parchment-page rounded-xl p-4">
@@ -883,7 +883,7 @@ export default function EditCharacterClient({
 
           {/* Section: Coins */}
           <h3 className="font-semibold text-sm"
-            style={{ color: 'var(--on-dark-muted)' }}>
+            style={{ color: 'var(--cs-text-muted)' }}>
             Monedas
           </h3>
           <div className="parchment-page rounded-xl p-3">
@@ -910,10 +910,10 @@ export default function EditCharacterClient({
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '1rem', alignItems: 'start' }}>
             {/* Left: Skills list */}
             <div className="parchment-page rounded-xl p-4">
-              <h3 className="font-semibold text-sm mb-1" style={{ color: 'var(--text-muted)' }}>
+              <h3 className="font-semibold text-sm mb-1" style={{ color: 'var(--cs-text-muted)' }}>
                 Skills
               </h3>
-              <p className="text-xs mb-3" style={{ color: 'var(--ink-faded)' }}>
+              <p className="text-xs mb-3" style={{ color: 'var(--cs-text-muted)' }}>
                 Click the dot to cycle: none → proficient → expertise.
               </p>
               <div className="space-y-0.5">
@@ -925,7 +925,7 @@ export default function EditCharacterClient({
                   const sign = bonus >= 0 ? '+' : ''
                   return (
                     <div key={skill.key} className="flex items-center gap-2 py-1"
-                      style={{ borderBottom: '1px solid var(--parchment-edge)' }}>
+                      style={{ borderBottom: '1px solid var(--cs-gold)' }}>
                       <button
                         onClick={() => cycleProf(skill.key)}
                         title={level === 'none' ? 'None' : level === 'proficient' ? 'Proficient' : 'Expertise'}
@@ -933,29 +933,29 @@ export default function EditCharacterClient({
                           width: 14, height: 14, borderRadius: '50%', border: 'none',
                           cursor: 'pointer', flexShrink: 0,
                           background: level === 'expertise'
-                            ? 'var(--accent-gold)'
+                            ? 'var(--cs-gold)'
                             : level === 'proficient'
-                              ? 'var(--accent, var(--crimson))'
-                              : 'var(--parchment-dark)',
+                              ? 'var(--cs-accent)'
+                              : 'rgba(201,173,106,0.3)',
                           boxShadow: level !== 'none' ? '0 0 3px rgba(0,0,0,0.3)' : 'none',
                         }}
                       />
                       <span className="flex-1 text-sm" style={{
-                        color: level !== 'none' ? 'var(--text-primary)' : 'var(--ink-faded)',
+                        color: level !== 'none' ? 'var(--cs-text)' : 'var(--cs-text-muted)',
                         fontWeight: level !== 'none' ? 600 : 400,
                       }}>
                         {skill.name}
                       </span>
                       <span className="text-sm font-semibold w-8 text-right" style={{
                         color: level === 'expertise'
-                          ? 'var(--accent-gold)'
+                          ? 'var(--cs-gold)'
                           : level === 'proficient'
                             ? 'var(--crimson)'
-                            : 'var(--ink-faded)',
+                            : 'var(--cs-text-muted)',
                       }}>
                         {sign}{bonus}
                       </span>
-                      <span className="text-xs w-8 text-right" style={{ color: 'var(--ink-faded)' }}>
+                      <span className="text-xs w-8 text-right" style={{ color: 'var(--cs-text-muted)' }}>
                         {ABILITY_LABELS[skill.ability]}
                       </span>
                       <button
@@ -964,8 +964,8 @@ export default function EditCharacterClient({
                         className="text-xs px-1.5 py-0.5 rounded"
                         style={{
                           background: adv ? 'var(--hp-good)' : 'transparent',
-                          color: adv ? 'white' : 'var(--ink-light)',
-                          border: adv ? 'none' : '1px solid var(--parchment-edge)',
+                          color: adv ? 'white' : 'var(--cs-text)',
+                          border: adv ? 'none' : '1px solid var(--cs-gold)',
                           cursor: 'pointer', fontSize: '0.65rem',
                           fontFamily: 'var(--font-cinzel, Cinzel, serif)',
                           letterSpacing: '0.03em', minWidth: 30,
@@ -976,28 +976,28 @@ export default function EditCharacterClient({
                   )
                 })}
               </div>
-              <div className="flex items-center gap-3 mt-3 text-xs" style={{ color: 'var(--ink-faded)' }}>
+              <div className="flex items-center gap-3 mt-3 text-xs" style={{ color: 'var(--cs-text-muted)' }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--parchment-dark)', display: 'inline-block' }} /> None
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(201,173,106,0.3)', display: 'inline-block' }} /> None
                 </span>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent, var(--crimson))', display: 'inline-block' }} /> Proficient
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--cs-accent)', display: 'inline-block' }} /> Proficient
                 </span>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-gold)', display: 'inline-block' }} /> Expertise
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--cs-gold)', display: 'inline-block' }} /> Expertise
                 </span>
               </div>
             </div>
 
             {/* Right: Suggestions from class/race/background/feats */}
             <div className="parchment-page rounded-xl p-4" style={{ position: 'sticky', top: '1rem' }}>
-              <h3 className="font-semibold text-sm mb-2" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-cinzel, Cinzel, serif)' }}>
+              <h3 className="font-semibold text-sm mb-2" style={{ color: 'var(--cs-text-muted)', fontFamily: 'var(--font-cinzel, Cinzel, serif)' }}>
                 Available from your build
               </h3>
               {loadingSuggestions ? (
-                <p className="text-xs" style={{ color: 'var(--ink-faded)' }}>Loading...</p>
+                <p className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>Loading...</p>
               ) : skillSuggestions.length === 0 ? (
-                <p className="text-xs" style={{ color: 'var(--ink-faded)' }}>
+                <p className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>
                   No suggestions found. Make sure your class, race, and background are set.
                 </p>
               ) : (
@@ -1010,9 +1010,9 @@ export default function EditCharacterClient({
                       : type === 'choice' ? 'Proficiency (choose)'
                       : type === 'expertise' ? 'Expertise'
                       : 'Advantage'
-                    const color = type === 'proficiency' ? 'var(--accent, var(--crimson))'
-                      : type === 'choice' ? 'var(--ink)'
-                      : type === 'expertise' ? 'var(--accent-gold)'
+                    const color = type === 'proficiency' ? 'var(--cs-accent)'
+                      : type === 'choice' ? 'var(--cs-text)'
+                      : type === 'expertise' ? 'var(--cs-gold)'
                       : 'var(--hp-good)'
                     return (
                       <div key={type}>
@@ -1028,14 +1028,14 @@ export default function EditCharacterClient({
                           return (
                             <div key={`${s.skill}-${s.source}-${i}`}
                               className="flex items-center gap-1.5 py-0.5"
-                              style={{ borderBottom: '1px solid var(--parchment-edge)' }}>
+                              style={{ borderBottom: '1px solid var(--cs-gold)' }}>
                               <span className="flex-1 text-xs" style={{
-                                color: alreadySet ? 'var(--ink-light)' : 'var(--text-primary)',
+                                color: alreadySet ? 'var(--cs-text)' : 'var(--cs-text)',
                                 textDecoration: alreadySet ? 'line-through' : 'none',
                               }}>
                                 {skillKey}
                               </span>
-                              <span className="text-xs" style={{ color: 'var(--ink-faded)', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              <span className="text-xs" style={{ color: 'var(--cs-text-muted)', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {s.source}
                               </span>
                               {isApplicable && !alreadySet && (
@@ -1101,7 +1101,7 @@ export default function EditCharacterClient({
         <div className="space-y-4">
           {/* Add spell form */}
           <div className="parchment-page rounded-xl p-4 space-y-3">
-            <h3 className="font-semibold text-sm" style={{ color: 'var(--text-muted)' }}>
+            <h3 className="font-semibold text-sm" style={{ color: 'var(--cs-text-muted)' }}>
               Agregar hechizo
             </h3>
             <div className="grid grid-cols-2 gap-3">
@@ -1131,7 +1131,7 @@ export default function EditCharacterClient({
               <input type="checkbox" id="offclass" checked={isOffClassSpell}
                 onChange={e => setIsOffClassSpell(e.target.checked)} />
               <label htmlFor="offclass" className="text-xs"
-                style={{ color: 'var(--text-muted)' }}>
+                style={{ color: 'var(--cs-text-muted)' }}>
                 Entrada manual (nombre libre)
               </label>
             </div>
@@ -1145,7 +1145,7 @@ export default function EditCharacterClient({
             ) : (
               <div>
                 <label className="block text-xs font-medium mb-1 capitalize"
-                  style={{ color: 'var(--text-muted)' }}>Spell name</label>
+                  style={{ color: 'var(--cs-text-muted)' }}>Spell name</label>
                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                   <input value={newSpell.name} readOnly className="ifield"
                     placeholder="Click to browse spells..."
@@ -1212,7 +1212,7 @@ export default function EditCharacterClient({
             return (
               <div key={lvl}>
                 <h4 className="text-xs font-bold uppercase tracking-wide mb-2"
-                  style={{ color: 'var(--on-dark-muted)' }}>
+                  style={{ color: 'var(--cs-text-muted)' }}>
                   {lvl === 0 ? 'Cantrips' : `Level ${lvl}`}
                 </h4>
                 <div className="space-y-2">
@@ -1225,7 +1225,7 @@ export default function EditCharacterClient({
                       {/* Source type badge */}
                       {s.source_type === 'scroll' && (
                         <span title="Pergamino" className="text-xs"
-                          style={{ color: 'var(--gold-dark)', fontWeight: 600 }}>
+                          style={{ color: 'var(--cs-gold-dk)', fontWeight: 600 }}>
                           &#128220;
                         </span>
                       )}
@@ -1237,26 +1237,26 @@ export default function EditCharacterClient({
                         </span>
                       )}
                       <span className="flex-1 text-sm font-medium"
-                        style={{ color: 'var(--text-primary)' }}>
+                        style={{ color: 'var(--cs-text)' }}>
                         {s.name}
                       </span>
                       {s.components && (
-                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                        <span className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>
                           {s.components}
                         </span>
                       )}
                       {s.range && (
-                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                        <span className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>
                           {s.range}
                         </span>
                       )}
                       {s.damage && (
-                        <span className="text-xs" style={{ color: 'var(--accent-gold)' }}>
+                        <span className="text-xs" style={{ color: 'var(--cs-gold)' }}>
                           {s.damage}
                         </span>
                       )}
                       {s.custom_notes && (
-                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                        <span className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>
                           {s.custom_notes}
                         </span>
                       )}
@@ -1289,7 +1289,7 @@ export default function EditCharacterClient({
       {tab === 'weapons' && (
         <div className="space-y-4">
           <div className="parchment-page rounded-xl p-4 space-y-3">
-            <h3 className="font-semibold text-sm" style={{ color: 'var(--text-muted)' }}>
+            <h3 className="font-semibold text-sm" style={{ color: 'var(--cs-text-muted)' }}>
               Agregar ataque
             </h3>
             <div className="grid grid-cols-2 gap-3">
@@ -1335,26 +1335,26 @@ export default function EditCharacterClient({
               <div key={w.id}
                 className="flex items-center gap-3 px-4 py-3 rounded-lg parchment-page">
                 <span className="flex-1 font-medium text-sm"
-                  style={{ color: 'var(--text-primary)' }}>
+                  style={{ color: 'var(--cs-text)' }}>
                   {w.name}
                 </span>
                 {w.atk_bonus && (
-                  <span className="text-sm" style={{ color: 'var(--accent-gold)' }}>
+                  <span className="text-sm" style={{ color: 'var(--cs-gold)' }}>
                     {w.atk_bonus}
                   </span>
                 )}
                 {w.damage && (
-                  <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                  <span className="text-sm" style={{ color: 'var(--cs-text-muted)' }}>
                     {w.damage}
                   </span>
                 )}
                 {w.damage_type && (
-                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  <span className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>
                     {w.damage_type}
                   </span>
                 )}
                 {w.range && (
-                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  <span className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>
                     {w.range}
                   </span>
                 )}
@@ -1374,7 +1374,7 @@ export default function EditCharacterClient({
       {tab === 'equipment' && (
         <div className="space-y-4">
           <div className="parchment-page rounded-xl p-4 space-y-3">
-            <h3 className="font-semibold text-sm" style={{ color: 'var(--text-muted)' }}>
+            <h3 className="font-semibold text-sm" style={{ color: 'var(--cs-text-muted)' }}>
               Agregar item
             </h3>
             <div className="grid grid-cols-2 gap-3">
@@ -1403,7 +1403,7 @@ export default function EditCharacterClient({
               </F>
             </div>
             {newEquip.notes && parseItemValue(newEquip.notes) != null && (
-              <p className="text-xs" style={{ color: 'var(--accent-gold)' }}>
+              <p className="text-xs" style={{ color: 'var(--cs-gold)' }}>
                 Valor: {parseItemValue(newEquip.notes)} gp
               </p>
             )}
@@ -1418,28 +1418,28 @@ export default function EditCharacterClient({
                 <div key={item.id}
                   className="flex items-center gap-3 px-4 py-3 rounded-lg parchment-page">
                   <span className="text-sm font-medium"
-                    style={{ color: 'var(--text-muted)' }}>
+                    style={{ color: 'var(--cs-text-muted)' }}>
                     x{item.quantity}
                   </span>
                   <span className="flex-1 font-medium text-sm"
-                    style={{ color: 'var(--text-primary)' }}>
+                    style={{ color: 'var(--cs-text)' }}>
                     {item.name}
                   </span>
                   {itemValue != null && (
                     <span className="text-xs"
-                      style={{ color: 'var(--accent-gold)' }}>
+                      style={{ color: 'var(--cs-gold)' }}>
                       {itemValue} gp
                     </span>
                   )}
                   {item.weight && (
                     <span className="text-xs"
-                      style={{ color: 'var(--text-muted)' }}>
+                      style={{ color: 'var(--cs-text-muted)' }}>
                       {item.weight}
                     </span>
                   )}
                   {extraNotes && (
                     <span className="text-xs"
-                      style={{ color: 'var(--text-muted)' }}>
+                      style={{ color: 'var(--cs-text-muted)' }}>
                       {extraNotes}
                     </span>
                   )}
@@ -1447,7 +1447,7 @@ export default function EditCharacterClient({
                     <button onClick={() => sellItem(item)}
                       className="text-xs px-2 py-0.5 rounded"
                       style={{
-                        background: 'var(--gold-dark)',
+                        background: 'var(--cs-gold-dk)',
                         color: 'var(--parchment)',
                         fontSize: '0.7rem',
                         fontFamily: 'Cinzel, serif',
@@ -1481,7 +1481,7 @@ export default function EditCharacterClient({
 
           {/* Manual add form */}
           <div className="parchment-page rounded-xl p-4 space-y-3">
-            <h3 className="font-semibold text-sm" style={{ color: 'var(--text-muted)' }}>
+            <h3 className="font-semibold text-sm" style={{ color: 'var(--cs-text-muted)' }}>
               Add trait / feature
             </h3>
             <div className="grid grid-cols-2 gap-3">
@@ -1525,7 +1525,7 @@ export default function EditCharacterClient({
                         <span style={{
                           fontFamily: 'var(--font-cinzel, Cinzel, serif)',
                           fontSize: '0.88rem', fontWeight: 600,
-                          color: 'var(--accent-gold)',
+                          color: 'var(--cs-gold)',
                         }}>
                           {f.name}
                         </span>
@@ -1533,7 +1533,7 @@ export default function EditCharacterClient({
                           <span style={{
                             fontSize: '0.62rem', padding: '0.1rem 0.4rem', borderRadius: '2px',
                             background: f.source.startsWith('Raza:') || f.source.startsWith('Race:')
-                              ? 'var(--gold-dark)'
+                              ? 'var(--cs-gold-dk)'
                               : f.source.startsWith('Clase:') || f.source.startsWith('Class:')
                                 ? 'var(--crimson)'
                                 : f.source.startsWith('Subclase:') || f.source.startsWith('Subclass:')
@@ -1549,7 +1549,7 @@ export default function EditCharacterClient({
                       </div>
                       <div className="flex items-center gap-1" style={{ flexShrink: 0 }}>
                         {hasDesc && (
-                          <span style={{ fontSize: '0.7rem', color: 'var(--ink-light)' }}>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--cs-text)' }}>
                             {isExpanded ? '▲' : '▼'}
                           </span>
                         )}
@@ -1562,7 +1562,7 @@ export default function EditCharacterClient({
                     </div>
                     {!isExpanded && hasDesc && (
                       <p style={{
-                        fontSize: '0.78rem', color: 'var(--ink-faded)',
+                        fontSize: '0.78rem', color: 'var(--cs-text-muted)',
                         marginTop: '0.25rem', lineHeight: 1.35,
                         overflow: 'hidden', textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
@@ -1572,7 +1572,7 @@ export default function EditCharacterClient({
                     )}
                     {isExpanded && (
                       <p style={{
-                        fontSize: '0.85rem', color: 'var(--text-primary)',
+                        fontSize: '0.85rem', color: 'var(--cs-text)',
                         marginTop: '0.35rem', lineHeight: 1.45,
                         whiteSpace: 'pre-wrap',
                       }}>
@@ -1593,7 +1593,7 @@ export default function EditCharacterClient({
       {tab === 'resources' && (
         <div className="space-y-4">
           <div className="parchment-page rounded-xl p-4 space-y-3">
-            <h3 className="font-semibold text-sm" style={{ color: 'var(--text-muted)' }}>
+            <h3 className="font-semibold text-sm" style={{ color: 'var(--cs-text-muted)' }}>
               Agregar recurso de clase (Sorcery Points, Ki, Superiority Dice, etc.)
             </h3>
             <div className="grid grid-cols-2 gap-3">
@@ -1634,13 +1634,13 @@ export default function EditCharacterClient({
               <div key={r.id}
                 className="flex items-center gap-3 px-4 py-3 rounded-lg parchment-page">
                 <span className="flex-1 font-medium text-sm"
-                  style={{ color: 'var(--text-primary)' }}>
+                  style={{ color: 'var(--cs-text)' }}>
                   {r.name}
                 </span>
-                <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                <span className="text-sm" style={{ color: 'var(--cs-text-muted)' }}>
                   {r.current}/{r.maximum}
                 </span>
-                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                <span className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>
                   {r.reset_on === 'short_rest'
                     ? 'desc. corto'
                     : r.reset_on === 'long_rest'
@@ -1663,10 +1663,10 @@ export default function EditCharacterClient({
       {tab === 'custom' && (
         <div className="space-y-4">
           <div className="parchment-page rounded-xl p-4 space-y-3">
-            <h3 className="font-semibold text-sm" style={{ color: 'var(--text-muted)' }}>
+            <h3 className="font-semibold text-sm" style={{ color: 'var(--cs-text-muted)' }}>
               Agregar stat personalizado / homebrew
             </h3>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>
               Usalo para cualquier cosa especial de tu campana, como el anillo de recuperacion de tu personaje.
             </p>
             <div className="grid grid-cols-2 gap-3">
@@ -1724,23 +1724,23 @@ export default function EditCharacterClient({
               <div key={c.id}
                 className="flex items-center gap-3 px-4 py-3 rounded-lg parchment-page">
                 <span className="flex-1 font-medium text-sm"
-                  style={{ color: 'var(--text-primary)' }}>
+                  style={{ color: 'var(--cs-text)' }}>
                   {c.name}
                 </span>
                 <span className="text-xs px-2 py-0.5 rounded"
                   style={{
-                    background: 'var(--parchment-dark)',
-                    color: 'var(--text-muted)',
+                    background: 'rgba(201,173,106,0.3)',
+                    color: 'var(--cs-text-muted)',
                   }}>
                   {c.stat_type}
                 </span>
                 {(c.stat_type === 'counter' || c.stat_type === 'tracker') && (
-                  <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                  <span className="text-sm" style={{ color: 'var(--cs-text-muted)' }}>
                     {c.current_value}{c.max_value ? `/${c.max_value}` : ''}
                   </span>
                 )}
                 {c.notes && (
-                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  <span className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>
                     {c.notes}
                   </span>
                 )}
@@ -1766,7 +1766,7 @@ function F({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
       <label className="block text-xs font-medium mb-1 capitalize"
-        style={{ color: 'var(--text-muted)' }}>
+        style={{ color: 'var(--cs-text-muted)' }}>
         {label}
       </label>
       {children}
