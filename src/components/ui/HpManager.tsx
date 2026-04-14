@@ -196,14 +196,16 @@ export default function HpManager({
           { label: 'HP temporal', val: temp, color: '#5b8dd9', min: 0, onChange: setTempDirect },
         ] as const).map(({ label, val, color, min, onChange }) => (
           <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ fontSize: '0.56rem', fontFamily: 'var(--font-cinzel)', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--cs-text-muted)', flex: 1 }}>{label}</span>
-            <button style={stepBtn} onClick={() => onChange(val - 1)}>−</button>
-            <input
-              type="number" value={val} min={min} max={hpMax}
-              onChange={e => onChange(parseInt(e.target.value) || 0)}
-              style={{ ...numInput, color, width: 44 }}
-            />
-            <button style={stepBtn} onClick={() => onChange(val + 1)}>+</button>
+            <span style={{ fontSize: '0.56rem', fontFamily: 'var(--font-cinzel)', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--cs-text-muted)', flex: 1, minWidth: 0 }}>{label}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
+              <button style={stepBtn} onClick={() => onChange(val - 1)}>−</button>
+              <input
+                type="number" value={val} min={min} max={hpMax}
+                onChange={e => onChange(parseInt(e.target.value) || 0)}
+                style={{ ...numInput, color, width: 44 }}
+              />
+              <button style={stepBtn} onClick={() => onChange(val + 1)}>+</button>
+            </div>
           </div>
         ))}
       </div>
