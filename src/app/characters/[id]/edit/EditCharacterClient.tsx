@@ -32,6 +32,13 @@ const DMG_TYPE_MAP: Record<string, string> = {
   N: 'Necrótico', O: 'Veneno', R: 'Radiante', T: 'Trueno',
 }
 
+const SPELLCASTING_ABILITIES = ['int', 'wis', 'cha'] as const
+
+const RARITY_COLORS: Record<string, string> = {
+  common: '#9CAF88', uncommon: '#4D9B4D', rare: '#4A90D9',
+  'very rare': '#9B59B6', legendary: '#E67E22', artifact: '#E74C3C',
+}
+
 type Tab = 'basic' | 'classes' | 'combat' | 'skills' | 'spells' | 'weapons' | 'equipment' | 'features' | 'resources' | 'custom'
 
 /* ── Helpers ── */
@@ -151,6 +158,8 @@ export default function EditCharacterClient({
   const [isHomebrewBackground, setIsHomebrewBackground] = useState(
     !!(character.homebrew_background_url || character.homebrew_background_description)
   )
+  // Note: isHomebrewBackground is intentionally separate from `basic` so the user
+  // can toggle the section open/closed without clearing the saved data.
 
   /* ── Combat state ── */
   const [combat, setCombat] = useState({
@@ -167,8 +176,9 @@ export default function EditCharacterClient({
   const [localClasses, setLocalClasses] = useState(classes)
   const [newCls, setNewCls] = useState({
     class_name: '', subclass_name: '', level: 1, is_primary: false,
-    spellcasting_ability: '' as string, spell_save_dc: '' as string | number,
-    spell_attack_mod: '' as string | number,
+    spellcasting_ability: '' as Ability | '',
+    spell_save_dc: null as number | null,
+    spell_attack_mod: null as number | null,
     is_homebrew: false, homebrew_url: '', homebrew_description: '',
   })
 
@@ -176,7 +186,7 @@ export default function EditCharacterClient({
   const [localSpells, setLocalSpells] = useState(spells)
   const [isOffClassSpell, setIsOffClassSpell] = useState(false)
   const [newSpell, setNewSpell] = useState({
-    class_id: classes[0]?.id ?? '',
+    class_id: localClasses[0]?.id ?? '',
     spell_level: 0,
     name: '',
     custom_notes: '',
@@ -406,40 +416,39 @@ export default function EditCharacterClient({
      CLASSES — CRUD
      ══════════════════════════════════════════════════════════════ */
 
+  function clsPayload(c: {
+    class_name: string; subclass_name: string | null; level: number; is_primary: boolean
+    spellcasting_ability: Ability | null | ''; spell_save_dc: number | null; spell_attack_mod: number | null
+    is_homebrew: boolean; homebrew_url: string | null; homebrew_description: string | null
+  }) {
+    return {
+      class_name: c.class_name,
+      subclass_name: c.subclass_name || null,
+      level: c.level,
+      is_primary: c.is_primary,
+      spellcasting_ability: (c.spellcasting_ability || null) as Ability | null,
+      spell_save_dc: c.spell_save_dc ?? null,
+      spell_attack_mod: c.spell_attack_mod ?? null,
+      is_homebrew: c.is_homebrew,
+      homebrew_url: c.homebrew_url || null,
+      homebrew_description: c.homebrew_description || null,
+    }
+  }
+
   async function saveClass(cls: CharacterClass) {
-    await supabase.from('character_classes').update({
-      class_name: cls.class_name,
-      subclass_name: cls.subclass_name || null,
-      level: cls.level,
-      is_primary: cls.is_primary,
-      spellcasting_ability: cls.spellcasting_ability || null,
-      spell_save_dc: cls.spell_save_dc || null,
-      spell_attack_mod: cls.spell_attack_mod || null,
-      is_homebrew: cls.is_homebrew,
-      homebrew_url: cls.homebrew_url || null,
-      homebrew_description: cls.homebrew_description || null,
-    }).eq('id', cls.id)
+    await supabase.from('character_classes').update(clsPayload(cls)).eq('id', cls.id)
   }
 
   async function addClass() {
     if (!newCls.class_name.trim()) return
     const { data } = await supabase.from('character_classes').insert({
       character_id: character.id,
-      class_name: newCls.class_name,
-      subclass_name: newCls.subclass_name || null,
-      level: newCls.level,
-      is_primary: newCls.is_primary,
-      spellcasting_ability: (newCls.spellcasting_ability as Ability) || null,
-      spell_save_dc: newCls.spell_save_dc ? +newCls.spell_save_dc : null,
-      spell_attack_mod: newCls.spell_attack_mod ? +newCls.spell_attack_mod : null,
-      is_homebrew: newCls.is_homebrew,
-      homebrew_url: newCls.homebrew_url || null,
-      homebrew_description: newCls.homebrew_description || null,
+      ...clsPayload(newCls),
     }).select().single()
     if (data) setLocalClasses(prev => [...prev, data as CharacterClass])
     setNewCls({
       class_name: '', subclass_name: '', level: 1, is_primary: false,
-      spellcasting_ability: '', spell_save_dc: '', spell_attack_mod: '',
+      spellcasting_ability: '', spell_save_dc: null, spell_attack_mod: null,
       is_homebrew: false, homebrew_url: '', homebrew_description: '',
     })
   }
@@ -1023,7 +1032,7 @@ export default function EditCharacterClient({
                     onChange={e => updateLocalClass(cls.id, { spellcasting_ability: (e.target.value as Ability) || null })}
                     className="ifield">
                     <option value="">— Ninguna —</option>
-                    {(['int', 'wis', 'cha'] as Ability[]).map(a => (
+                    {SPELLCASTING_ABILITIES.map(a => (
                       <option key={a} value={a}>{a.toUpperCase()}</option>
                     ))}
                   </select>
@@ -1113,10 +1122,10 @@ export default function EditCharacterClient({
               </F>
               <F label="Habilidad de conjuración">
                 <select value={newCls.spellcasting_ability}
-                  onChange={e => setNewCls(p => ({ ...p, spellcasting_ability: e.target.value }))}
+                  onChange={e => setNewCls(p => ({ ...p, spellcasting_ability: e.target.value as Ability | '' }))}
                   className="ifield">
                   <option value="">— Ninguna —</option>
-                  {(['int', 'wis', 'cha'] as Ability[]).map(a => (
+                  {SPELLCASTING_ABILITIES.map(a => (
                     <option key={a} value={a}>{a.toUpperCase()}</option>
                   ))}
                 </select>
@@ -1465,7 +1474,7 @@ export default function EditCharacterClient({
                 <select value={newSpell.class_id}
                   onChange={e => setNewSpell(p => ({ ...p, class_id: e.target.value }))}
                   className="ifield">
-                  {classes.map(c => (
+                  {localClasses.map(c => (
                     <option key={c.id} value={c.id}>{c.class_name}</option>
                   ))}
                 </select>
@@ -1633,8 +1642,8 @@ export default function EditCharacterClient({
             onClose={() => setSpellModalOpen(false)}
             onSelect={handleSpellSelect}
             spells={spellList}
-            characterClasses={classes.map(c => c.class_name)}
-            defaultClass={classes.find(c => c.id === newSpell.class_id)?.class_name ?? classes[0]?.class_name ?? ''}
+            characterClasses={localClasses.map(c => c.class_name)}
+            defaultClass={localClasses.find(c => c.id === newSpell.class_id)?.class_name ?? localClasses[0]?.class_name ?? ''}
           />
         </div>
       )}
@@ -1788,12 +1797,8 @@ export default function EditCharacterClient({
                 ['legendary', 'Legendario'],
                 ['artifact', 'Artefacto'],
               ].map(([f, label]) => {
-                const rarColors: Record<string, string> = {
-                  common: '#9CAF88', uncommon: '#4D9B4D', rare: '#4A90D9',
-                  'very rare': '#9B59B6', legendary: '#E67E22', artifact: '#E74C3C',
-                };
                 const isActive = equipRarityFilter === f;
-                const accent = rarColors[f] || 'var(--cs-accent)';
+                const accent = RARITY_COLORS[f] || 'var(--cs-accent)';
                 return (
                   <button key={f} onClick={() => setEquipRarityFilter(f)}
                     className="text-xs px-2.5 py-0.5 rounded-full border transition-all"
