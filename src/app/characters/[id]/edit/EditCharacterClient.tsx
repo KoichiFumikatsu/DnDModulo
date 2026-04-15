@@ -14,7 +14,7 @@ import type {
   Character, CharacterClass, CharacterSpell,
   CharacterWeapon, CharacterEquipment, CharacterFeature,
   CharacterProficiency, ClassResource, CustomStat, CustomStatType, ResetOn,
-  ProficiencyLevel, Ability,
+  ProficiencyLevel, Ability, Grant,
 } from '@/modules/characters/types'
 import { SKILLS, ABILITY_NAMES as AB_LABELS } from '@/lib/constants'
 import { getLevelFromXP, XP_THRESHOLDS } from '@/lib/5etools/xp'
@@ -63,6 +63,130 @@ function cleanTaggedText(text: string | null): string {
     .replace(/\{@\w+\s+([^|}]+)(?:\|[^}]*)?\}/g, '$1')
     .replace(/\s{2,}/g, ' ')
     .trim()
+}
+
+/* ══════════════════════════════════════════════════════════════
+   GRANT BUILDER COMPONENT
+   ══════════════════════════════════════════════════════════════ */
+
+const ALL_SKILLS_LIST = [
+  'acrobatics','animal handling','arcana','athletics','deception','history',
+  'insight','intimidation','investigation','medicine','nature','perception',
+  'performance','persuasion','religion','sleight of hand','stealth','survival',
+]
+const ABILITY_OPTIONS: Ability[] = ['str','dex','con','int','wis','cha']
+
+function GrantBuilder({ sourceTag, grants, setGrants, onSave }: {
+  sourceTag: string
+  grants: Grant[]
+  setGrants: React.Dispatch<React.SetStateAction<Grant[]>>
+  onSave: () => void
+}) {
+  const [newType, setNewType] = useState<Grant['type']>('ability')
+  const [newAbility, setNewAbility] = useState<Ability>('str')
+  const [newValue, setNewValue] = useState(1)
+  const [newSkill, setNewSkill] = useState('acrobatics')
+  const [newLevel, setNewLevel] = useState<'proficient' | 'expertise'>('proficient')
+
+  const thisGrants = grants.filter(g => g.sourceTag === sourceTag)
+
+  function addGrant() {
+    let grant: Grant
+    const id = Math.random().toString(36).slice(2)
+    if (newType === 'ability') {
+      grant = { id, type: 'ability', ability: newAbility, value: newValue, sourceTag }
+    } else if (newType === 'skill') {
+      grant = { id, type: 'skill', skill: newSkill, level: newLevel, sourceTag }
+    } else if (newType === 'advantage') {
+      grant = { id, type: 'advantage', skill: newSkill, sourceTag }
+    } else {
+      grant = { id, type: 'save', ability: newAbility, sourceTag }
+    }
+    setGrants(prev => [...prev, grant])
+  }
+
+  function removeGrant(id: string) {
+    setGrants(prev => prev.filter(g => g.id !== id))
+  }
+
+  function grantLabel(g: Grant): string {
+    if (g.type === 'ability') return `+${g.value} ${g.ability?.toUpperCase()}`
+    if (g.type === 'skill') return `${g.level === 'expertise' ? 'Maestría' : 'Competencia'}: ${g.skill}`
+    if (g.type === 'advantage') return `Ventaja: ${g.skill}`
+    if (g.type === 'save') return `Salvación: ${g.ability?.toUpperCase()}`
+    return ''
+  }
+
+  const fieldStyle: React.CSSProperties = {
+    background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(201,173,106,0.3)',
+    borderRadius: 4, padding: '0.3rem 0.5rem', fontSize: '0.78rem',
+    color: 'var(--cs-text)', outline: 'none',
+  }
+
+  return (
+    <div style={{ marginTop: '0.75rem' }}>
+      <p style={{ fontSize: '0.72rem', fontFamily: 'var(--font-cinzel, serif)', color: 'var(--cs-gold)', marginBottom: '0.4rem', letterSpacing: '0.05em' }}>
+        BONIFICACIONES ESTRUCTURADAS
+      </p>
+
+      {/* Existing grants */}
+      {thisGrants.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '0.6rem' }}>
+          {thisGrants.map(g => (
+            <span key={g.id} style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+              background: 'rgba(201,173,106,0.12)', border: '1px solid rgba(201,173,106,0.35)',
+              borderRadius: 12, padding: '0.18rem 0.55rem', fontSize: '0.73rem', color: 'var(--cs-text)',
+            }}>
+              {grantLabel(g)}
+              <button onClick={() => removeGrant(g.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--cs-text-muted)', fontSize: '0.75rem', padding: 0, lineHeight: 1 }}>×</button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Add grant form */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' }}>
+        <select value={newType} onChange={e => setNewType(e.target.value as Grant['type'])} style={fieldStyle}>
+          <option value="ability">Característica (+N)</option>
+          <option value="skill">Competencia de habilidad</option>
+          <option value="advantage">Ventaja en habilidad</option>
+          <option value="save">Tirada de salvación</option>
+        </select>
+
+        {(newType === 'ability' || newType === 'save') && (
+          <select value={newAbility} onChange={e => setNewAbility(e.target.value as Ability)} style={fieldStyle}>
+            {ABILITY_OPTIONS.map(a => <option key={a} value={a}>{a.toUpperCase()}</option>)}
+          </select>
+        )}
+        {newType === 'ability' && (
+          <input type="number" value={newValue} onChange={e => setNewValue(+e.target.value)}
+            min={1} max={10} style={{ ...fieldStyle, width: 52 }} />
+        )}
+        {(newType === 'skill' || newType === 'advantage') && (
+          <select value={newSkill} onChange={e => setNewSkill(e.target.value)} style={fieldStyle}>
+            {ALL_SKILLS_LIST.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        )}
+        {newType === 'skill' && (
+          <select value={newLevel} onChange={e => setNewLevel(e.target.value as 'proficient' | 'expertise')} style={fieldStyle}>
+            <option value="proficient">Competencia</option>
+            <option value="expertise">Maestría</option>
+          </select>
+        )}
+        <button onClick={addGrant} style={{
+          background: 'var(--cs-accent)', color: '#fff', border: 'none', borderRadius: 4,
+          padding: '0.3rem 0.75rem', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600,
+        }}>+ Agregar</button>
+        {thisGrants.length > 0 && (
+          <button onClick={onSave} style={{
+            background: 'transparent', color: 'var(--cs-gold)', border: '1px solid var(--cs-gold)',
+            borderRadius: 4, padding: '0.3rem 0.75rem', fontSize: '0.75rem', cursor: 'pointer',
+          }}>Guardar bonificaciones</button>
+        )}
+      </div>
+    </div>
+  )
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -248,6 +372,9 @@ export default function EditCharacterClient({
     text_value: '', stat_type: 'counter' as CustomStatType, notes: '',
   })
 
+  /* ── Grants ── */
+  const [grants, setGrants] = useState<Grant[]>(() => (character.grants as Grant[] ?? []))
+
   /* ── Skills / Proficiencies ── */
   const [localProfs, setLocalProfs] = useState<CharacterProficiency[]>(
     proficiencies.filter(p => p.type === 'skill')
@@ -356,6 +483,15 @@ export default function EditCharacterClient({
             }
           }
         }
+        // Structured grants
+        for (const g of grants) {
+          if (g.type === 'skill' && g.skill) {
+            suggestions.push({ skill: g.skill, source: 'Homebrew', type: g.level === 'expertise' ? 'expertise' : 'proficiency' })
+          }
+          if (g.type === 'advantage' && g.skill) {
+            suggestions.push({ skill: g.skill, source: 'Homebrew', type: 'advantage' })
+          }
+        }
       } catch (err) {
         console.error('Error loading skill suggestions:', err)
       }
@@ -364,7 +500,8 @@ export default function EditCharacterClient({
       setLoadingSuggestions(false)
     }
     loadSuggestions()
-  }, [backgroundSkills, basic.background, basic.race, basic.subrace, classDetails, localClasses, localFeatures, raceSkills])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [backgroundSkills, basic.background, basic.race, basic.subrace, classDetails, grants, localClasses, localFeatures, raceSkills])
 
   /* ══════════════════════════════════════════════════════════════
      ABILITY BONUS SOURCES — computed from feats + homebrew background
@@ -388,7 +525,14 @@ export default function EditCharacterClient({
       }
     }
 
-    // 2. From homebrew background text — parse patterns like "+2 CHA", "+1 int"
+    // 2. From structured grants (ability type)
+    for (const g of grants) {
+      if (g.type === 'ability' && g.ability && g.value) {
+        results.push({ ability: g.ability, value: g.value, source: 'Homebrew' })
+      }
+    }
+
+    // 3. From homebrew background text — parse patterns like "+2 CHA", "+1 int"
     const bgText = basic.homebrew_background_notes ?? ''
     const abbrMap: Record<string, string> = {
       str: 'str', fuerza: 'str',
@@ -422,9 +566,15 @@ export default function EditCharacterClient({
   async function saveBasic() {
     setSaving(true)
     await Promise.all([
-      supabase.from('characters').update(basic).eq('id', character.id),
+      supabase.from('characters').update({ ...basic, grants }).eq('id', character.id),
       saveLanguages(),
     ])
+    showSaved()
+  }
+
+  async function saveGrants() {
+    setSaving(true)
+    await supabase.from('characters').update({ grants }).eq('id', character.id)
     showSaved()
   }
 
@@ -1068,15 +1218,18 @@ export default function EditCharacterClient({
                     rows={4} className="ifield resize-none"
                     placeholder="Describe el trasfondo, su historia, lo que otorga..." />
                 </F>
-                <F label="Rasgos, bonos y subidas de nivel">
+                <F label="Descripción libre (rasgos, nivel, notas)">
                   <textarea value={basic.homebrew_background_notes}
                     onChange={e => setBasic(p => ({ ...p, homebrew_background_notes: e.target.value }))}
-                    rows={5} className="ifield resize-none"
-                    placeholder="+2 CHA, +1 INT&#10;Habilidades: Persuasión, Historia&#10;Tiradas de salvación: CHA&#10;Nivel 1: ..." />
+                    rows={4} className="ifield resize-none"
+                    placeholder="Nivel 1: ...&#10;Notas extra..." />
                 </F>
-                <p className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>
-                  Las tiradas de salvación y habilidades del trasfondo también se pueden agregar en la tab Habilidades.
-                </p>
+                <GrantBuilder
+                  sourceTag="background"
+                  grants={grants}
+                  setGrants={setGrants}
+                  onSave={saveGrants}
+                />
               </div>
             )}
           </div>
@@ -1204,11 +1357,16 @@ export default function EditCharacterClient({
                   </F>
                   <p className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>
                     Agrega los rasgos individuales en la tab Rasgos con fuente «Subclase: {cls.subclass_name || cls.class_name}».
-                    Las tiradas de salvación se agregan en Habilidades.
                   </p>
+                  <GrantBuilder
+                    sourceTag={cls.id}
+                    grants={grants}
+                    setGrants={setGrants}
+                    onSave={saveGrants}
+                  />
                 </div>
               )}
-              <button onClick={() => saveClass(cls)}
+              <button onClick={async () => { await saveClass(cls); await saveGrants() }}
                 className="btn-primary text-sm">
                 Guardar esta clase
               </button>

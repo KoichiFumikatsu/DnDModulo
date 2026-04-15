@@ -1,4 +1,14 @@
 export type Ability = 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'
+
+export interface Grant {
+  id: string
+  type: 'ability' | 'skill' | 'advantage' | 'save'
+  ability?: Ability
+  value?: number
+  skill?: string
+  level?: 'proficient' | 'expertise'
+  sourceTag: string  // 'background' | character_class.id
+}
 export type ProficiencyLevel = 'none' | 'proficient' | 'expertise'
 export type CustomStatType = 'counter' | 'text' | 'checkbox' | 'tracker'
 export type ResetOn = 'short_rest' | 'long_rest' | 'manual'
@@ -192,6 +202,9 @@ export interface Character {
   homebrew_background_url: string | null
   homebrew_background_description: string | null
   homebrew_background_notes: string | null
+
+  // Structured grants (ability bonuses, skill profs, advantages, saves)
+  grants: Grant[] | null
 
   created_at: string
   updated_at: string
