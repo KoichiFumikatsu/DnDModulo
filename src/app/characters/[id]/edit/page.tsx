@@ -1,6 +1,19 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import {
+  fetchAllSpells,
+  fetchBackgrounds,
+  fetchClasses,
+  fetchEquipmentItems,
+  fetchFeats,
+  fetchRaces,
+} from '@/lib/5etools/data'
+import {
+  loadLocalBackgroundSkills,
+  loadLocalClassDetails,
+  loadLocalRaceSkills,
+} from '@/lib/5etools/local'
 import EditCharacterClient from './EditCharacterClient'
 
 export default async function EditCharacterPage({ params }: { params: Promise<{ id: string }> }) {
@@ -20,7 +33,6 @@ export default async function EditCharacterPage({ params }: { params: Promise<{ 
 
   const [
     { data: classes },
-    { data: spellSlots },
     { data: spells },
     { data: weapons },
     { data: equipment },
@@ -28,9 +40,17 @@ export default async function EditCharacterPage({ params }: { params: Promise<{ 
     { data: proficiencies },
     { data: classResources },
     { data: customStats },
+    raceOptions,
+    backgroundOptions,
+    classMap,
+    spellList,
+    equipmentItems,
+    allFeats,
+    classDetails,
+    backgroundSkills,
+    raceSkills,
   ] = await Promise.all([
     supabase.from('character_classes').select('*').eq('character_id', id),
-    supabase.from('character_spell_slots').select('*').eq('character_id', id),
     supabase.from('character_spells').select('*').eq('character_id', id).order('sort_order'),
     supabase.from('character_weapons').select('*').eq('character_id', id).order('sort_order'),
     supabase.from('character_equipment').select('*').eq('character_id', id).order('sort_order'),
@@ -38,6 +58,15 @@ export default async function EditCharacterPage({ params }: { params: Promise<{ 
     supabase.from('character_proficiencies').select('*').eq('character_id', id),
     supabase.from('character_class_resources').select('*').eq('character_id', id).order('sort_order'),
     supabase.from('character_custom_stats').select('*').eq('character_id', id).order('sort_order'),
+    fetchRaces(),
+    fetchBackgrounds(),
+    fetchClasses(),
+    fetchAllSpells(),
+    fetchEquipmentItems(),
+    fetchFeats(),
+    loadLocalClassDetails(),
+    loadLocalBackgroundSkills(),
+    loadLocalRaceSkills(),
   ])
 
   return (
@@ -56,7 +85,6 @@ export default async function EditCharacterPage({ params }: { params: Promise<{ 
       <EditCharacterClient
         character={character}
         classes={classes ?? []}
-        spellSlots={spellSlots ?? []}
         spells={spells ?? []}
         weapons={weapons ?? []}
         equipment={equipment ?? []}
@@ -64,6 +92,15 @@ export default async function EditCharacterPage({ params }: { params: Promise<{ 
         proficiencies={proficiencies ?? []}
         classResources={classResources ?? []}
         customStats={customStats ?? []}
+        raceOptions={raceOptions}
+        backgroundOptions={backgroundOptions}
+        classMap={classMap}
+        spellList={spellList}
+        equipmentItems={equipmentItems}
+        allFeats={allFeats}
+        classDetails={classDetails}
+        backgroundSkills={backgroundSkills}
+        raceSkills={raceSkills}
       />
     </div>
   )
