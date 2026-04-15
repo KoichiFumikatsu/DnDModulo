@@ -680,9 +680,26 @@ export default function EditCharacterClient({
     const value = parseItemValue(item.notes)
     if (value == null || value <= 0) return
     const totalValue = Math.round(value * item.quantity * 100) / 100
-    // Remove from equipment
-    await supabase.from('character_equipment').delete().eq('id', item.id)
-    setLocalEquipment(prev => prev.filter(e => e.id !== item.id))
+
+    // Find content item names from catalog (these were auto-inserted when the pack was added)
+    const catalogItem = equipmentItems.find(e => e.name === item.name)
+    const contentNames = (catalogItem?.contents ?? []).map(c => {
+      const multiMatch = c.match(/^(\d+)x (.+)$/)
+      const rawName = multiMatch ? multiMatch[2] : c.split('|')[0]
+      return (rawName.charAt(0).toUpperCase() + rawName.slice(1)).toLowerCase()
+    })
+
+    // IDs to remove: the pack itself + any matching content rows
+    const idsToDelete = [item.id]
+    const contentItems = contentNames.length > 0
+      ? localEquipment.filter(e => e.id !== item.id && contentNames.includes(e.name.toLowerCase()))
+      : []
+    for (const ci of contentItems) idsToDelete.push(ci.id)
+
+    // Delete all at once
+    await supabase.from('character_equipment').delete().in('id', idsToDelete)
+    setLocalEquipment(prev => prev.filter(e => !idsToDelete.includes(e.id)))
+
     // Add gold
     const newGp = Math.round((combat.gp + totalValue) * 100) / 100
     setCombat(p => ({ ...p, gp: newGp }))
