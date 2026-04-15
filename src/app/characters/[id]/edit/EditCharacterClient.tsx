@@ -171,6 +171,12 @@ export default function EditCharacterClient({
   const [combat, setCombat] = useState({
     str: character.str, dex: character.dex, con: character.con,
     int: character.int, wis: character.wis, cha: character.cha,
+    base_str: character.base_str ?? null as number | null,
+    base_dex: character.base_dex ?? null as number | null,
+    base_con: character.base_con ?? null as number | null,
+    base_int: character.base_int ?? null as number | null,
+    base_wis: character.base_wis ?? null as number | null,
+    base_cha: character.base_cha ?? null as number | null,
     hp_max: character.hp_max, hp_current: character.hp_current, hp_temp: character.hp_temp,
     ac: character.ac, initiative_bonus: character.initiative_bonus,
     proficiency_bonus: character.proficiency_bonus,
@@ -1167,27 +1173,61 @@ export default function EditCharacterClient({
           {/* Section: Ability Scores */}
           <h3 className="font-semibold text-sm"
             style={{ color: 'var(--cs-text-muted)' }}>
-            Puntuaciones de caracteristica
+            Puntuaciones de característica
           </h3>
           <div className="parchment-page rounded-xl p-4">
             <div className="grid grid-cols-6 gap-2">
-              {(['str', 'dex', 'con', 'int', 'wis', 'cha'] as const).map(ab => (
-                <div key={ab} className="stat-box rounded text-center">
-                  <div className="text-[0.65rem] font-bold uppercase tracking-wide mb-1"
-                    style={{ color: 'var(--cs-text-muted)', fontFamily: 'Cinzel, serif' }}>
-                    {ABILITY_LABELS[ab]}
+              {(['str', 'dex', 'con', 'int', 'wis', 'cha'] as const).map(ab => {
+                const baseKey = `base_${ab}` as `base_str` | `base_dex` | `base_con` | `base_int` | `base_wis` | `base_cha`
+                const base = combat[baseKey]
+                const bonus = base != null ? combat[ab] - base : null
+                return (
+                  <div key={ab} className="stat-box rounded text-center"
+                    style={{ padding: '0.4rem 0.25rem' }}>
+                    <div className="text-[0.65rem] font-bold uppercase tracking-wide mb-1"
+                      style={{ color: 'var(--cs-text-muted)', fontFamily: 'Cinzel, serif' }}>
+                      {ABILITY_LABELS[ab]}
+                    </div>
+
+                    {/* Total score */}
+                    <input
+                      type="number" value={combat[ab]} min={1} max={30}
+                      onChange={e => setCombat(p => ({ ...p, [ab]: +e.target.value }))}
+                      className="ifield text-center text-lg font-bold"
+                      style={{ padding: '2px 4px', background: 'transparent', border: 'none' }}
+                    />
+                    <div className="text-xs font-semibold mb-2" style={{ color: 'var(--cs-accent)' }}>
+                      {mod(combat[ab])}
+                    </div>
+
+                    {/* Breakdown */}
+                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: '0.3rem' }}>
+                      <div className="text-[0.6rem] mb-0.5"
+                        style={{ color: 'var(--cs-text-muted)', fontFamily: 'Cinzel, serif' }}>
+                        Base
+                      </div>
+                      <input
+                        type="number"
+                        value={base ?? ''}
+                        placeholder="—"
+                        min={1} max={20}
+                        onChange={e => {
+                          const v = e.target.value === '' ? null : +e.target.value
+                          setCombat(p => ({ ...p, [baseKey]: v }))
+                        }}
+                        className="ifield text-center text-xs"
+                        style={{ padding: '1px 2px', background: 'transparent', border: 'none', width: '100%' }}
+                      />
+                      {bonus != null && (
+                        <div className="text-[0.6rem] mt-0.5"
+                          style={{ color: bonus > 0 ? 'var(--cs-gold)' : 'var(--danger)' }}>
+                          {bonus >= 0 ? `+${bonus}` : bonus} bono
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <input
-                    type="number" value={combat[ab]} min={1} max={30}
-                    onChange={e => setCombat(p => ({ ...p, [ab]: +e.target.value }))}
-                    className="ifield text-center text-lg font-bold"
-                    style={{ padding: '2px 4px', background: 'transparent', border: 'none' }}
-                  />
-                  <div className="text-xs font-semibold" style={{ color: 'var(--cs-accent)' }}>
-                    {mod(combat[ab])}
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
 

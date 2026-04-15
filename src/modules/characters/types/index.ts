@@ -138,6 +138,14 @@ export interface Character {
   wis: number
   cha: number
 
+  // Base ability scores (before racial/ASI bonuses)
+  base_str: number | null
+  base_dex: number | null
+  base_con: number | null
+  base_int: number | null
+  base_wis: number | null
+  base_cha: number | null
+
   // HP
   hp_max: number
   hp_current: number
