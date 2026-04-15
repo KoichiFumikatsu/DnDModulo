@@ -180,45 +180,48 @@ export default async function CharacterPage({
                 }))}
               />
 
-              {/* Money */}
-              <div className="cs-card--notched" style={{ padding: '0.75rem 1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
-                  <img src="/assets/dnd/icon-money.svg" alt="" style={{ width: 15, height: 15 }} />
-                  <span className="cs-section-title">Money</span>
-                </div>
-                <div style={{ height: 2, background: 'var(--cs-gold)', borderRadius: 4, marginBottom: '0.5rem' }} />
-                {[
-                  { label: 'Copper Coins', value: character.cp, icon: '/assets/dnd/icon-coin-cp.svg' },
-                  { label: 'Silver Coins', value: character.sp, icon: '/assets/dnd/icon-coin-sp.svg' },
-                  { label: 'Electrum', value: 0, icon: '/assets/dnd/icon-coin-ep.svg' },
-                  { label: 'Gold Coins', value: character.gp, icon: '/assets/dnd/icon-coin-gp.svg' },
-                  { label: 'Platinum', value: character.pp, icon: '/assets/dnd/icon-coin-pp.svg' },
-                ].map(({ label, value, icon }) => (
-                  <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.15rem 0' }}>
-                    <img src={icon} alt="" style={{ width: 14, height: 14, flexShrink: 0 }} />
-                    <span style={{ flex: 1, fontFamily: 'var(--font-montaga)', fontSize: '0.78rem', color: 'var(--cs-text)' }}>{label}</span>
-                    <span className="cs-num" style={{ fontSize: '1rem', minWidth: 26, textAlign: 'right' }}>
-                      {String(value ?? 0).padStart(2, '0')}
-                    </span>
+              {/* Money + Languages side by side */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', alignItems: 'start' }}>
+                {/* Money */}
+                <div className="cs-card--notched" style={{ padding: '0.6rem 0.75rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginBottom: '0.3rem' }}>
+                    <img src="/assets/dnd/icon-money.svg" alt="" style={{ width: 13, height: 13 }} />
+                    <span className="cs-section-title">Money</span>
                   </div>
-                ))}
-              </div>
-
-              {/* Languages */}
-              <div className="cs-card--notched">
-                <span className="cs-section-title">Languages</span>
-                <div style={{ height: 2, background: 'var(--cs-gold)', borderRadius: 4, margin: '0.4rem 0' }} />
-                {langProfs.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                    {langProfs.map(p => (
-                      <span key={p.id} style={{ fontSize: '0.82rem', fontFamily: 'var(--font-montaga)', color: 'var(--cs-text)' }}>
-                        {p.name}
+                  <div style={{ height: 2, background: 'var(--cs-gold)', borderRadius: 4, marginBottom: '0.4rem' }} />
+                  {[
+                    { label: 'CP', value: character.cp, icon: '/assets/dnd/icon-coin-cp.svg' },
+                    { label: 'SP', value: character.sp, icon: '/assets/dnd/icon-coin-sp.svg' },
+                    { label: 'EP', value: 0, icon: '/assets/dnd/icon-coin-ep.svg' },
+                    { label: 'GP', value: character.gp, icon: '/assets/dnd/icon-coin-gp.svg' },
+                    { label: 'PP', value: character.pp, icon: '/assets/dnd/icon-coin-pp.svg' },
+                  ].map(({ label, value, icon }) => (
+                    <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.1rem 0' }}>
+                      <img src={icon} alt="" style={{ width: 12, height: 12, flexShrink: 0 }} />
+                      <span style={{ flex: 1, fontFamily: 'var(--font-montaga)', fontSize: '0.72rem', color: 'var(--cs-text)' }}>{label}</span>
+                      <span className="cs-num" style={{ fontSize: '0.9rem', minWidth: 22, textAlign: 'right' }}>
+                        {String(value ?? 0).padStart(2, '0')}
                       </span>
-                    ))}
-                  </div>
-                ) : (
-                  <span style={{ fontSize: '0.78rem', fontFamily: 'var(--font-montaga)', color: 'var(--cs-text-muted)' }}>—</span>
-                )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Languages */}
+                <div className="cs-card--notched" style={{ padding: '0.6rem 0.75rem' }}>
+                  <span className="cs-section-title">Languages</span>
+                  <div style={{ height: 2, background: 'var(--cs-gold)', borderRadius: 4, margin: '0.3rem 0 0.4rem' }} />
+                  {langProfs.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                      {langProfs.map(p => (
+                        <span key={p.id} style={{ fontSize: '0.75rem', fontFamily: 'var(--font-montaga)', color: 'var(--cs-text)' }}>
+                          {p.name}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span style={{ fontSize: '0.75rem', fontFamily: 'var(--font-montaga)', color: 'var(--cs-text-muted)' }}>—</span>
+                  )}
+                </div>
               </div>
 
               {/* Personality */}

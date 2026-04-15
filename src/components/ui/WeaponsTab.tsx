@@ -74,6 +74,13 @@ function parseExtraDamage(raw: string): { formula: string; type: string }[] {
 }
 
 /* ── Roll result type ── */
+interface DmgBreakdown {
+  label: string
+  value: number
+  detail: string
+  type?: string
+}
+
 interface RollResult {
   type: 'attack' | 'damage'
   weaponName: string
@@ -83,6 +90,7 @@ interface RollResult {
   isCrit?: boolean
   isMiss?: boolean
   extras?: { formula: string; type: string; total: number; detail: string }[]
+  breakdown?: DmgBreakdown[]
 }
 
 /* ══════════════════════════════════════════════════════════════ */
@@ -119,23 +127,41 @@ export default function WeaponsTab({ weapons, character }: Props) {
 
   function rollDamage(w: Weapon) {
     const abilityMod = getAbilityMod(w.ability_mod)
-    const baseFormula = (w.damage ?? '1') + (abilityMod !== 0 ? signStr(abilityMod) : '')
-    const base = rollFormula(baseFormula)
+    // Roll dice separately from modifier
+    const diceOnly = rollFormula(w.damage ?? '1')
     const extras: RollResult['extras'] = []
+    const breakdown: DmgBreakdown[] = []
+
+    breakdown.push({
+      label: w.damage ?? '—',
+      value: diceOnly.total,
+      detail: diceOnly.detail,
+      type: w.damage_type ?? undefined,
+    })
+    if (abilityMod !== 0) {
+      breakdown.push({
+        label: `${(w.ability_mod ?? '').toUpperCase()} mod`,
+        value: abilityMod,
+        detail: signStr(abilityMod),
+      })
+    }
+
     if (w.extra_damage) {
       for (const e of parseExtraDamage(w.extra_damage)) {
         const r = rollFormula(e.formula)
         extras.push({ formula: e.formula, type: e.type, ...r })
+        breakdown.push({ label: e.formula, value: r.total, detail: r.detail, type: e.type })
       }
     }
-    const total = base.total + extras.reduce((s, e) => s + e.total, 0)
-    const parts = [`${w.damage ?? ''}${abilityMod !== 0 ? signStr(abilityMod) : ''} → ${base.total}(${base.detail})`]
+
+    const total = diceOnly.total + abilityMod + extras.reduce((s, e) => s + e.total, 0)
     setLastRoll({
       type: 'damage',
       weaponName: w.name,
       total,
-      detail: parts.join(''),
+      detail: `${w.damage ?? ''}${abilityMod !== 0 ? signStr(abilityMod) : ''} → ${diceOnly.detail}`,
       extras,
+      breakdown,
     })
   }
 
@@ -189,18 +215,27 @@ export default function WeaponsTab({ weapons, character }: Props) {
               {lastRoll.detail}
             </span>
           </div>
-          {/* Extra damage breakdown */}
-          {lastRoll.extras && lastRoll.extras.length > 0 && (
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
-              {lastRoll.extras.map((e, i) => (
-                <span key={i} style={{
-                  fontSize: '0.75rem', padding: '2px 8px', borderRadius: 20,
-                  background: 'var(--cs-card-alt, rgba(201,173,106,0.12))',
+          {/* Damage breakdown per component */}
+          {lastRoll.type === 'damage' && lastRoll.breakdown && lastRoll.breakdown.length > 0 && (
+            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.3rem' }}>
+              {lastRoll.breakdown.map((b, i) => (
+                <div key={i} style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  padding: '3px 10px', borderRadius: 8,
+                  background: 'rgba(201,173,106,0.10)',
                   border: '1px solid rgba(201,173,106,0.3)',
-                  color: 'var(--cs-text)',
+                  minWidth: 48,
                 }}>
-                  +{e.total} {e.type} ({e.detail})
-                </span>
+                  <span style={{ fontFamily: 'Cinzel, serif', fontSize: '1rem', fontWeight: 700, color: 'var(--cs-text)', lineHeight: 1.2 }}>
+                    {b.value >= 0 ? (i > 0 ? `+${b.value}` : b.value) : b.value}
+                  </span>
+                  <span style={{ fontSize: '0.6rem', color: 'var(--cs-text-muted)', fontFamily: 'var(--font-montaga)', textAlign: 'center', marginTop: 1 }}>
+                    {b.label}{b.type ? ` ${b.type}` : ''}
+                  </span>
+                  <span style={{ fontSize: '0.58rem', color: 'var(--cs-gold)', fontFamily: 'monospace', opacity: 0.8 }}>
+                    {b.detail}
+                  </span>
+                </div>
               ))}
             </div>
           )}
