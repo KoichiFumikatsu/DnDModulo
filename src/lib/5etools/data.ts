@@ -7,6 +7,7 @@ import STATIC_SPELLS from '../5etools-processed/spells.json'
 import STATIC_RACES from '../5etools-processed/races.json'
 import STATIC_BACKGROUNDS from '../5etools-processed/backgrounds.json'
 import STATIC_CLASSES from '../5etools-processed/classes.json'
+import STATIC_LANGUAGES from '../5etools-processed/languages.json'
 
 // ── Types ──
 
@@ -69,6 +70,64 @@ export interface TraitEntry {
   description: string
   source: string
 }
+
+export interface LanguageGrant {
+  fixed: string[]         // automatic languages (e.g. Common, Elvish)
+  anyStandard: number     // number of free choices from all languages
+  chooseFrom: string[]    // if not empty, choices are restricted to this list
+}
+
+/** Returns the language grants for a race/subrace + background combination. */
+export function getLanguageGrants(params: {
+  race?: string
+  subrace?: string
+  background?: string
+}): { grants: Array<LanguageGrant & { source: string }>; autoFixed: string[] } {
+  const db = STATIC_LANGUAGES as {
+    races: Record<string, Partial<LanguageGrant>>
+    subraces: Record<string, Partial<LanguageGrant>>
+    backgrounds: Record<string, Partial<LanguageGrant>>
+  }
+
+  const grants: Array<LanguageGrant & { source: string }> = []
+  const autoFixed: string[] = []
+
+  function addEntry(entry: Partial<LanguageGrant> | undefined, source: string) {
+    if (!entry) return
+    const fixed = entry.fixed ?? []
+    const anyStandard = entry.anyStandard ?? 0
+    const chooseFrom = entry.chooseFrom ?? []
+    for (const lang of fixed) {
+      if (!autoFixed.includes(lang)) autoFixed.push(lang)
+    }
+    if (anyStandard > 0 || chooseFrom.length > 0) {
+      grants.push({ fixed, anyStandard, chooseFrom, source })
+    }
+  }
+
+  // Race entry — use subrace data if subrace has its own full entry (it overrides race)
+  const subraceKey = params.subrace && params.race
+    ? `${params.subrace} (${params.race})`
+    : undefined
+  const subraceEntry = subraceKey ? db.subraces[subraceKey] : undefined
+
+  if (subraceEntry) {
+    addEntry(subraceEntry, `Subraza: ${params.subrace}`)
+  } else {
+    if (params.race) addEntry(db.races[params.race], `Raza: ${params.race}`)
+    if (subraceKey) addEntry(db.subraces[subraceKey], `Subraza: ${params.subrace}`)
+  }
+
+  if (params.background) addEntry(db.backgrounds[params.background], `Trasfondo: ${params.background}`)
+
+  return { grants, autoFixed }
+}
+
+export const ALL_LANGUAGES: string[] = [
+  'Common', 'Dwarvish', 'Elvish', 'Giant', 'Gnomish', 'Goblin', 'Halfling', 'Orc',
+  'Abyssal', 'Aquan', 'Auran', 'Celestial', 'Draconic', 'Deep Speech',
+  'Ignan', 'Infernal', 'Primordial', 'Sylvan', 'Terran', 'Undercommon',
+]
 
 // ── Caches ──
 

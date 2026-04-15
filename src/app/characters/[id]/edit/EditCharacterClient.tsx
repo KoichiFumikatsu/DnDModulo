@@ -11,6 +11,7 @@ import {
   fetchRaceTraits, fetchClassFeatures, fetchSubclassFeatures,
   fetchClassDetails, fetchBackgroundSkills, fetchRaceSkills,
   fetchRaces, fetchBackgrounds, fetchClasses,
+  getLanguageGrants, ALL_LANGUAGES,
   type ClassDetail, type RaceSkillProf, type ClassMap,
 } from '@/lib/5etools/data'
 import type {
@@ -97,6 +98,20 @@ export default function EditCharacterClient({
   const [spellList, setSpellList] = useState<SpellEntry[]>([])
   const [equipmentItems, setEquipmentItems] = useState<EquipmentItem[]>([])
   const [weaponItems, setWeaponItems] = useState<EquipmentItem[]>([])
+
+  /* ── Language state ── */
+  // All non-auto languages (choices + custom) tracked here
+  // Initialized from saved proficiencies, auto-fixed ones are computed and excluded in the UI
+  const [langChoices, setLangChoices] = useState<string[]>(() => {
+    const saved = proficiencies.filter(p => p.type === 'language').map(p => p.name)
+    const { autoFixed } = getLanguageGrants({
+      race: character.race || undefined,
+      subrace: character.subrace || undefined,
+      background: character.background || undefined,
+    })
+    return saved.filter(l => !autoFixed.includes(l))
+  })
+  const [customLangInput, setCustomLangInput] = useState('')
   const [raceOptions, setRaceOptions] = useState<string[]>([])
   const [backgroundOptions, setBackgroundOptions] = useState<string[]>([])
   const [classMap, setClassMap] = useState<ClassMap>({})
@@ -331,8 +346,34 @@ export default function EditCharacterClient({
 
   async function saveBasic() {
     setSaving(true)
-    await supabase.from('characters').update(basic).eq('id', character.id)
+    await Promise.all([
+      supabase.from('characters').update(basic).eq('id', character.id),
+      saveLanguages(),
+    ])
     showSaved()
+  }
+
+  async function saveLanguages() {
+    const { autoFixed } = getLanguageGrants({
+      race: basic.race || undefined,
+      subrace: basic.subrace || undefined,
+      background: basic.background || undefined,
+    })
+    // Combine auto + user choices, deduplicated
+    const all = [...new Set([...autoFixed, ...langChoices.filter(Boolean)])]
+    await supabase.from('character_proficiencies')
+      .delete().eq('character_id', character.id).eq('type', 'language')
+    if (all.length > 0) {
+      await supabase.from('character_proficiencies').insert(
+        all.map(name => ({
+          character_id: character.id,
+          type: 'language' as const,
+          name,
+          proficiency_level: 'proficient' as const,
+          has_advantage: false,
+        }))
+      )
+    }
   }
 
   async function saveCombat() {
@@ -773,6 +814,17 @@ export default function EditCharacterClient({
               </F>
             </div>
           </div>
+
+          {/* ── Idiomas ── */}
+          <LanguageSection
+            race={basic.race}
+            subrace={basic.subrace}
+            background={basic.background}
+            langChoices={langChoices}
+            setLangChoices={setLangChoices}
+            customLangInput={customLangInput}
+            setCustomLangInput={setCustomLangInput}
+          />
 
           <div className="parchment-page rounded-xl p-4">
             <div className="grid grid-cols-3 gap-4">
@@ -1750,6 +1802,207 @@ export default function EditCharacterClient({
             ))}
           </div>
         </div>
+      )}
+    </div>
+  )
+}
+
+/* ══════════════════════════════════════════════════════════════
+   LANGUAGE SECTION
+   ══════════════════════════════════════════════════════════════ */
+
+function LanguageSection({
+  race, subrace, background,
+  langChoices, setLangChoices,
+  customLangInput, setCustomLangInput,
+}: {
+  race: string; subrace: string; background: string
+  langChoices: string[]; setLangChoices: (v: string[]) => void
+  customLangInput: string; setCustomLangInput: (v: string) => void
+}) {
+  const { grants, autoFixed } = getLanguageGrants({
+    race: race || undefined,
+    subrace: subrace || undefined,
+    background: background || undefined,
+  })
+
+  // Total choice slots from all grants
+  const choiceSlots: Array<{ source: string; from: string[] }> = []
+  for (const g of grants) {
+    if (g.chooseFrom.length > 0) {
+      for (let i = 0; i < g.chooseFrom.length; i++) {
+        choiceSlots.push({ source: g.source, from: g.chooseFrom })
+      }
+    } else {
+      for (let i = 0; i < g.anyStandard; i++) {
+        choiceSlots.push({ source: g.source, from: ALL_LANGUAGES })
+      }
+    }
+  }
+
+  // Choices that are not auto-fixed (user picks)
+  const nonAutoChoices = langChoices.filter(l => !autoFixed.includes(l))
+  // Custom languages = anything beyond choice slots
+  const customLangs = nonAutoChoices.slice(choiceSlots.length)
+
+  function setChoiceAt(i: number, val: string) {
+    const next = [...nonAutoChoices]
+    next[i] = val
+    // Rebuild: choices first, then custom
+    const customs = next.slice(choiceSlots.length)
+    setLangChoices([...next.slice(0, choiceSlots.length).filter(Boolean), ...customs])
+  }
+
+  function addCustom() {
+    const trimmed = customLangInput.trim()
+    if (!trimmed) return
+    const alreadyHave = [...autoFixed, ...nonAutoChoices]
+    if (!alreadyHave.includes(trimmed)) {
+      setLangChoices([...langChoices.filter(l => !autoFixed.includes(l)), trimmed])
+    }
+    setCustomLangInput('')
+  }
+
+  function removeCustom(lang: string) {
+    setLangChoices(langChoices.filter(l => l !== lang))
+  }
+
+  const sectionTitle: React.CSSProperties = {
+    fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.08em',
+    color: 'var(--cs-text-muted)', fontFamily: 'Cinzel, serif',
+    textTransform: 'uppercase', marginBottom: '0.5rem',
+  }
+  const badge: React.CSSProperties = {
+    display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+    padding: '0.2rem 0.6rem',
+    background: 'rgba(201,173,106,0.18)', border: '1px solid var(--cs-gold)',
+    borderRadius: '2px', fontSize: '0.82rem', color: 'var(--cs-text)',
+    fontFamily: 'Crimson Text, serif',
+  }
+  const sourceLabel: React.CSSProperties = {
+    fontSize: '0.65rem', color: 'var(--cs-text-muted)', opacity: 0.7,
+  }
+
+  return (
+    <div className="parchment-page rounded-xl p-4 space-y-3">
+      <div style={sectionTitle}>Idiomas</div>
+
+      {/* Auto languages */}
+      {autoFixed.length > 0 && (
+        <div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--cs-text-muted)', marginBottom: '0.4rem' }}>
+            Automáticos
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+            {autoFixed.map(lang => {
+              // Find which source gave this language
+              const src = grants.find(g => g.fixed.includes(lang))?.source
+                ?? (race ? `Raza: ${race}` : '')
+              return (
+                <span key={lang} style={badge}>
+                  {lang}
+                  {src && <span style={sourceLabel}>({src})</span>}
+                </span>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Choice dropdowns */}
+      {choiceSlots.length > 0 && (
+        <div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--cs-text-muted)', marginBottom: '0.4rem' }}>
+            A elegir
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {choiceSlots.map((slot, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ fontSize: '0.72rem', color: 'var(--cs-text-muted)', minWidth: 130 }}>
+                  {slot.source}
+                </span>
+                <select
+                  value={nonAutoChoices[i] ?? ''}
+                  onChange={e => setChoiceAt(i, e.target.value)}
+                  className="ifield"
+                  style={{ flex: 1, padding: '0.3rem 0.5rem', fontSize: '0.88rem' }}
+                >
+                  <option value="">— Elige idioma —</option>
+                  {slot.from.map(l => (
+                    <option key={l} value={l}
+                      disabled={
+                        autoFixed.includes(l) ||
+                        nonAutoChoices.some((c, j) => j !== i && c === l)
+                      }
+                    >{l}</option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Custom languages */}
+      {customLangs.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+          {customLangs.map(lang => (
+            <span key={lang} style={{ ...badge, gap: '0.4rem' }}>
+              {lang}
+              <button
+                onClick={() => removeCustom(lang)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--cs-accent)', fontSize: '0.8rem', padding: 0, lineHeight: 1 }}
+              >×</button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Add extra language */}
+      <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <select
+          value={customLangInput}
+          onChange={e => setCustomLangInput(e.target.value)}
+          className="ifield"
+          style={{ flex: 1, padding: '0.3rem 0.5rem', fontSize: '0.88rem' }}
+        >
+          <option value="">+ Añadir idioma adicional</option>
+          {ALL_LANGUAGES.map(l => (
+            <option key={l} value={l}
+              disabled={[...autoFixed, ...nonAutoChoices].includes(l)}
+            >{l}</option>
+          ))}
+          <option value="__custom__">Otro (escribir)...</option>
+        </select>
+        {customLangInput === '__custom__' && (
+          <input
+            type="text"
+            placeholder="Idioma..."
+            className="ifield"
+            style={{ flex: 1 }}
+            onKeyDown={e => { if (e.key === 'Enter') addCustom() }}
+            onChange={e => setCustomLangInput(e.target.value)}
+            autoFocus
+          />
+        )}
+        {customLangInput && customLangInput !== '__custom__' && (
+          <button
+            onClick={addCustom}
+            style={{
+              padding: '0.3rem 0.8rem', background: 'var(--cs-accent)', color: '#fff',
+              border: 'none', borderRadius: '2px', cursor: 'pointer', fontSize: '0.82rem',
+              fontFamily: 'Cinzel, serif', letterSpacing: '0.05em',
+            }}
+          >
+            Añadir
+          </button>
+        )}
+      </div>
+
+      {autoFixed.length === 0 && choiceSlots.length === 0 && customLangs.length === 0 && (
+        <p style={{ fontSize: '0.78rem', color: 'var(--cs-text-muted)', fontStyle: 'italic' }}>
+          Selecciona raza y trasfondo para ver los idiomas automáticos.
+        </p>
       )}
     </div>
   )
