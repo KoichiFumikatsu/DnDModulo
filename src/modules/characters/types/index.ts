@@ -15,6 +15,7 @@ export interface CharacterClass {
   spell_attack_mod: number | null
   is_homebrew: boolean
   homebrew_url: string | null
+  homebrew_description: string | null
 }
 
 export interface SpellSlot {
@@ -175,6 +176,11 @@ export interface Character {
   backstory: string | null
   additional_equipment: string | null
   notes: string | null
+
+  // Homebrew background
+  homebrew_background_url: string | null
+  homebrew_background_description: string | null
+  homebrew_background_notes: string | null
 
   created_at: string
   updated_at: string

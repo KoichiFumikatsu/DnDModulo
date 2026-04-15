@@ -18,7 +18,7 @@ import type {
   Character, CharacterClass, SpellSlot, CharacterSpell,
   CharacterWeapon, CharacterEquipment, CharacterFeature,
   CharacterProficiency, ClassResource, CustomStat, CustomStatType, ResetOn,
-  ProficiencyLevel,
+  ProficiencyLevel, Ability,
 } from '@/modules/characters/types'
 import { SKILLS, ABILITY_NAMES as AB_LABELS } from '@/lib/constants'
 
@@ -32,7 +32,7 @@ const DMG_TYPE_MAP: Record<string, string> = {
   N: 'Necrótico', O: 'Veneno', R: 'Radiante', T: 'Trueno',
 }
 
-type Tab = 'basic' | 'combat' | 'skills' | 'spells' | 'weapons' | 'equipment' | 'features' | 'resources' | 'custom'
+type Tab = 'basic' | 'classes' | 'combat' | 'skills' | 'spells' | 'weapons' | 'equipment' | 'features' | 'resources' | 'custom'
 
 /* ── Helpers ── */
 
@@ -99,6 +99,11 @@ export default function EditCharacterClient({
   const [equipmentItems, setEquipmentItems] = useState<EquipmentItem[]>([])
   const [weaponItems, setWeaponItems] = useState<EquipmentItem[]>([])
 
+  /* ── Item / weapon filters ── */
+  const [weaponCatFilter, setWeaponCatFilter] = useState<'all' | 'simple' | 'martial'>('all')
+  const [equipCatFilter, setEquipCatFilter] = useState<string>('all')
+  const [equipRarityFilter, setEquipRarityFilter] = useState<string>('all')
+
   /* ── Language state ── */
   // All non-auto languages (choices + custom) tracked here
   // Initialized from saved proficiencies, auto-fixed ones are computed and excluded in the UI
@@ -139,7 +144,13 @@ export default function EditCharacterClient({
     bonds: character.bonds ?? '',
     flaws: character.flaws ?? '',
     backstory: character.backstory ?? '',
+    homebrew_background_url: character.homebrew_background_url ?? '',
+    homebrew_background_description: character.homebrew_background_description ?? '',
+    homebrew_background_notes: character.homebrew_background_notes ?? '',
   })
+  const [isHomebrewBackground, setIsHomebrewBackground] = useState(
+    !!(character.homebrew_background_url || character.homebrew_background_description)
+  )
 
   /* ── Combat state ── */
   const [combat, setCombat] = useState({
@@ -150,6 +161,15 @@ export default function EditCharacterClient({
     proficiency_bonus: character.proficiency_bonus,
     hit_dice_total: character.hit_dice_total ?? '',
     pp: character.pp, gp: character.gp, sp: character.sp, cp: character.cp,
+  })
+
+  /* ── Classes ── */
+  const [localClasses, setLocalClasses] = useState(classes)
+  const [newCls, setNewCls] = useState({
+    class_name: '', subclass_name: '', level: 1, is_primary: false,
+    spellcasting_ability: '' as string, spell_save_dc: '' as string | number,
+    spell_attack_mod: '' as string | number,
+    is_homebrew: false, homebrew_url: '', homebrew_description: '',
   })
 
   /* ── Spells ── */
@@ -329,7 +349,7 @@ export default function EditCharacterClient({
     fetchEquipmentItems()
       .then(items => {
         setEquipmentItems(items)
-        setWeaponItems(items.filter(i => i.weaponCategory || i.damage))
+        setWeaponItems(items.filter(i => i.weaponCategory != null))
       })
       .catch(() => {})
   }, [])
@@ -379,6 +399,63 @@ export default function EditCharacterClient({
   async function saveCombat() {
     setSaving(true)
     await supabase.from('characters').update(combat).eq('id', character.id)
+    showSaved()
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     CLASSES — CRUD
+     ══════════════════════════════════════════════════════════════ */
+
+  async function saveClass(cls: CharacterClass) {
+    await supabase.from('character_classes').update({
+      class_name: cls.class_name,
+      subclass_name: cls.subclass_name || null,
+      level: cls.level,
+      is_primary: cls.is_primary,
+      spellcasting_ability: cls.spellcasting_ability || null,
+      spell_save_dc: cls.spell_save_dc || null,
+      spell_attack_mod: cls.spell_attack_mod || null,
+      is_homebrew: cls.is_homebrew,
+      homebrew_url: cls.homebrew_url || null,
+      homebrew_description: cls.homebrew_description || null,
+    }).eq('id', cls.id)
+  }
+
+  async function addClass() {
+    if (!newCls.class_name.trim()) return
+    const { data } = await supabase.from('character_classes').insert({
+      character_id: character.id,
+      class_name: newCls.class_name,
+      subclass_name: newCls.subclass_name || null,
+      level: newCls.level,
+      is_primary: newCls.is_primary,
+      spellcasting_ability: (newCls.spellcasting_ability as Ability) || null,
+      spell_save_dc: newCls.spell_save_dc ? +newCls.spell_save_dc : null,
+      spell_attack_mod: newCls.spell_attack_mod ? +newCls.spell_attack_mod : null,
+      is_homebrew: newCls.is_homebrew,
+      homebrew_url: newCls.homebrew_url || null,
+      homebrew_description: newCls.homebrew_description || null,
+    }).select().single()
+    if (data) setLocalClasses(prev => [...prev, data as CharacterClass])
+    setNewCls({
+      class_name: '', subclass_name: '', level: 1, is_primary: false,
+      spellcasting_ability: '', spell_save_dc: '', spell_attack_mod: '',
+      is_homebrew: false, homebrew_url: '', homebrew_description: '',
+    })
+  }
+
+  async function deleteClass(id: string) {
+    await supabase.from('character_classes').delete().eq('id', id)
+    setLocalClasses(prev => prev.filter(c => c.id !== id))
+  }
+
+  function updateLocalClass(id: string, patch: Partial<CharacterClass>) {
+    setLocalClasses(prev => prev.map(c => c.id === id ? { ...c, ...patch } : c))
+  }
+
+  async function saveAllClasses() {
+    setSaving(true)
+    await Promise.all(localClasses.map(saveClass))
     showSaved()
   }
 
@@ -740,6 +817,7 @@ export default function EditCharacterClient({
 
   const tabs: { key: Tab; label: string }[] = [
     { key: 'basic', label: 'Basico' },
+    { key: 'classes', label: 'Clases' },
     { key: 'combat', label: 'Combate' },
     { key: 'skills', label: 'Habilidades' },
     { key: 'spells', label: 'Hechizos' },
@@ -826,6 +904,42 @@ export default function EditCharacterClient({
             setCustomLangInput={setCustomLangInput}
           />
 
+          {/* ── Trasfondo Homebrew ── */}
+          <div className="parchment-page rounded-xl p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <input type="checkbox" id="hb-bg-toggle" checked={isHomebrewBackground}
+                onChange={e => setIsHomebrewBackground(e.target.checked)} />
+              <label htmlFor="hb-bg-toggle" className="text-sm font-semibold cursor-pointer"
+                style={{ color: 'var(--cs-gold)', fontFamily: 'var(--font-cinzel, serif)' }}>
+                Trasfondo personalizado / Homebrew
+              </label>
+            </div>
+            {isHomebrewBackground && (
+              <div className="space-y-3">
+                <F label="Enlace (URL del trasfondo)">
+                  <input value={basic.homebrew_background_url}
+                    onChange={e => setBasic(p => ({ ...p, homebrew_background_url: e.target.value }))}
+                    className="ifield" placeholder="https://..." />
+                </F>
+                <F label="Descripción del trasfondo">
+                  <textarea value={basic.homebrew_background_description}
+                    onChange={e => setBasic(p => ({ ...p, homebrew_background_description: e.target.value }))}
+                    rows={4} className="ifield resize-none"
+                    placeholder="Describe el trasfondo, su historia, lo que otorga..." />
+                </F>
+                <F label="Rasgos, bonos y subidas de nivel">
+                  <textarea value={basic.homebrew_background_notes}
+                    onChange={e => setBasic(p => ({ ...p, homebrew_background_notes: e.target.value }))}
+                    rows={5} className="ifield resize-none"
+                    placeholder="+2 CHA, +1 INT&#10;Habilidades: Persuasión, Historia&#10;Tiradas de salvación: CHA&#10;Nivel 1: ..." />
+                </F>
+                <p className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>
+                  Las tiradas de salvación y habilidades del trasfondo también se pueden agregar en la tab Habilidades.
+                </p>
+              </div>
+            )}
+          </div>
+
           <div className="parchment-page rounded-xl p-4">
             <div className="grid grid-cols-3 gap-4">
               {(['age', 'height', 'weight', 'eyes', 'skin', 'hair'] as const).map(k => (
@@ -849,6 +963,198 @@ export default function EditCharacterClient({
           </div>
 
           <SaveBtn onClick={saveBasic} saving={saving} />
+        </div>
+      )}
+
+      {/* ════════════════════════════════════════════════════════
+         CLASSES TAB
+         ════════════════════════════════════════════════════════ */}
+      {tab === 'classes' && (
+        <div className="space-y-4">
+          {/* Existing classes */}
+          {localClasses.map(cls => (
+            <div key={cls.id} className="parchment-page rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold" style={{ color: 'var(--cs-gold)', fontFamily: 'var(--font-cinzel, serif)' }}>
+                  {cls.class_name} {cls.subclass_name ? `— ${cls.subclass_name}` : ''} Nv{cls.level}
+                </h3>
+                <button onClick={() => deleteClass(cls.id)}
+                  className="text-xs px-2 py-1 rounded"
+                  style={{ color: 'var(--danger)', border: '1px solid var(--danger)' }}>
+                  Eliminar
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <F label="Clase">
+                  <select value={cls.class_name}
+                    onChange={e => updateLocalClass(cls.id, { class_name: e.target.value, subclass_name: null })}
+                    className="ifield">
+                    {Object.keys(classMap).map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                    {!classMap[cls.class_name] && (
+                      <option value={cls.class_name}>{cls.class_name}</option>
+                    )}
+                  </select>
+                </F>
+                <F label="Subclase">
+                  {cls.is_homebrew ? (
+                    <input value={cls.subclass_name ?? ''}
+                      onChange={e => updateLocalClass(cls.id, { subclass_name: e.target.value })}
+                      className="ifield" placeholder="Nombre de la subclase homebrew..." />
+                  ) : (
+                    <select value={cls.subclass_name ?? ''}
+                      onChange={e => updateLocalClass(cls.id, { subclass_name: e.target.value || null })}
+                      className="ifield">
+                      <option value="">— Sin subclase —</option>
+                      {(classMap[cls.class_name] ?? []).map(sc => (
+                        <option key={sc} value={sc}>{sc}</option>
+                      ))}
+                    </select>
+                  )}
+                </F>
+                <F label="Nivel">
+                  <input type="number" min={1} max={20} value={cls.level}
+                    onChange={e => updateLocalClass(cls.id, { level: +e.target.value })}
+                    className="ifield" />
+                </F>
+                <F label="Habilidad de conjuración">
+                  <select value={cls.spellcasting_ability ?? ''}
+                    onChange={e => updateLocalClass(cls.id, { spellcasting_ability: (e.target.value as Ability) || null })}
+                    className="ifield">
+                    <option value="">— Ninguna —</option>
+                    {(['int', 'wis', 'cha'] as Ability[]).map(a => (
+                      <option key={a} value={a}>{a.toUpperCase()}</option>
+                    ))}
+                  </select>
+                </F>
+                <F label="CD salvación de hechizos">
+                  <input type="number" value={cls.spell_save_dc ?? ''}
+                    onChange={e => updateLocalClass(cls.id, { spell_save_dc: e.target.value ? +e.target.value : null })}
+                    className="ifield" placeholder="8 + prof + mod" />
+                </F>
+                <F label="Mod. ataque de hechizos">
+                  <input type="number" value={cls.spell_attack_mod ?? ''}
+                    onChange={e => updateLocalClass(cls.id, { spell_attack_mod: e.target.value ? +e.target.value : null })}
+                    className="ifield" placeholder="prof + mod" />
+                </F>
+              </div>
+              {/* Homebrew toggle */}
+              <div className="flex items-center gap-2 pt-1">
+                <input type="checkbox" id={`hb-${cls.id}`} checked={cls.is_homebrew}
+                  onChange={e => updateLocalClass(cls.id, { is_homebrew: e.target.checked })} />
+                <label htmlFor={`hb-${cls.id}`} className="text-sm cursor-pointer"
+                  style={{ color: 'var(--cs-gold)' }}>
+                  Subclase homebrew
+                </label>
+              </div>
+              {cls.is_homebrew && (
+                <div className="space-y-2 pt-1 border-t" style={{ borderColor: 'rgba(201,173,106,0.2)' }}>
+                  <F label="Enlace (URL)">
+                    <input value={cls.homebrew_url ?? ''}
+                      onChange={e => updateLocalClass(cls.id, { homebrew_url: e.target.value })}
+                      className="ifield" placeholder="https://homebrewery.naturalcrit.com/..." />
+                  </F>
+                  <F label="Descripción de la subclase homebrew">
+                    <textarea value={cls.homebrew_description ?? ''}
+                      onChange={e => updateLocalClass(cls.id, { homebrew_description: e.target.value })}
+                      rows={6} className="ifield resize-none"
+                      placeholder="Describe los rasgos y habilidades de la subclase..." />
+                  </F>
+                  <p className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>
+                    Agrega los rasgos individuales en la tab Rasgos con fuente «Subclase: {cls.subclass_name || cls.class_name}».
+                    Las tiradas de salvación se agregan en Habilidades.
+                  </p>
+                </div>
+              )}
+              <button onClick={() => saveClass(cls)}
+                className="btn-primary text-sm">
+                Guardar esta clase
+              </button>
+            </div>
+          ))}
+
+          {/* Add new class */}
+          <div className="parchment-page rounded-xl p-4 space-y-3">
+            <h3 className="font-semibold text-sm" style={{ color: 'var(--cs-text-muted)' }}>
+              Agregar clase / multiclase
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              <F label="Clase">
+                <select value={newCls.class_name}
+                  onChange={e => setNewCls(p => ({ ...p, class_name: e.target.value, subclass_name: '' }))}
+                  className="ifield">
+                  <option value="">— Seleccionar —</option>
+                  {Object.keys(classMap).map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </F>
+              <F label="Subclase">
+                {newCls.is_homebrew ? (
+                  <input value={newCls.subclass_name}
+                    onChange={e => setNewCls(p => ({ ...p, subclass_name: e.target.value }))}
+                    className="ifield" placeholder="Nombre homebrew..." />
+                ) : (
+                  <select value={newCls.subclass_name}
+                    onChange={e => setNewCls(p => ({ ...p, subclass_name: e.target.value }))}
+                    className="ifield">
+                    <option value="">— Sin subclase —</option>
+                    {(classMap[newCls.class_name] ?? []).map(sc => (
+                      <option key={sc} value={sc}>{sc}</option>
+                    ))}
+                  </select>
+                )}
+              </F>
+              <F label="Nivel">
+                <input type="number" min={1} max={20} value={newCls.level}
+                  onChange={e => setNewCls(p => ({ ...p, level: +e.target.value }))}
+                  className="ifield" />
+              </F>
+              <F label="Habilidad de conjuración">
+                <select value={newCls.spellcasting_ability}
+                  onChange={e => setNewCls(p => ({ ...p, spellcasting_ability: e.target.value }))}
+                  className="ifield">
+                  <option value="">— Ninguna —</option>
+                  {(['int', 'wis', 'cha'] as Ability[]).map(a => (
+                    <option key={a} value={a}>{a.toUpperCase()}</option>
+                  ))}
+                </select>
+              </F>
+            </div>
+            <div className="flex items-center gap-2">
+              <input type="checkbox" id="newcls-hb" checked={newCls.is_homebrew}
+                onChange={e => setNewCls(p => ({ ...p, is_homebrew: e.target.checked }))} />
+              <label htmlFor="newcls-hb" className="text-sm cursor-pointer"
+                style={{ color: 'var(--cs-gold)' }}>
+                Subclase homebrew
+              </label>
+              <input type="checkbox" id="newcls-primary" checked={newCls.is_primary}
+                onChange={e => setNewCls(p => ({ ...p, is_primary: e.target.checked }))} />
+              <label htmlFor="newcls-primary" className="text-sm cursor-pointer"
+                style={{ color: 'var(--cs-text-muted)' }}>
+                Clase primaria
+              </label>
+            </div>
+            {newCls.is_homebrew && (
+              <div className="space-y-2">
+                <F label="URL de la subclase homebrew">
+                  <input value={newCls.homebrew_url}
+                    onChange={e => setNewCls(p => ({ ...p, homebrew_url: e.target.value }))}
+                    className="ifield" placeholder="https://..." />
+                </F>
+                <F label="Descripción">
+                  <textarea value={newCls.homebrew_description}
+                    onChange={e => setNewCls(p => ({ ...p, homebrew_description: e.target.value }))}
+                    rows={4} className="ifield resize-none"
+                    placeholder="Rasgos y descripción de la subclase..." />
+                </F>
+              </div>
+            )}
+            <button onClick={addClass} className="btn-primary">+ Agregar clase</button>
+          </div>
+
+          <SaveBtn onClick={saveAllClasses} saving={saving} />
         </div>
       )}
 
@@ -1342,12 +1648,28 @@ export default function EditCharacterClient({
             <h3 className="font-semibold text-sm" style={{ color: 'var(--cs-text-muted)' }}>
               Agregar ataque
             </h3>
+            {/* Weapon category filter */}
+            <div className="flex gap-2 flex-wrap">
+              {(['all', 'simple', 'martial'] as const).map(f => (
+                <button key={f} onClick={() => setWeaponCatFilter(f)}
+                  className="text-xs px-3 py-1 rounded-full border transition-all"
+                  style={{
+                    background: weaponCatFilter === f ? 'var(--cs-accent)' : 'transparent',
+                    borderColor: weaponCatFilter === f ? 'var(--cs-accent)' : 'rgba(201,173,106,0.3)',
+                    color: weaponCatFilter === f ? '#fff' : 'var(--cs-text-muted)',
+                  }}>
+                  {f === 'all' ? 'Todas' : f === 'simple' ? 'Simple' : 'Marcial'}
+                </button>
+              ))}
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <F label="Nombre">
                 <Autocomplete
                   value={newWeapon.name}
                   onChange={handleWeaponAutocomplete}
-                  options={weaponItems.map(w => w.name)}
+                  options={weaponItems
+                    .filter(w => weaponCatFilter === 'all' || w.weaponCategory === weaponCatFilter)
+                    .map(w => w.name)}
                   placeholder="Buscar arma..."
                 />
               </F>
@@ -1427,12 +1749,75 @@ export default function EditCharacterClient({
             <h3 className="font-semibold text-sm" style={{ color: 'var(--cs-text-muted)' }}>
               Agregar item
             </h3>
+            {/* Equipment category filter */}
+            <div className="flex gap-1.5 flex-wrap">
+              {[
+                ['all', 'Todos'],
+                ['weapon', 'Arma'],
+                ['armor', 'Armadura'],
+                ['potion', 'Poción'],
+                ['scroll', 'Pergamino'],
+                ['rod', 'Vara'],
+                ['wand', 'Varita'],
+                ['ring', 'Anillo'],
+                ['focus', 'Foco'],
+                ['tool', 'Herramienta'],
+                ['gear', 'Equipo'],
+                ['other', 'Otro'],
+              ].map(([f, label]) => (
+                <button key={f} onClick={() => setEquipCatFilter(f)}
+                  className="text-xs px-2.5 py-0.5 rounded-full border transition-all"
+                  style={{
+                    background: equipCatFilter === f ? 'var(--cs-accent)' : 'transparent',
+                    borderColor: equipCatFilter === f ? 'var(--cs-accent)' : 'rgba(201,173,106,0.3)',
+                    color: equipCatFilter === f ? '#fff' : 'var(--cs-text-muted)',
+                  }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            {/* Rarity filter */}
+            <div className="flex gap-1.5 flex-wrap">
+              {[
+                ['all', 'Toda rareza'],
+                ['none', 'No mágico'],
+                ['common', 'Común'],
+                ['uncommon', 'Poco común'],
+                ['rare', 'Raro'],
+                ['very rare', 'Muy raro'],
+                ['legendary', 'Legendario'],
+                ['artifact', 'Artefacto'],
+              ].map(([f, label]) => {
+                const rarColors: Record<string, string> = {
+                  common: '#9CAF88', uncommon: '#4D9B4D', rare: '#4A90D9',
+                  'very rare': '#9B59B6', legendary: '#E67E22', artifact: '#E74C3C',
+                };
+                const isActive = equipRarityFilter === f;
+                const accent = rarColors[f] || 'var(--cs-accent)';
+                return (
+                  <button key={f} onClick={() => setEquipRarityFilter(f)}
+                    className="text-xs px-2.5 py-0.5 rounded-full border transition-all"
+                    style={{
+                      background: isActive ? accent : 'transparent',
+                      borderColor: isActive ? accent : 'rgba(201,173,106,0.3)',
+                      color: isActive ? '#fff' : 'var(--cs-text-muted)',
+                    }}>
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <F label="Nombre">
                 <Autocomplete
                   value={newEquip.name}
                   onChange={handleEquipAutocomplete}
-                  options={equipmentItems.map(e => e.name)}
+                  options={equipmentItems
+                    .filter(e =>
+                      (equipCatFilter === 'all' || e.category === equipCatFilter) &&
+                      (equipRarityFilter === 'all' || e.rarity === equipRarityFilter)
+                    )
+                    .map(e => e.name)}
                   placeholder="Buscar item..."
                 />
               </F>

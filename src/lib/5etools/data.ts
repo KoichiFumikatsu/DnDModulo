@@ -53,6 +53,7 @@ export interface SpellEntry {
 export interface EquipmentItem {
   name: string
   type: string
+  category: string
   weight?: number
   value?: number
   source: string
@@ -63,6 +64,8 @@ export interface EquipmentItem {
   properties?: string[]
   weaponCategory?: string
   rarity?: string
+  isMagic?: boolean
+  reqAttune?: string | boolean | null
 }
 
 export interface TraitEntry {
@@ -623,7 +626,7 @@ async function _fetchAllSpellsFromAPI(): Promise<SpellEntry[]> {
 
 export async function fetchEquipmentItems(): Promise<EquipmentItem[]> {
   if (equipmentCache) return equipmentCache
-  equipmentCache = STATIC_ITEMS as EquipmentItem[]
+  equipmentCache = STATIC_ITEMS as unknown as EquipmentItem[]
   return equipmentCache
 }
 
@@ -923,18 +926,18 @@ const FALLBACK_FEATS: Feat[] = [
 const FALLBACK_SPELLS: SpellEntry[] = []
 
 const FALLBACK_EQUIPMENT: EquipmentItem[] = [
-  { name: 'Longsword', type: 'M', weight: 3, value: 15, source: 'PHB', damage: '1d8', damageType: 'S', weaponCategory: 'martial' },
-  { name: 'Shortbow', type: 'R', weight: 2, value: 25, source: 'PHB', damage: '1d6', damageType: 'P', range: '80/320', weaponCategory: 'simple' },
-  { name: 'Dagger', type: 'M', weight: 1, value: 2, source: 'PHB', damage: '1d4', damageType: 'P', weaponCategory: 'simple' },
-  { name: 'Handaxe', type: 'M', weight: 2, value: 5, source: 'PHB', damage: '1d6', damageType: 'S', weaponCategory: 'simple' },
-  { name: 'Shield', type: 'S', weight: 6, value: 10, source: 'PHB', ac: 2 },
-  { name: 'Chain Mail', type: 'HA', weight: 55, value: 75, source: 'PHB', ac: 16 },
-  { name: 'Leather Armor', type: 'LA', weight: 10, value: 10, source: 'PHB', ac: 11 },
-  { name: 'Scale Mail', type: 'MA', weight: 45, value: 50, source: 'PHB', ac: 14 },
-  { name: 'Backpack', type: 'G', weight: 5, value: 2, source: 'PHB' },
-  { name: 'Rope, Hempen (50 feet)', type: 'G', weight: 10, value: 1, source: 'PHB' },
-  { name: 'Torch', type: 'G', weight: 1, value: 0.01, source: 'PHB' },
-  { name: 'Rations (1 day)', type: 'G', weight: 2, value: 0.5, source: 'PHB' },
+  { name: 'Longsword', type: 'M', category: 'weapon', weight: 3, value: 15, source: 'PHB', damage: '1d8', damageType: 'S', weaponCategory: 'martial' },
+  { name: 'Shortbow', type: 'R', category: 'weapon', weight: 2, value: 25, source: 'PHB', damage: '1d6', damageType: 'P', range: '80/320', weaponCategory: 'simple' },
+  { name: 'Dagger', type: 'M', category: 'weapon', weight: 1, value: 2, source: 'PHB', damage: '1d4', damageType: 'P', weaponCategory: 'simple' },
+  { name: 'Handaxe', type: 'M', category: 'weapon', weight: 2, value: 5, source: 'PHB', damage: '1d6', damageType: 'S', weaponCategory: 'simple' },
+  { name: 'Shield', type: 'S', category: 'armor', weight: 6, value: 10, source: 'PHB', ac: 2 },
+  { name: 'Chain Mail', type: 'HA', category: 'armor', weight: 55, value: 75, source: 'PHB', ac: 16 },
+  { name: 'Leather Armor', type: 'LA', category: 'armor', weight: 10, value: 10, source: 'PHB', ac: 11 },
+  { name: 'Scale Mail', type: 'MA', category: 'armor', weight: 45, value: 50, source: 'PHB', ac: 14 },
+  { name: 'Backpack', type: 'G', category: 'gear', weight: 5, value: 2, source: 'PHB' },
+  { name: 'Rope, Hempen (50 feet)', type: 'G', category: 'gear', weight: 10, value: 1, source: 'PHB' },
+  { name: 'Torch', type: 'G', category: 'gear', weight: 1, value: 0.01, source: 'PHB' },
+  { name: 'Rations (1 day)', type: 'G', category: 'gear', weight: 2, value: 0.5, source: 'PHB' },
 ]
 
 const FALLBACK_RACE_TRAITS: TraitEntry[] = []
