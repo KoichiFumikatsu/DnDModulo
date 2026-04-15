@@ -30,6 +30,10 @@ export interface Feat {
   category?: string
   prerequisite?: Array<Record<string, unknown>>
   ability?: Array<Record<string, unknown>>
+  // Each entry is { skillName: true } | { choose: { from: string[], count?: number } } | { any: N }
+  skillProficiencies?: Array<Record<string, unknown>>
+  // Each entry is { skillName: true } | { anyProficientSkill: N } | { choose: ... }
+  expertise?: Array<Record<string, unknown>>
   entries?: unknown[]
   description?: string
 }

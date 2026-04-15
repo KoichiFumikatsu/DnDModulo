@@ -453,32 +453,40 @@ export default function EditCharacterClient({
           }
         }
 
-        // Features that mention advantage on skills
-        for (const f of localFeatures) {
-          const desc = (f.description ?? '').toLowerCase()
-          // Check for advantage mentions
-          if (desc.includes('advantage') || desc.includes('ventaja')) {
-            const allSkillKeys = ['acrobatics','animal handling','arcana','athletics','deception','history',
-              'insight','intimidation','investigation','medicine','nature','perception',
-              'performance','persuasion','religion','sleight of hand','stealth','survival']
-            for (const sk of allSkillKeys) {
-              if (desc.includes(sk.toLowerCase())) {
-                suggestions.push({ skill: sk, source: f.name, type: 'advantage' })
+        // Feats — use structured catalog data (skillProficiencies + expertise)
+        for (const feature of localFeatures) {
+          const catalog = allFeats.find(f => f.name.toLowerCase() === feature.name.toLowerCase())
+          if (!catalog) continue
+
+          // Skill proficiencies
+          for (const entry of (catalog.skillProficiencies ?? []) as Record<string, unknown>[]) {
+            if ('choose' in entry && entry.choose) {
+              const ch = entry.choose as { from?: string[]; count?: number }
+              const count = ch.count ?? 1
+              for (const sk of (ch.from ?? [])) {
+                suggestions.push({ skill: sk, source: `${feature.name} (choose ${count})`, type: 'choice' })
+              }
+            } else if ('any' in entry && typeof entry.any === 'number') {
+              suggestions.push({ skill: `Any ${entry.any} skills`, source: feature.name, type: 'choice' })
+            } else {
+              for (const [sk, val] of Object.entries(entry)) {
+                if (val === true) suggestions.push({ skill: sk, source: feature.name, type: 'proficiency' })
               }
             }
-            // Common patterns
-            if (desc.includes('perception') && !suggestions.some(s => s.skill === 'perception' && s.source === f.name)) {
-              // already handled above
-            }
           }
-          // Check for proficiency mentions
-          if (desc.includes('proficiency') || desc.includes('competencia') || desc.includes('proficient')) {
-            const allSkillKeys = ['acrobatics','animal handling','arcana','athletics','deception','history',
-              'insight','intimidation','investigation','medicine','nature','perception',
-              'performance','persuasion','religion','sleight of hand','stealth','survival']
-            for (const sk of allSkillKeys) {
-              if (desc.includes(sk.toLowerCase())) {
-                suggestions.push({ skill: sk, source: f.name, type: 'proficiency' })
+
+          // Expertise
+          for (const entry of (catalog.expertise ?? []) as Record<string, unknown>[]) {
+            if ('anyProficientSkill' in entry) {
+              suggestions.push({ skill: `Any ${entry.anyProficientSkill} proficient skill`, source: `${feature.name} (expertise)`, type: 'expertise' })
+            } else if ('choose' in entry && entry.choose) {
+              const ch = entry.choose as { from?: string[]; count?: number }
+              for (const sk of (ch.from ?? [])) {
+                suggestions.push({ skill: sk, source: `${feature.name} (expertise, choose ${ch.count ?? 1})`, type: 'expertise' })
+              }
+            } else {
+              for (const [sk, val] of Object.entries(entry)) {
+                if (val === true) suggestions.push({ skill: sk, source: `${feature.name} (expertise)`, type: 'expertise' })
               }
             }
           }
