@@ -402,6 +402,7 @@ export default async function CharacterPage({
             }))}
             spells={(spells ?? []).map(s => ({
               id: s.id, spell_level: s.spell_level, name: s.name,
+              damage: (s as Record<string, unknown>).damage as string ?? null,
               custom_notes: s.custom_notes, is_prepared: s.is_prepared,
             }))}
           />

@@ -14,6 +14,7 @@ interface Spell {
   id: string
   spell_level: number
   name: string
+  damage: string | null
   custom_notes: string | null
   is_prepared: boolean
 }
@@ -69,10 +70,19 @@ function rollFormula(formula: string): { total: number; detail: string } {
 
 function signStr(n: number) { return n >= 0 ? `+${n}` : `${n}` }
 
-/** Parse "2d6 fire, 1d4 cold" from custom_notes if present */
-function parseDamageFromNotes(notes: string | null): { formula: string; type: string } | null {
-  if (!notes) return null
-  const clean = notes.replace(/^(dmg|damage|daño)\s*:\s*/i, '').trim()
+/** Extract damage formula from spell.damage field or custom_notes fallback */
+function parseDamageFormula(spell: Spell): { formula: string; type: string } | null {
+  // 1. Primary: dedicated damage field (e.g. "2d6 fire" or just "1d8")
+  if (spell.damage?.trim()) {
+    const clean = spell.damage.trim()
+    const m = clean.match(/^(\d*d\d+(?:[+-]\d+)?)\s*(.*)$/i)
+    if (m) return { formula: m[1], type: m[2].split(/[,;]/)[0].trim() }
+    // If no dice but has text, treat whole value as formula attempt
+    return { formula: clean, type: '' }
+  }
+  // 2. Fallback: parse from custom_notes
+  if (!spell.custom_notes) return null
+  const clean = spell.custom_notes.replace(/^(dmg|damage|daño)\s*:\s*/i, '').trim()
   const m = clean.match(/^(\d*d\d+(?:[+-]\d+)?)\s*(.*)$/i)
   if (m) return { formula: m[1], type: m[2].split(/[,;]/)[0].trim() }
   return null
@@ -157,7 +167,7 @@ export default function SpellsTab({ characterId, classes, slots: initialSlots, s
   }
 
   function rollDamage(spell: Spell) {
-    const dmg = parseDamageFromNotes(spell.custom_notes)
+    const dmg = parseDamageFormula(spell)
     if (!dmg) return
     const base = rollFormula(dmg.formula)
     let total = base.total
@@ -347,7 +357,7 @@ export default function SpellsTab({ characterId, classes, slots: initialSlots, s
             </thead>
             <tbody>
               {spells.map((s, i) => {
-                const dmg = parseDamageFromNotes(s.custom_notes)
+                const dmg = parseDamageFormula(s)
                 return (
                   <tr key={s.id} style={{ borderBottom: i < spells.length - 1 ? '1px solid rgba(201,173,106,0.35)' : 'none' }}>
                     {/* Name */}
@@ -396,7 +406,7 @@ export default function SpellsTab({ characterId, classes, slots: initialSlots, s
                     {/* Notes */}
                     <td style={{ padding: '0.6rem 0 0.6rem 0.5rem', verticalAlign: 'middle' }}>
                       <span style={{ fontFamily: 'var(--font-montaga)', fontSize: '0.78rem', color: 'var(--cs-text)' }}>
-                        {s.custom_notes && !parseDamageFromNotes(s.custom_notes) ? s.custom_notes : ''}
+                        {s.custom_notes ?? ''}
                       </span>
                     </td>
                   </tr>

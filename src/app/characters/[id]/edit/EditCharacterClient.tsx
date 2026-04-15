@@ -657,6 +657,15 @@ export default function EditCharacterClient({
     setLocalClasses(prev => prev.map(c => c.id === id ? { ...c, ...patch } : c))
   }
 
+  /** Compute spell DC and attack mod from spellcasting ability + current proficiency bonus */
+  function calcSpellStats(ability: Ability | '' | null): { spell_save_dc: number; spell_attack_mod: number } | null {
+    if (!ability) return null
+    const score = combat[ability as Ability] ?? 10
+    const abilMod = Math.floor((score - 10) / 2)
+    const prof = combat.proficiency_bonus
+    return { spell_save_dc: 8 + prof + abilMod, spell_attack_mod: prof + abilMod }
+  }
+
   async function saveAllClasses() {
     setSaving(true)
     await Promise.all(localClasses.map(saveClass))
@@ -1314,7 +1323,11 @@ export default function EditCharacterClient({
                 </F>
                 <F label="Habilidad de conjuración">
                   <select value={cls.spellcasting_ability ?? ''}
-                    onChange={e => updateLocalClass(cls.id, { spellcasting_ability: (e.target.value as Ability) || null })}
+                    onChange={e => {
+                      const ability = (e.target.value as Ability) || null
+                      const auto = calcSpellStats(ability)
+                      updateLocalClass(cls.id, { spellcasting_ability: ability, ...(auto ?? {}) })
+                    }}
                     className="ifield">
                     <option value="">— Ninguna —</option>
                     {SPELLCASTING_ABILITIES.map(a => (
@@ -1323,9 +1336,15 @@ export default function EditCharacterClient({
                   </select>
                 </F>
                 <F label="CD salvación de hechizos">
-                  <input type="number" value={cls.spell_save_dc ?? ''}
-                    onChange={e => updateLocalClass(cls.id, { spell_save_dc: e.target.value ? +e.target.value : null })}
-                    className="ifield" placeholder="8 + prof + mod" />
+                  <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                    <input type="number" value={cls.spell_save_dc ?? ''}
+                      onChange={e => updateLocalClass(cls.id, { spell_save_dc: e.target.value ? +e.target.value : null })}
+                      className="ifield" placeholder="8 + prof + mod" style={{ flex: 1 }} />
+                    {cls.spellcasting_ability && (
+                      <button type="button" onClick={() => { const s = calcSpellStats(cls.spellcasting_ability); if (s) updateLocalClass(cls.id, s) }}
+                        title="Recalcular" style={{ fontSize: '0.7rem', padding: '2px 7px', borderRadius: 4, border: '1px solid rgba(201,173,106,0.4)', background: 'transparent', color: 'var(--cs-gold)', cursor: 'pointer' }}>↻</button>
+                    )}
+                  </div>
                 </F>
                 <F label="Mod. ataque de hechizos">
                   <input type="number" value={cls.spell_attack_mod ?? ''}
@@ -1412,7 +1431,11 @@ export default function EditCharacterClient({
               </F>
               <F label="Habilidad de conjuración">
                 <select value={newCls.spellcasting_ability}
-                  onChange={e => setNewCls(p => ({ ...p, spellcasting_ability: e.target.value as Ability | '' }))}
+                  onChange={e => {
+                    const ability = e.target.value as Ability | ''
+                    const auto = calcSpellStats(ability)
+                    setNewCls(p => ({ ...p, spellcasting_ability: ability, ...(auto ?? {}) }))
+                  }}
                   className="ifield">
                   <option value="">— Ninguna —</option>
                   {SPELLCASTING_ABILITIES.map(a => (
