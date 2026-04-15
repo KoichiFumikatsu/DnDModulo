@@ -33,9 +33,15 @@ interface Props {
   spells: Spell[]
 }
 
+interface TempBuff {
+  id: string
+  name: string
+  value: string   // e.g. "1d6"
+}
+
 const LEVEL_LABELS = ['Cantrips', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
 
-/* ── Dice rolling (same helpers as WeaponsTab) ── */
+/* ── Dice rolling ── */
 function rollDie(sides: number) { return Math.floor(Math.random() * sides) + 1 }
 
 function rollFormula(formula: string): { total: number; detail: string } {
@@ -66,7 +72,6 @@ function signStr(n: number) { return n >= 0 ? `+${n}` : `${n}` }
 /** Parse "2d6 fire, 1d4 cold" from custom_notes if present */
 function parseDamageFromNotes(notes: string | null): { formula: string; type: string } | null {
   if (!notes) return null
-  // Look for a dice formula at the start or after "dmg:" / "damage:"
   const clean = notes.replace(/^(dmg|damage|daño)\s*:\s*/i, '').trim()
   const m = clean.match(/^(\d*d\d+(?:[+-]\d+)?)\s*(.*)$/i)
   if (m) return { formula: m[1], type: m[2].split(/[,;]/)[0].trim() }
@@ -81,14 +86,18 @@ interface SpellRollResult {
   detail: string
   isCrit?: boolean
   isMiss?: boolean
-  buffDetail?: string
 }
 
 export default function SpellsTab({ characterId, classes, slots: initialSlots, spells }: Props) {
   const [slots, setSlots] = useState<SpellSlot[]>(initialSlots)
   const [, startTransition] = useTransition()
   const [lastRoll, setLastRoll] = useState<SpellRollResult | null>(null)
-  const [tempBuff, setTempBuff] = useState('')   // e.g. "1d6" for Bardic Inspiration
+
+  /* ── Multi-buff system ── */
+  const [tempBuffs, setTempBuffs] = useState<TempBuff[]>([])
+  const [newBuffName, setNewBuffName] = useState('')
+  const [newBuffValue, setNewBuffValue] = useState('')
+  const [showBuffForm, setShowBuffForm] = useState(false)
 
   const byLevel: Record<number, Spell[]> = {}
   for (const s of spells) {
@@ -101,6 +110,30 @@ export default function SpellsTab({ characterId, classes, slots: initialSlots, s
 
   const mainClass = classes.find(c => c.spell_save_dc || c.spell_attack_mod) ?? classes[0]
   const atkMod = mainClass?.spell_attack_mod ?? 0
+
+  function addBuff() {
+    if (!newBuffValue.trim()) return
+    setTempBuffs(prev => [...prev, { id: Math.random().toString(36).slice(2), name: newBuffName.trim(), value: newBuffValue.trim() }])
+    setNewBuffName('')
+    setNewBuffValue('')
+    setShowBuffForm(false)
+  }
+
+  function removeBuff(id: string) {
+    setTempBuffs(prev => prev.filter(b => b.id !== id))
+  }
+
+  /** Roll all active buffs and return total + detail string */
+  function rollBuffs(): { total: number; detail: string } {
+    let total = 0
+    const parts: string[] = []
+    for (const b of tempBuffs) {
+      const r = rollFormula(b.value)
+      total += r.total
+      parts.push(`${b.name ? b.name + ':' : ''}${b.value}→${r.total}(${r.detail})`)
+    }
+    return { total, detail: parts.join(' + ') }
+  }
 
   function handleDotClick(slot: SpellSlot, dotIndex: number) {
     const newUsed = dotIndex < slot.slots_used ? dotIndex : dotIndex + 1
@@ -115,14 +148,12 @@ export default function SpellsTab({ characterId, classes, slots: initialSlots, s
     const d20 = rollDie(20)
     let total = d20 + atkMod
     const parts = [`d20(${d20})`, signStr(atkMod) + ' atk']
-    let buffDetail = ''
-    if (tempBuff.trim()) {
-      const b = rollFormula(tempBuff)
+    if (tempBuffs.length > 0) {
+      const b = rollBuffs()
       total += b.total
-      buffDetail = `+${b.total} buff(${b.detail})`
-      parts.push(buffDetail)
+      parts.push(`buffs:+${b.total}(${b.detail})`)
     }
-    setLastRoll({ spellName: spell.name, type: 'attack', d20, total, detail: parts.join(' '), isCrit: d20 === 20, isMiss: d20 === 1, buffDetail })
+    setLastRoll({ spellName: spell.name, type: 'attack', d20, total, detail: parts.join(' '), isCrit: d20 === 20, isMiss: d20 === 1 })
   }
 
   function rollDamage(spell: Spell) {
@@ -130,15 +161,20 @@ export default function SpellsTab({ characterId, classes, slots: initialSlots, s
     if (!dmg) return
     const base = rollFormula(dmg.formula)
     let total = base.total
-    let buffDetail = ''
-    const parts = [`${dmg.formula} → ${base.total}(${base.detail})${dmg.type ? ` ${dmg.type}` : ''}`]
-    if (tempBuff.trim()) {
-      const b = rollFormula(tempBuff)
+    const parts = [`${dmg.formula}→${base.total}(${base.detail})${dmg.type ? ` ${dmg.type}` : ''}`]
+    if (tempBuffs.length > 0) {
+      const b = rollBuffs()
       total += b.total
-      buffDetail = `+${b.total} buff(${b.detail})`
-      parts.push(buffDetail)
+      parts.push(`buffs:+${b.total}(${b.detail})`)
     }
-    setLastRoll({ spellName: spell.name, type: 'damage', total, detail: parts.join(' '), buffDetail })
+    setLastRoll({ spellName: spell.name, type: 'damage', total, detail: parts.join(' ') })
+  }
+
+  /* ── Styles ── */
+  const fieldStyle: React.CSSProperties = {
+    padding: '3px 8px', fontFamily: 'monospace', fontSize: '0.78rem',
+    background: 'var(--cs-card)', border: '1px solid var(--cs-gold)',
+    color: 'var(--cs-text)', borderRadius: 4, outline: 'none',
   }
 
   return (
@@ -173,21 +209,47 @@ export default function SpellsTab({ characterId, classes, slots: initialSlots, s
         </div>
       )}
 
-      {/* Temp buff input */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', justifyContent: 'flex-end' }}>
-        <label style={{ fontFamily: 'Cinzel, serif', fontSize: '0.65rem', color: 'var(--cs-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-          Buff temporal (ej: 1d6)
-        </label>
-        <input value={tempBuff} onChange={e => setTempBuff(e.target.value)}
-          placeholder="1d6"
-          style={{
-            width: 90, padding: '3px 8px', fontFamily: 'monospace', fontSize: '0.8rem',
-            background: 'var(--cs-card)', border: '1px solid var(--cs-gold)',
-            color: 'var(--cs-text)', borderRadius: 4,
-          }} />
-        {tempBuff && (
-          <button onClick={() => setTempBuff('')}
-            style={{ fontSize: '0.65rem', color: 'var(--cs-text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>✕</button>
+      {/* ── Temp Buffs ── */}
+      <div style={{ marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', alignItems: 'flex-end' }}>
+        {/* Active buffs chips */}
+        {tempBuffs.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', justifyContent: 'flex-end' }}>
+            {tempBuffs.map(b => (
+              <span key={b.id} style={{
+                display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                background: 'rgba(201,173,106,0.15)', border: '1px solid var(--cs-gold)',
+                borderRadius: 12, padding: '0.18rem 0.55rem 0.18rem 0.65rem', fontSize: '0.73rem', color: 'var(--cs-text)',
+              }}>
+                {b.name && <span style={{ color: 'var(--cs-text-muted)' }}>{b.name}:</span>}
+                <span style={{ fontFamily: 'monospace', color: 'var(--cs-gold)' }}>{b.value}</span>
+                <button onClick={() => removeBuff(b.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--cs-text-muted)', fontSize: '0.8rem', padding: 0, lineHeight: 1 }}>×</button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Add buff form (toggles) */}
+        {showBuffForm ? (
+          <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <input value={newBuffName} onChange={e => setNewBuffName(e.target.value)}
+              placeholder="Nombre (ej: Inspiración)" style={{ ...fieldStyle, width: 150 }} />
+            <input value={newBuffValue} onChange={e => setNewBuffValue(e.target.value)}
+              placeholder="Valor (ej: 1d6)" style={{ ...fieldStyle, width: 90 }}
+              onKeyDown={e => e.key === 'Enter' && addBuff()} />
+            <button onClick={addBuff}
+              style={{ background: 'var(--cs-accent)', color: '#fff', border: 'none', borderRadius: 4, padding: '3px 10px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}>
+              + Agregar
+            </button>
+            <button onClick={() => setShowBuffForm(false)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--cs-text-muted)', fontSize: '0.78rem' }}>
+              Cancelar
+            </button>
+          </div>
+        ) : (
+          <button onClick={() => setShowBuffForm(true)}
+            style={{ fontFamily: 'Cinzel, serif', fontSize: '0.62rem', padding: '3px 12px', borderRadius: 12, border: '1px solid rgba(201,173,106,0.5)', background: 'transparent', color: 'var(--cs-text-muted)', cursor: 'pointer', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+            + Buff temporal
+          </button>
         )}
       </div>
 
@@ -298,21 +360,19 @@ export default function SpellsTab({ characterId, classes, slots: initialSlots, s
                       </div>
                     </td>
 
-                    {/* Attack / DC */}
+                    {/* Attack */}
                     <td style={{ padding: '0.6rem 1rem 0.6rem 0.5rem', verticalAlign: 'middle' }}>
-                      {mainClass?.spell_attack_mod != null ? (
-                        <div>
-                          <div style={{ fontFamily: 'var(--font-montaga)', fontSize: '0.82rem', color: 'var(--cs-text)', marginBottom: '0.25rem' }}>
-                            {signStr(atkMod)} atk · DC {mainClass.spell_save_dc ?? '—'}
+                      <div>
+                        {atkMod !== 0 && (
+                          <div style={{ fontFamily: 'var(--font-montaga)', fontSize: '0.78rem', color: 'var(--cs-text)', marginBottom: '0.25rem' }}>
+                            {signStr(atkMod)} atk{mainClass?.spell_save_dc ? ` · DC ${mainClass.spell_save_dc}` : ''}
                           </div>
-                          <button onClick={() => rollAttack(s)}
-                            style={{ fontFamily: 'Cinzel, serif', fontSize: '0.65rem', padding: '2px 10px', borderRadius: 20, border: '1px solid var(--cs-gold)', background: 'transparent', color: 'var(--cs-gold)', cursor: 'pointer', letterSpacing: '0.05em' }}>
-                            🎲 Tirar
-                          </button>
-                        </div>
-                      ) : (
-                        <span style={{ color: 'var(--cs-text-muted)', fontSize: '0.78rem' }}>—</span>
-                      )}
+                        )}
+                        <button onClick={() => rollAttack(s)}
+                          style={{ fontFamily: 'Cinzel, serif', fontSize: '0.65rem', padding: '2px 10px', borderRadius: 20, border: '1px solid var(--cs-gold)', background: 'transparent', color: 'var(--cs-gold)', cursor: 'pointer', letterSpacing: '0.05em' }}>
+                          🎲 Tirar
+                        </button>
+                      </div>
                     </td>
 
                     {/* Damage */}
@@ -329,14 +389,14 @@ export default function SpellsTab({ characterId, classes, slots: initialSlots, s
                           </button>
                         </div>
                       ) : (
-                        <span style={{ color: 'var(--cs-text-muted)', fontSize: '0.78rem' }}>—</span>
+                        <span style={{ color: 'var(--cs-text-muted)', fontSize: '0.75rem', fontStyle: 'italic', fontFamily: 'var(--font-montaga)' }}>—</span>
                       )}
                     </td>
 
                     {/* Notes */}
                     <td style={{ padding: '0.6rem 0 0.6rem 0.5rem', verticalAlign: 'middle' }}>
                       <span style={{ fontFamily: 'var(--font-montaga)', fontSize: '0.78rem', color: 'var(--cs-text)' }}>
-                        {s.custom_notes && !parseDamageFromNotes(s.custom_notes) ? s.custom_notes : (s.custom_notes ? '' : '')}
+                        {s.custom_notes && !parseDamageFromNotes(s.custom_notes) ? s.custom_notes : ''}
                       </span>
                     </td>
                   </tr>
