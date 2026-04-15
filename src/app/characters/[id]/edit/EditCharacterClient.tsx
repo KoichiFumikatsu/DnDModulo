@@ -214,6 +214,7 @@ export default function EditCharacterClient({
   const [localWeapons, setLocalWeapons] = useState(weapons)
   const [newWeapon, setNewWeapon] = useState({
     name: '', atk_bonus: '', damage: '', damage_type: '', range: '', notes: '',
+    ability_mod: '' as string, is_proficient: false, extra_damage: '',
   })
 
   /* ── Equipment ── */
@@ -545,7 +546,7 @@ export default function EditCharacterClient({
       sort_order: localWeapons.length,
     }).select().single()
     if (data) setLocalWeapons(prev => [...prev, data])
-    setNewWeapon({ name: '', atk_bonus: '', damage: '', damage_type: '', range: '', notes: '' })
+    setNewWeapon({ name: '', atk_bonus: '', damage: '', damage_type: '', range: '', notes: '', ability_mod: '', is_proficient: false, extra_damage: '' })
   }
 
   async function deleteWeapon(id: string) {
@@ -1739,8 +1740,29 @@ export default function EditCharacterClient({
                   onChange={e => setNewWeapon(p => ({ ...p, notes: e.target.value }))}
                   className="ifield" />
               </F>
+              <F label="Mod. de habilidad">
+                <select value={newWeapon.ability_mod}
+                  onChange={e => setNewWeapon(p => ({ ...p, ability_mod: e.target.value }))}
+                  className="ifield">
+                  <option value="">— ninguno —</option>
+                  {(['str','dex','con','int','wis','cha'] as const).map(a => (
+                    <option key={a} value={a}>{ABILITY_LABELS[a] ?? a.toUpperCase()}</option>
+                  ))}
+                </select>
+              </F>
+              <F label="Daño extra (fórmula)">
+                <input value={newWeapon.extra_damage}
+                  onChange={e => setNewWeapon(p => ({ ...p, extra_damage: e.target.value }))}
+                  className="ifield" placeholder="1d6 frío, 2d4 fuego" />
+              </F>
             </div>
-            <button onClick={addWeapon} className="btn-primary">+ Agregar</button>
+            <label className="flex items-center gap-2 text-sm cursor-pointer mt-1"
+              style={{ color: 'var(--cs-text-muted)' }}>
+              <input type="checkbox" checked={newWeapon.is_proficient}
+                onChange={e => setNewWeapon(p => ({ ...p, is_proficient: e.target.checked }))} />
+              Proficiente con esta arma
+            </label>
+            <button onClick={addWeapon} className="btn-primary mt-2">+ Agregar</button>
           </div>
 
           <div className="space-y-2">

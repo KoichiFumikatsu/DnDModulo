@@ -54,6 +54,9 @@ export interface CharacterWeapon {
   range: string | null
   weight: string | null
   notes: string | null
+  ability_mod: string | null
+  is_proficient: boolean
+  extra_damage: string | null
 }
 
 export interface CharacterEquipment {

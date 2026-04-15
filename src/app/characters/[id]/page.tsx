@@ -370,11 +370,21 @@ export default async function CharacterPage({
 
         {/* ════ WEAPONS TAB ════ */}
         {tab === 'weapons' && (
-          <WeaponsTab weapons={(weapons ?? []).map(w => ({
-            id: w.id, name: w.name, atk_bonus: w.atk_bonus,
-            damage: w.damage, damage_type: w.damage_type,
-            range: w.range, notes: w.notes,
-          }))} />
+          <WeaponsTab
+            weapons={(weapons ?? []).map(w => ({
+              id: w.id, name: w.name, atk_bonus: w.atk_bonus,
+              damage: w.damage, damage_type: w.damage_type,
+              range: w.range, notes: w.notes,
+              ability_mod: w.ability_mod ?? null,
+              is_proficient: w.is_proficient ?? false,
+              extra_damage: w.extra_damage ?? null,
+            }))}
+            character={{
+              str: character.str, dex: character.dex, con: character.con,
+              int: character.int, wis: character.wis, cha: character.cha,
+              proficiency_bonus: character.proficiency_bonus,
+            }}
+          />
         )}
 
         {/* ════ SPELLS TAB ════ */}
