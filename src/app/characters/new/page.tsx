@@ -1,5 +1,4 @@
-﻿import { fetchBackgrounds, fetchClasses, fetchFeats, fetchRaces } from '@/lib/5etools/data'
-import { loadLocalClassDetails, loadLocalRaceAbilities } from '@/lib/5etools/local'
+﻿import { fetchBackgrounds, fetchClasses, fetchFeats, fetchRaces, fetchRaceAbilities, fetchClassDetails } from '@/lib/5etools/data'
 import NewCharacterClient from './NewCharacterClient'
 
 export default async function NewCharacterPage() {
@@ -14,9 +13,9 @@ export default async function NewCharacterPage() {
     fetchRaces(),
     fetchBackgrounds(),
     fetchClasses(),
-    loadLocalRaceAbilities(),
+    fetchRaceAbilities(),
     fetchFeats(),
-    loadLocalClassDetails(),
+    fetchClassDetails(),
   ])
 
   return (
