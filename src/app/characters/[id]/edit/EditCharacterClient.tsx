@@ -367,6 +367,49 @@ export default function EditCharacterClient({
   }, [backgroundSkills, basic.background, basic.race, basic.subrace, classDetails, localClasses, localFeatures, raceSkills])
 
   /* ══════════════════════════════════════════════════════════════
+     ABILITY BONUS SOURCES — computed from feats + homebrew background
+     ══════════════════════════════════════════════════════════════ */
+
+  /** Returns list of { ability, value, source } for all known bonus grants */
+  function getAbilityBonusSources(): { ability: string; value: number; source: string }[] {
+    const results: { ability: string; value: number; source: string }[] = []
+
+    // 1. From feats the character has (matched against allFeats catalog)
+    for (const feat of localFeatures) {
+      const catalog = allFeats.find(f => f.name.toLowerCase() === feat.name.toLowerCase())
+      if (!catalog?.ability) continue
+      for (const entry of catalog.ability as Record<string, unknown>[]) {
+        if ('choose' in entry) continue // skip choose — we don't know what was picked
+        for (const [ab, val] of Object.entries(entry)) {
+          if (typeof val === 'number') {
+            results.push({ ability: ab, value: val, source: `Feat: ${feat.name}` })
+          }
+        }
+      }
+    }
+
+    // 2. From homebrew background text — parse patterns like "+2 CHA", "+1 int"
+    const bgText = basic.homebrew_background_notes ?? ''
+    const abbrMap: Record<string, string> = {
+      str: 'str', fuerza: 'str',
+      dex: 'dex', destreza: 'dex',
+      con: 'con', constitución: 'con', constitucion: 'con',
+      int: 'int', inteligencia: 'int',
+      wis: 'wis', sabiduría: 'wis', sabiduria: 'wis',
+      cha: 'cha', carisma: 'cha',
+    }
+    const pattern = /([+-]\d+)\s+(str|dex|con|int|wis|cha|fuerza|destreza|constitución|constitucion|inteligencia|sabiduría|sabiduria|carisma)/gi
+    let m: RegExpExecArray | null
+    while ((m = pattern.exec(bgText)) !== null) {
+      const val = parseInt(m[1])
+      const ab = abbrMap[m[2].toLowerCase()]
+      if (ab && val) results.push({ ability: ab, value: val, source: 'Trasfondo' })
+    }
+
+    return results
+  }
+
+  /* ══════════════════════════════════════════════════════════════
      SAVE HELPERS
      ══════════════════════════════════════════════════════════════ */
 
@@ -1247,6 +1290,7 @@ export default function EditCharacterClient({
                 const baseKey = `base_${ab}` as `base_str` | `base_dex` | `base_con` | `base_int` | `base_wis` | `base_cha`
                 const base = combat[baseKey]
                 const bonus = base != null ? combat[ab] - base : null
+                const sources = getAbilityBonusSources().filter(s => s.ability === ab)
                 return (
                   <div key={ab} className="stat-box rounded text-center"
                     style={{ padding: '0.4rem 0.25rem' }}>
@@ -1284,10 +1328,24 @@ export default function EditCharacterClient({
                         className="ifield text-center text-xs"
                         style={{ padding: '1px 2px', background: 'transparent', border: 'none', width: '100%' }}
                       />
-                      {bonus != null && (
+                      {bonus != null && bonus !== 0 && (
                         <div className="text-[0.6rem] mt-0.5"
                           style={{ color: bonus > 0 ? 'var(--cs-gold)' : 'var(--danger)' }}>
                           {bonus >= 0 ? `+${bonus}` : bonus} bono
+                        </div>
+                      )}
+                      {/* Source chips */}
+                      {sources.length > 0 && (
+                        <div style={{ marginTop: '0.3rem', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          {sources.map((s, i) => (
+                            <div key={i} style={{
+                              fontSize: '0.52rem', padding: '1px 4px', borderRadius: 3,
+                              background: 'rgba(201,173,106,0.2)', color: 'var(--cs-gold-dk)',
+                              lineHeight: 1.3, textAlign: 'center',
+                            }}>
+                              {s.value > 0 ? `+${s.value}` : s.value} {s.source}
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>
