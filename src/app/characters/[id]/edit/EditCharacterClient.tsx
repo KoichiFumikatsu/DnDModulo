@@ -1,22 +1,17 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Autocomplete from '@/components/ui/Autocomplete'
 import SpellModal from '@/components/ui/SpellModal'
 import {
-  fetchAllSpells, type SpellEntry,
-  fetchEquipmentItems, type EquipmentItem,
   fetchRaceTraits, fetchClassFeatures, fetchSubclassFeatures,
-  fetchClassDetails, fetchBackgroundSkills, fetchRaceSkills,
-  fetchRaces, fetchBackgrounds, fetchClasses,
-  fetchFeats, type Feat,
   getLanguageGrants, ALL_LANGUAGES,
+  type SpellEntry, type EquipmentItem, type Feat,
   type ClassDetail, type RaceSkillProf, type ClassMap,
 } from '@/lib/5etools/data'
 import type {
-  Character, CharacterClass, SpellSlot, CharacterSpell,
+  Character, CharacterClass, CharacterSpell,
   CharacterWeapon, CharacterEquipment, CharacterFeature,
   CharacterProficiency, ClassResource, CustomStat, CustomStatType, ResetOn,
   ProficiencyLevel, Ability,
@@ -76,7 +71,6 @@ function cleanTaggedText(text: string | null): string {
 export default function EditCharacterClient({
   character,
   classes,
-  spellSlots,
   spells,
   weapons,
   equipment,
@@ -84,10 +78,18 @@ export default function EditCharacterClient({
   proficiencies,
   classResources,
   customStats,
+  raceOptions,
+  backgroundOptions,
+  classMap,
+  spellList,
+  equipmentItems,
+  allFeats,
+  classDetails,
+  backgroundSkills,
+  raceSkills,
 }: {
   character: Character
   classes: CharacterClass[]
-  spellSlots: SpellSlot[]
   spells: CharacterSpell[]
   weapons: CharacterWeapon[]
   equipment: CharacterEquipment[]
@@ -95,17 +97,23 @@ export default function EditCharacterClient({
   proficiencies: CharacterProficiency[]
   classResources: ClassResource[]
   customStats: CustomStat[]
+  raceOptions: string[]
+  backgroundOptions: string[]
+  classMap: ClassMap
+  spellList: SpellEntry[]
+  equipmentItems: EquipmentItem[]
+  allFeats: Feat[]
+  classDetails: Record<string, ClassDetail>
+  backgroundSkills: Record<string, string[]>
+  raceSkills: Record<string, RaceSkillProf>
 }) {
-  const router = useRouter()
   const supabase = createClient()
   const [tab, setTab] = useState<Tab>('basic')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
   /* ── 5etools data ── */
-  const [spellList, setSpellList] = useState<SpellEntry[]>([])
-  const [equipmentItems, setEquipmentItems] = useState<EquipmentItem[]>([])
-  const [weaponItems, setWeaponItems] = useState<EquipmentItem[]>([])
+  const weaponItems = equipmentItems.filter(i => i.weaponCategory != null)
 
   /* ── Item / weapon filters ── */
   const [weaponCatFilter, setWeaponCatFilter] = useState<'all' | 'simple' | 'martial'>('all')
@@ -125,9 +133,6 @@ export default function EditCharacterClient({
     return saved.filter(l => !autoFixed.includes(l))
   })
   const [customLangInput, setCustomLangInput] = useState('')
-  const [raceOptions, setRaceOptions] = useState<string[]>([])
-  const [backgroundOptions, setBackgroundOptions] = useState<string[]>([])
-  const [classMap, setClassMap] = useState<ClassMap>({})
   const [loadingTraits, setLoadingTraits] = useState(false)
   const [spellModalOpen, setSpellModalOpen] = useState(false)
   const [expandedFeature, setExpandedFeature] = useState<string | null>(null)
@@ -213,7 +218,6 @@ export default function EditCharacterClient({
   /* ── Features ── */
   const [localFeatures, setLocalFeatures] = useState(features)
   const [newFeature, setNewFeature] = useState({ name: '', description: '', source: '' })
-  const [allFeats, setAllFeats] = useState<Feat[]>([])
   const [featQuery, setFeatQuery] = useState('')
 
   /* ── Resources ── */
@@ -247,15 +251,6 @@ export default function EditCharacterClient({
      EFFECTS — fetch 5etools data
      ══════════════════════════════════════════════════════════════ */
 
-  // 5etools catalog data
-  useEffect(() => {
-    fetchRaces().then(setRaceOptions).catch(() => {})
-    fetchBackgrounds().then(setBackgroundOptions).catch(() => {})
-    fetchClasses().then(setClassMap).catch(() => {})
-    fetchAllSpells().then(setSpellList).catch(() => {})
-    fetchFeats().then(setAllFeats).catch(() => {})
-  }, [])
-
   // Skill suggestions — from class, race, background, features
   useEffect(() => {
     async function loadSuggestions() {
@@ -264,8 +259,7 @@ export default function EditCharacterClient({
 
       try {
         // Class skill proficiencies
-        const classDetails = await fetchClassDetails()
-        for (const cls of classes) {
+        for (const cls of localClasses) {
           const detail = classDetails[cls.class_name]
           if (detail?.skillChoices) {
             const sc = detail.skillChoices
@@ -290,9 +284,8 @@ export default function EditCharacterClient({
         }
 
         // Background skills
-        const bgSkills = await fetchBackgroundSkills()
-        const bgName = character.background ?? ''
-        const bgMatch = bgSkills[bgName]
+        const bgName = basic.background ?? ''
+        const bgMatch = backgroundSkills[bgName]
         if (bgMatch) {
           for (const s of bgMatch) {
             suggestions.push({ skill: s, source: `Background: ${bgName}`, type: 'proficiency' })
@@ -300,11 +293,10 @@ export default function EditCharacterClient({
         }
 
         // Race skills
-        const raceSkills = await fetchRaceSkills()
-        const raceName = character.subrace
-          ? `${character.subrace} (${character.race})`
-          : character.race ?? ''
-        const raceMatch = raceSkills[raceName] ?? raceSkills[character.race ?? '']
+        const raceName = basic.subrace
+          ? `${basic.subrace} (${basic.race})`
+          : basic.race ?? ''
+        const raceMatch = raceSkills[raceName] ?? raceSkills[basic.race ?? '']
         if (raceMatch) {
           for (const s of raceMatch.fixed) {
             suggestions.push({ skill: s, source: `Race: ${raceName}`, type: 'proficiency' })
@@ -320,7 +312,7 @@ export default function EditCharacterClient({
         }
 
         // Features that mention advantage on skills
-        for (const f of features) {
+        for (const f of localFeatures) {
           const desc = (f.description ?? '').toLowerCase()
           // Check for advantage mentions
           if (desc.includes('advantage') || desc.includes('ventaja')) {
@@ -357,17 +349,7 @@ export default function EditCharacterClient({
       setLoadingSuggestions(false)
     }
     loadSuggestions()
-  }, [classes, character.background, character.race, character.subrace, features])
-
-  // Equipment & weapons on mount
-  useEffect(() => {
-    fetchEquipmentItems()
-      .then(items => {
-        setEquipmentItems(items)
-        setWeaponItems(items.filter(i => i.weaponCategory != null))
-      })
-      .catch(() => {})
-  }, [])
+  }, [backgroundSkills, basic.background, basic.race, basic.subrace, classDetails, localClasses, localFeatures, raceSkills])
 
   /* ══════════════════════════════════════════════════════════════
      SAVE HELPERS
@@ -509,13 +491,14 @@ export default function EditCharacterClient({
       sort_order: localSpells.length,
     }
     // Try with source_type columns; fall back if migration not yet applied
-    let { data, error } = await supabase.from('character_spells').insert({
+    const insertResult = await supabase.from('character_spells').insert({
       ...base,
       source_type: newSpell.source_type,
       charges_max: newSpell.source_type === 'charges' ? (newSpell.charges_max ?? 1) : null,
       charges_used: 0,
     }).select().single()
-    if (error && error.message?.includes('source_type')) {
+    let data = insertResult.data
+    if (insertResult.error && insertResult.error.message?.includes('source_type')) {
       const res = await supabase.from('character_spells').insert(base).select().single()
       data = res.data
     }
@@ -638,10 +621,10 @@ export default function EditCharacterClient({
       const existingNames = new Set(localFeatures.map(f => f.name))
 
       // Race traits
-      if (character.race) {
-        const raceKey = character.subrace
-          ? `${character.subrace} (${character.race})`
-          : character.race
+      if (basic.race) {
+        const raceKey = basic.subrace
+          ? `${basic.subrace} (${basic.race})`
+          : basic.race
         const raceTraits = await fetchRaceTraits(raceKey)
         for (const t of raceTraits) {
           if (!existingNames.has(t.name)) {
@@ -1868,52 +1851,74 @@ export default function EditCharacterClient({
             {localEquipment.map(item => {
               const itemValue = parseItemValue(item.notes)
               const extraNotes = cleanNotes(item.notes)
+              const catalogItem = equipmentItems.find(e => e.name === item.name)
+              const contents = catalogItem?.contents ?? []
               return (
-                <div key={item.id}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg parchment-page">
-                  <span className="text-sm font-medium"
-                    style={{ color: 'var(--cs-text-muted)' }}>
-                    x{item.quantity}
-                  </span>
-                  <span className="flex-1 font-medium text-sm"
-                    style={{ color: 'var(--cs-text)' }}>
-                    {item.name}
-                  </span>
-                  {itemValue != null && (
-                    <span className="text-xs"
-                      style={{ color: 'var(--cs-gold)' }}>
-                      {itemValue} gp
-                    </span>
-                  )}
-                  {item.weight && (
-                    <span className="text-xs"
+                <div key={item.id} className="rounded-lg parchment-page overflow-hidden">
+                  <div className="flex items-center gap-3 px-4 py-3">
+                    <span className="text-sm font-medium"
                       style={{ color: 'var(--cs-text-muted)' }}>
-                      {item.weight}
+                      x{item.quantity}
                     </span>
-                  )}
-                  {extraNotes && (
-                    <span className="text-xs"
-                      style={{ color: 'var(--cs-text-muted)' }}>
-                      {extraNotes}
+                    <span className="flex-1 font-medium text-sm"
+                      style={{ color: 'var(--cs-text)' }}>
+                      {item.name}
                     </span>
-                  )}
-                  {itemValue != null && itemValue > 0 && (
-                    <button onClick={() => sellItem(item)}
-                      className="text-xs px-2 py-0.5 rounded"
-                      style={{
-                        background: 'var(--cs-gold-dk)',
-                        color: 'var(--cs-card)',
-                        fontSize: '0.7rem',
-                        fontFamily: 'Cinzel, serif',
-                        letterSpacing: '0.03em',
-                      }}>
-                      Vender
+                    {itemValue != null && (
+                      <span className="text-xs"
+                        style={{ color: 'var(--cs-gold)' }}>
+                        {itemValue} gp
+                      </span>
+                    )}
+                    {extraNotes && (
+                      <span className="text-xs"
+                        style={{ color: 'var(--cs-text-muted)' }}>
+                        {extraNotes}
+                      </span>
+                    )}
+                    {itemValue != null && itemValue > 0 && (
+                      <button onClick={() => sellItem(item)}
+                        className="text-xs px-2 py-0.5 rounded"
+                        style={{
+                          background: 'var(--cs-gold-dk)',
+                          color: 'var(--cs-card)',
+                          fontSize: '0.7rem',
+                          fontFamily: 'Cinzel, serif',
+                          letterSpacing: '0.03em',
+                        }}>
+                        Vender
+                      </button>
+                    )}
+                    <button onClick={() => deleteEquipment(item.id)}
+                      style={{ color: 'var(--danger)' }}>
+                      &#10005;
                     </button>
+                  </div>
+                  {contents.length > 0 && (
+                    <div className="px-4 pb-3 pt-0"
+                      style={{ borderTop: '1px solid var(--border)', marginTop: '-1px' }}>
+                      <p className="text-xs font-semibold mb-1"
+                        style={{ color: 'var(--cs-text-muted)' }}>Contenido:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {contents.map((c, i) => {
+                          const [qty, ...nameParts] = /^\d+x /.test(c)
+                            ? [c.match(/^(\d+)x /)?.[1] ?? '1', c.replace(/^\d+x /, '')]
+                            : ['1', c.split('|')[0]]
+                          const label = nameParts.join(' ') || c.split('|')[0]
+                          return (
+                            <span key={i} className="text-xs px-2 py-0.5 rounded"
+                              style={{
+                                background: 'var(--cs-card)',
+                                color: 'var(--cs-text)',
+                                border: '1px solid var(--border)',
+                              }}>
+                              {qty !== '1' ? `${qty}× ` : ''}{label}
+                            </span>
+                          )
+                        })}
+                      </div>
+                    </div>
                   )}
-                  <button onClick={() => deleteEquipment(item.id)}
-                    style={{ color: 'var(--danger)' }}>
-                    &#10005;
-                  </button>
                 </div>
               )
             })}

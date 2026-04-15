@@ -1,8 +1,10 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { fetchEquipmentItems } from '@/lib/5etools/data'
 import QuickStats from '@/modules/characters/components/QuickStats'
 import DeathSavesClient from './DeathSavesClient'
+import EquipmentTracker from './EquipmentTracker'
 
 export default async function PlayPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -25,12 +27,16 @@ export default async function PlayPage({ params }: { params: Promise<{ id: strin
     { data: classResources },
     { data: customStats },
     { data: weapons },
+    { data: equipment },
+    equipmentCatalog,
   ] = await Promise.all([
     supabase.from('character_classes').select('*').eq('character_id', id),
     supabase.from('character_spell_slots').select('*').eq('character_id', id),
     supabase.from('character_class_resources').select('*').eq('character_id', id).order('sort_order'),
     supabase.from('character_custom_stats').select('*').eq('character_id', id).order('sort_order'),
     supabase.from('character_weapons').select('*').eq('character_id', id).order('sort_order'),
+    supabase.from('character_equipment').select('*').eq('character_id', id).order('sort_order'),
+    fetchEquipmentItems(),
   ])
 
   return (
@@ -82,6 +88,14 @@ export default async function PlayPage({ params }: { params: Promise<{ id: strin
               ))}
             </div>
           </section>
+        )}
+
+        {/* Equipment tracker */}
+        {equipment && equipment.length > 0 && (
+          <EquipmentTracker
+            initialEquipment={equipment}
+            catalog={equipmentCatalog.map(e => ({ name: e.name, contents: e.contents }))}
+          />
         )}
 
         {/* Death Saves */}
