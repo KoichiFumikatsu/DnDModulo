@@ -36,7 +36,7 @@ const RARITY_COLORS: Record<string, string> = {
   'very rare': '#9B59B6', legendary: '#E67E22', artifact: '#E74C3C',
 }
 
-type Tab = 'basic' | 'classes' | 'combat' | 'skills' | 'spells' | 'weapons' | 'equipment' | 'features' | 'resources' | 'custom'
+type Tab = 'basic' | 'classes' | 'combat' | 'skills' | 'spells' | 'weapons' | 'equipment' | 'features' | 'resources'
 
 /* ── Helpers ── */
 
@@ -948,7 +948,6 @@ export default function EditCharacterClient({
     { key: 'equipment', label: 'Equipo' },
     { key: 'features', label: 'Rasgos' },
     { key: 'resources', label: 'Recursos' },
-    { key: 'custom', label: 'Custom' },
   ]
 
   /* ══════════════════════════════════════════════════════════════
@@ -2427,14 +2426,6 @@ export default function EditCharacterClient({
         </div>
       )}
 
-      {/* Custom tab removed — use Recursos instead */}
-      {tab === 'custom' && (
-        <div className="parchment-page rounded-xl p-6 text-center">
-          <p className="text-sm" style={{ color: 'var(--cs-text-muted)' }}>
-            Usa el tab <strong>Recursos</strong> para rastrear contadores y recursos personalizados.
-          </p>
-        </div>
-      )}
     </div>
   )
 }
