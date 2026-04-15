@@ -1013,14 +1013,23 @@ export default function EditCharacterClient({
                   className="ifield" />
               </F>
               <F label="XP">
-                <input type="number" value={basic.experience_points}
-                  onChange={e => setBasic(p => ({ ...p, experience_points: +e.target.value }))}
-                  onKeyDown={e => {
-                    const lvl = getLevelFromXP(basic.experience_points)
-                    if (e.key === 'ArrowUp' && lvl < 20) { e.preventDefault(); setBasic(p => ({ ...p, experience_points: XP_THRESHOLDS[lvl] })) }
-                    if (e.key === 'ArrowDown' && lvl > 1) { e.preventDefault(); setBasic(p => ({ ...p, experience_points: XP_THRESHOLDS[lvl - 2] })) }
-                  }}
-                  className="ifield" />
+                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                  <button type="button"
+                    onClick={() => { const lvl = getLevelFromXP(basic.experience_points); if (lvl > 1) setBasic(p => ({ ...p, experience_points: XP_THRESHOLDS[lvl - 2] })) }}
+                    className="text-xs px-2 py-1 rounded"
+                    style={{ border: '1px solid var(--cs-gold)', color: 'var(--cs-gold)', background: 'transparent', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                    − Niv
+                  </button>
+                  <input type="number" value={basic.experience_points}
+                    onChange={e => setBasic(p => ({ ...p, experience_points: +e.target.value }))}
+                    className="ifield" style={{ flex: 1 }} />
+                  <button type="button"
+                    onClick={() => { const lvl = getLevelFromXP(basic.experience_points); if (lvl < 20) setBasic(p => ({ ...p, experience_points: XP_THRESHOLDS[lvl] })) }}
+                    className="text-xs px-2 py-1 rounded"
+                    style={{ border: '1px solid var(--cs-gold)', color: 'var(--cs-gold)', background: 'transparent', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                    + Niv
+                  </button>
+                </div>
               </F>
             </div>
           </div>

@@ -476,14 +476,21 @@ export default function NewCharacterClient({
               </Field>
             </div>
             <Field label="Experiencia (XP)">
-              <input type="number" value={xp}
-                onChange={e => setXp(parseInt(e.target.value) || 0)}
-                onKeyDown={e => {
-                  const lvl = getLevelFromXP(xp)
-                  if (e.key === 'ArrowUp' && lvl < 20) { e.preventDefault(); setXp(XP_THRESHOLDS[lvl]) }
-                  if (e.key === 'ArrowDown' && lvl > 1) { e.preventDefault(); setXp(XP_THRESHOLDS[lvl - 2]) }
-                }}
-                style={darkInput} min={0} />
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <button type="button"
+                  onClick={() => { const lvl = getLevelFromXP(xp); if (lvl > 1) setXp(XP_THRESHOLDS[lvl - 2]) }}
+                  style={{ padding: '6px 12px', background: 'rgba(201,173,106,0.15)', border: '1px solid rgba(201,173,106,0.4)', color: 'var(--cs-gold)', borderRadius: 4, cursor: 'pointer', fontSize: '0.75rem' }}>
+                  − Nivel
+                </button>
+                <input type="number" value={xp}
+                  onChange={e => setXp(parseInt(e.target.value) || 0)}
+                  style={{ ...darkInput, flex: 1 }} min={0} />
+                <button type="button"
+                  onClick={() => { const lvl = getLevelFromXP(xp); if (lvl < 20) setXp(XP_THRESHOLDS[lvl]) }}
+                  style={{ padding: '6px 12px', background: 'rgba(201,173,106,0.15)', border: '1px solid rgba(201,173,106,0.4)', color: 'var(--cs-gold)', borderRadius: 4, cursor: 'pointer', fontSize: '0.75rem' }}>
+                  + Nivel
+                </button>
+              </div>
               <div style={{ marginTop: '0.4rem', fontSize: '0.85rem', color: 'var(--cs-gold)', fontFamily: 'var(--font-cinzel, serif)' }}>
                 Nivel {totalLevel} — Bonus de proficiencia +{profBonus}
               </div>
