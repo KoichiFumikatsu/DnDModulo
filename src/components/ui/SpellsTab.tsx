@@ -34,16 +34,25 @@ interface Props {
   spells: Spell[]
 }
 
+type BuffTarget = 'attack' | 'damage' | 'both' | 'advantage'
+
 interface TempBuff {
   id: string
-  name: string      // label, e.g. "Inspiración Bárdica"
-  count: number     // number of dice (or flat value if dieType === 'flat')
-  dieType: string   // 'd4' | 'd6' | 'd8' | 'd10' | 'd12' | 'd20' | 'flat'
+  name: string
+  count: number     // dice count or flat value
+  dieType: string   // 'd4' | 'd6' | ... | 'flat'
   dmgType: string   // 'fire' | 'cold' | ... | ''
+  target: BuffTarget
 }
 
 const DIE_TYPES = ['d4','d6','d8','d10','d12','d20','flat']
 const DMG_TYPES = ['','fire','cold','lightning','thunder','necrotic','radiant','poison','acid','psychic','force','piercing','slashing','bludgeoning','healing']
+const BUFF_TARGETS: { value: BuffTarget; label: string }[] = [
+  { value: 'attack', label: 'Tirada de ataque' },
+  { value: 'damage', label: 'Daño' },
+  { value: 'both',   label: 'Ataque + Daño' },
+  { value: 'advantage', label: 'Ventaja (ataque)' },
+]
 
 const LEVEL_LABELS = ['Cantrips', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
 
@@ -119,7 +128,7 @@ export default function SpellsTab({ characterId, classes, slots: initialSlots, s
   /* ── Structured multi-buff system ── */
   const [tempBuffs, setTempBuffs] = useState<TempBuff[]>([])
   const [showBuffForm, setShowBuffForm] = useState(false)
-  const [newBuff, setNewBuff] = useState<Omit<TempBuff, 'id'>>({ name: '', count: 1, dieType: 'd6', dmgType: '' })
+  const [newBuff, setNewBuff] = useState<Omit<TempBuff, 'id'>>({ name: '', count: 1, dieType: 'd6', dmgType: '', target: 'attack' })
 
   const slotsByLevel: Record<number, SpellSlot> = {}
   for (const s of slots) slotsByLevel[s.spell_level] = s
@@ -129,16 +138,20 @@ export default function SpellsTab({ characterId, classes, slots: initialSlots, s
 
   function addBuff() {
     setTempBuffs(prev => [...prev, { ...newBuff, id: Math.random().toString(36).slice(2) }])
-    setNewBuff({ name: '', count: 1, dieType: 'd6', dmgType: '' })
+    setNewBuff(p => ({ name: '', count: 1, dieType: 'd6', dmgType: '', target: p.target }))
     setShowBuffForm(false)
   }
 
   function removeBuff(id: string) { setTempBuffs(prev => prev.filter(b => b.id !== id)) }
 
-  function rollBuffs(): { total: number; parts: string[] } {
+  function rollBuffsFor(forTarget: 'attack' | 'damage'): { total: number; parts: string[] } {
+    const applicable = tempBuffs.filter(b =>
+      b.target === forTarget || b.target === 'both'
+      // 'advantage' buffs don't add dice, handled separately
+    )
     let total = 0
     const parts: string[] = []
-    for (const b of tempBuffs) {
+    for (const b of applicable) {
       const formula = buffFormula(b)
       const r = rollFormula(formula)
       total += r.total
@@ -147,6 +160,8 @@ export default function SpellsTab({ characterId, classes, slots: initialSlots, s
     }
     return { total, parts }
   }
+
+  const hasAdvantage = tempBuffs.some(b => b.target === 'advantage')
 
   function handleDotClick(slot: SpellSlot, dotIndex: number) {
     const newUsed = dotIndex < slot.slots_used ? dotIndex : dotIndex + 1
@@ -158,11 +173,19 @@ export default function SpellsTab({ characterId, classes, slots: initialSlots, s
   }
 
   function rollAttack(spell: Spell) {
-    const d20 = rollDie(20)
+    let d20: number
+    let advantageNote = ''
+    if (hasAdvantage) {
+      const r1 = rollDie(20), r2 = rollDie(20)
+      d20 = Math.max(r1, r2)
+      advantageNote = ` ventaja(${r1},${r2})`
+    } else {
+      d20 = rollDie(20)
+    }
     let total = d20 + atkMod
-    const parts = [`d20(${d20})`, `${signStr(atkMod)} atk`]
-    if (tempBuffs.length > 0) {
-      const b = rollBuffs()
+    const parts = [`d20(${d20})${advantageNote}`, `${signStr(atkMod)} atk`]
+    const b = rollBuffsFor('attack')
+    if (b.total !== 0) {
       total += b.total
       parts.push(...b.parts.map(p => `+${p}`))
     }
@@ -175,8 +198,8 @@ export default function SpellsTab({ characterId, classes, slots: initialSlots, s
     const base = rollFormula(dmg.formula)
     let total = base.total
     const parts = [`${dmg.formula}→${base.total}(${base.detail})${dmg.type ? ` ${dmg.type}` : ''}`]
-    if (tempBuffs.length > 0) {
-      const b = rollBuffs()
+    const b = rollBuffsFor('damage')
+    if (b.total !== 0) {
       total += b.total
       parts.push(...b.parts.map(p => `+${p}`))
     }
@@ -220,19 +243,26 @@ export default function SpellsTab({ characterId, classes, slots: initialSlots, s
         {/* Active buff chips */}
         {tempBuffs.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '0.5rem', justifyContent: 'flex-end' }}>
-            {tempBuffs.map(b => (
-              <span key={b.id} style={{
-                display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
-                background: 'rgba(201,173,106,0.15)', border: '1px solid var(--cs-gold)',
-                borderRadius: 12, padding: '0.18rem 0.6rem 0.18rem 0.7rem', fontSize: '0.73rem',
-              }}>
-                {b.name && <span style={{ color: 'var(--cs-text-muted)', marginRight: 2 }}>{b.name}:</span>}
-                <span style={{ fontFamily: 'monospace', color: 'var(--cs-gold)', fontWeight: 700 }}>{buffFormula(b)}</span>
-                {b.dmgType && <span style={{ color: 'var(--cs-text-muted)', fontSize: '0.68rem' }}>{b.dmgType}</span>}
-                <button onClick={() => removeBuff(b.id)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--cs-text-muted)', fontSize: '0.85rem', padding: 0, lineHeight: 1, marginLeft: 2 }}>×</button>
-              </span>
-            ))}
+            {tempBuffs.map(b => {
+              const targetLabel = BUFF_TARGETS.find(t => t.value === b.target)?.label ?? ''
+              const chipColor = b.target === 'advantage' ? 'rgba(45,106,45,0.25)' : 'rgba(201,173,106,0.15)'
+              return (
+                <span key={b.id} style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                  background: chipColor, border: `1px solid ${b.target === 'advantage' ? '#4a8a4a' : 'var(--cs-gold)'}`,
+                  borderRadius: 12, padding: '0.18rem 0.6rem 0.18rem 0.7rem', fontSize: '0.73rem',
+                }}>
+                  {b.name && <span style={{ color: 'var(--cs-text-muted)', marginRight: 2 }}>{b.name}:</span>}
+                  {b.target !== 'advantage' && (
+                    <span style={{ fontFamily: 'monospace', color: 'var(--cs-gold)', fontWeight: 700 }}>{buffFormula(b)}</span>
+                  )}
+                  {b.dmgType && <span style={{ color: 'var(--cs-text-muted)', fontSize: '0.68rem' }}>{b.dmgType}</span>}
+                  <span style={{ color: 'var(--cs-text-muted)', fontSize: '0.62rem', fontStyle: 'italic' }}>({targetLabel})</span>
+                  <button onClick={() => removeBuff(b.id)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--cs-text-muted)', fontSize: '0.85rem', padding: 0, lineHeight: 1, marginLeft: 2 }}>×</button>
+                </span>
+              )
+            })}
           </div>
         )}
 
@@ -240,16 +270,25 @@ export default function SpellsTab({ characterId, classes, slots: initialSlots, s
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           {showBuffForm ? (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center', justifyContent: 'flex-end' }}>
+              {/* Target type first */}
+              <select value={newBuff.target} onChange={e => setNewBuff(p => ({ ...p, target: e.target.value as BuffTarget }))} style={inputStyle}>
+                {BUFF_TARGETS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </select>
               <input value={newBuff.name} onChange={e => setNewBuff(p => ({ ...p, name: e.target.value }))}
-                placeholder="Nombre (ej: Inspiración)" style={{ ...inputStyle, width: 140 }} />
-              <input type="number" value={newBuff.count} onChange={e => setNewBuff(p => ({ ...p, count: Math.max(1, +e.target.value) }))}
-                min={1} style={{ ...inputStyle, width: 46 }} />
-              <select value={newBuff.dieType} onChange={e => setNewBuff(p => ({ ...p, dieType: e.target.value }))} style={inputStyle}>
-                {DIE_TYPES.map(d => <option key={d} value={d}>{d === 'flat' ? 'fijo' : d}</option>)}
-              </select>
-              <select value={newBuff.dmgType} onChange={e => setNewBuff(p => ({ ...p, dmgType: e.target.value }))} style={inputStyle}>
-                {DMG_TYPES.map(t => <option key={t} value={t}>{t || '— tipo —'}</option>)}
-              </select>
+                placeholder="Nombre (ej: Inspiración)" style={{ ...inputStyle, width: 130 }} />
+              {/* Dice fields only when not advantage */}
+              {newBuff.target !== 'advantage' && (<>
+                <input type="number" value={newBuff.count} onChange={e => setNewBuff(p => ({ ...p, count: Math.max(1, +e.target.value) }))}
+                  min={1} style={{ ...inputStyle, width: 46 }} />
+                <select value={newBuff.dieType} onChange={e => setNewBuff(p => ({ ...p, dieType: e.target.value }))} style={inputStyle}>
+                  {DIE_TYPES.map(d => <option key={d} value={d}>{d === 'flat' ? 'fijo' : d}</option>)}
+                </select>
+                {newBuff.target === 'damage' || newBuff.target === 'both' ? (
+                  <select value={newBuff.dmgType} onChange={e => setNewBuff(p => ({ ...p, dmgType: e.target.value }))} style={inputStyle}>
+                    {DMG_TYPES.map(t => <option key={t} value={t}>{t || '— tipo —'}</option>)}
+                  </select>
+                ) : null}
+              </>)}
               <button onClick={addBuff}
                 style={{ background: 'var(--cs-accent)', color: '#fff', border: 'none', borderRadius: 4, padding: '3px 10px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}>
                 + Agregar
