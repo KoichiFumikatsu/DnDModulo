@@ -8,6 +8,10 @@ import STATIC_RACES from '../5etools-processed/races.json'
 import STATIC_BACKGROUNDS from '../5etools-processed/backgrounds.json'
 import STATIC_CLASSES from '../5etools-processed/classes.json'
 import STATIC_LANGUAGES from '../5etools-processed/languages.json'
+import STATIC_FEATS from '../5etools-processed/feats.json'
+import STATIC_CLASS_FEATURES from '../5etools-processed/class-features.json'
+import STATIC_SUBCLASS_FEATURES from '../5etools-processed/subclass-features.json'
+import STATIC_RACE_TRAITS from '../5etools-processed/race-traits.json'
 
 // ── Types ──
 
@@ -25,6 +29,7 @@ export interface Feat {
   prerequisite?: Array<Record<string, unknown>>
   ability?: Array<Record<string, unknown>>
   entries?: unknown[]
+  description?: string
 }
 
 export interface ClassDetail {
@@ -66,6 +71,7 @@ export interface EquipmentItem {
   rarity?: string
   isMagic?: boolean
   reqAttune?: string | boolean | null
+  contents?: string[]
 }
 
 export interface TraitEntry {
@@ -369,33 +375,8 @@ const FEAT_SOURCES = new Set(['PHB', 'XPHB', 'TCE', 'XGE', 'PHB2024'])
 
 export async function fetchFeats(): Promise<Feat[]> {
   if (featsCache) return featsCache
-  try {
-    const res = await fetch(`${BASE}/feats.json`)
-    const json = await res.json()
-    const feats: Feat[] = []
-    const seen = new Set<string>()
-
-    for (const f of json.feat ?? []) {
-      if (!f.name || !FEAT_SOURCES.has(f.source)) continue
-      // Dedupe by name (keep first)
-      if (seen.has(f.name)) continue
-      seen.add(f.name)
-
-      feats.push({
-        name: f.name,
-        source: f.source,
-        category: f.category,
-        prerequisite: f.prerequisite,
-        ability: f.ability,
-        entries: f.entries,
-      })
-    }
-
-    featsCache = feats.sort((a, b) => a.name.localeCompare(b.name))
-    return featsCache
-  } catch {
-    return FALLBACK_FEATS
-  }
+  featsCache = STATIC_FEATS as unknown as Feat[]
+  return featsCache
 }
 
 // ── Helpers ──
@@ -632,127 +613,24 @@ export async function fetchEquipmentItems(): Promise<EquipmentItem[]> {
 
 // ── Race Traits ──
 
-async function getRacesJson(): Promise<{ race?: unknown[]; subrace?: unknown[] }> {
-  if (racesJsonCache) return racesJsonCache
-  const res = await fetch(`${BASE}/races.json`)
-  racesJsonCache = await res.json()
-  return racesJsonCache!
-}
-
 export async function fetchRaceTraits(raceName: string): Promise<TraitEntry[]> {
-  if (raceTraitsCache[raceName]) return raceTraitsCache[raceName]
-  try {
-    const json = await getRacesJson()
-    const traits: TraitEntry[] = []
-    const lowerName = raceName.toLowerCase()
-
-    // Search main races
-    for (const r of (json.race ?? []) as Record<string, unknown>[]) {
-      if ((r.name as string)?.toLowerCase() !== lowerName) continue
-      if (Array.isArray(r.entries)) {
-        for (const entry of r.entries) {
-          if (typeof entry === 'object' && entry !== null) {
-            const obj = entry as Record<string, unknown>
-            if (obj.type === 'entries' && typeof obj.name === 'string' && Array.isArray(obj.entries)) {
-              traits.push({
-                name: obj.name,
-                description: flattenEntries(obj.entries),
-                source: (r.source as string) ?? 'PHB',
-              })
-            }
-          }
-        }
-      }
-      break
-    }
-
-    // Search subraces (format: "SubraceName (RaceName)")
-    const subraceMatch = raceName.match(/^(.+?)\s*\((.+)\)$/)
-    if (subraceMatch) {
-      const [, srName, baseRace] = subraceMatch
-      // First get base race traits
-      const baseTraits = await fetchRaceTraits(baseRace)
-      traits.push(...baseTraits)
-
-      for (const sr of (json.subrace ?? []) as Record<string, unknown>[]) {
-        if (
-          (sr.name as string)?.toLowerCase() === srName.toLowerCase() &&
-          (sr.raceName as string)?.toLowerCase() === baseRace.toLowerCase()
-        ) {
-          if (Array.isArray(sr.entries)) {
-            for (const entry of sr.entries) {
-              if (typeof entry === 'object' && entry !== null) {
-                const obj = entry as Record<string, unknown>
-                if (obj.type === 'entries' && typeof obj.name === 'string' && Array.isArray(obj.entries)) {
-                  traits.push({
-                    name: obj.name,
-                    description: flattenEntries(obj.entries),
-                    source: (sr.source as string) ?? 'PHB',
-                  })
-                }
-              }
-            }
-          }
-          break
-        }
-      }
-    }
-
-    raceTraitsCache[raceName] = traits
-    return traits
-  } catch {
-    return FALLBACK_RACE_TRAITS
-  }
+  const db = STATIC_RACE_TRAITS as Record<string, Array<{ name: string; description: string; source: string }>>
+  // Try exact match first, then case-insensitive
+  const exact = db[raceName]
+  if (exact) return exact
+  const lower = raceName.toLowerCase()
+  const found = Object.entries(db).find(([k]) => k.toLowerCase() === lower)
+  return found?.[1] ?? []
 }
 
 // ── Class Features ──
 
 export async function fetchClassFeatures(className: string, level: number): Promise<TraitEntry[]> {
-  const cacheKey = className
-  if (classFeaturesCache[cacheKey]) {
-    return classFeaturesCache[cacheKey].filter(
-      (_, idx) => idx < classFeaturesCache[cacheKey].length
-    )
-  }
-  try {
-    const indexRes = await fetch(`${BASE}/class/index.json`)
-    const index: Record<string, string> = await indexRes.json()
-
-    // Find the file for this class
-    const classKey = Object.keys(index).find(
-      (k) => k.toLowerCase() === className.toLowerCase()
-    )
-    if (!classKey) return FALLBACK_CLASS_FEATURES
-
-    const res = await fetch(`${BASE}/class/${index[classKey]}`)
-    const json = await res.json()
-    const allTraits: TraitEntry[] = []
-
-    for (const cf of json.classFeature ?? []) {
-      if (!cf.name || !cf.className) continue
-      if (cf.className.toLowerCase() !== className.toLowerCase()) continue
-      if (cf.source !== 'PHB' && cf.classSource !== 'PHB') continue
-      if (typeof cf.level !== 'number') continue
-
-      if (Array.isArray(cf.entries)) {
-        allTraits.push({
-          name: `${cf.name} (Level ${cf.level})`,
-          description: flattenEntries(cf.entries),
-          source: cf.source ?? 'PHB',
-        })
-      }
-    }
-
-    classFeaturesCache[cacheKey] = allTraits
-
-    // Return only up to the requested level
-    return allTraits.filter((t) => {
-      const levelMatch = t.name.match(/\(Level (\d+)\)/)
-      return levelMatch ? parseInt(levelMatch[1], 10) <= level : true
-    })
-  } catch {
-    return FALLBACK_CLASS_FEATURES
-  }
+  const db = STATIC_CLASS_FEATURES as Record<string, Array<{ name: string; level: number; description: string }>>
+  const feats = db[className] ?? []
+  return feats
+    .filter(f => f.level <= level)
+    .map(f => ({ name: `${f.name} (Level ${f.level})`, description: f.description, source: className }))
 }
 
 // ── Subclass Features ──
@@ -762,53 +640,18 @@ export async function fetchSubclassFeatures(
   subclassName: string,
   level: number
 ): Promise<TraitEntry[]> {
-  const cacheKey = `${className}::${subclassName}`
-  if (subclassFeaturesCache[cacheKey]) {
-    return subclassFeaturesCache[cacheKey].filter((t) => {
-      const levelMatch = t.name.match(/\(Level (\d+)\)/)
-      return levelMatch ? parseInt(levelMatch[1], 10) <= level : true
-    })
-  }
-  try {
-    const indexRes = await fetch(`${BASE}/class/index.json`)
-    const index: Record<string, string> = await indexRes.json()
-
-    const classKey = Object.keys(index).find(
-      (k) => k.toLowerCase() === className.toLowerCase()
-    )
-    if (!classKey) return FALLBACK_SUBCLASS_FEATURES
-
-    const res = await fetch(`${BASE}/class/${index[classKey]}`)
-    const json = await res.json()
-    const allTraits: TraitEntry[] = []
-
-    for (const sf of json.subclassFeature ?? []) {
-      if (!sf.name || !sf.className || !sf.subclassShortName) continue
-      if (sf.className.toLowerCase() !== className.toLowerCase()) continue
-      if (
-        sf.subclassShortName.toLowerCase() !== subclassName.toLowerCase() &&
-        sf.subclassSource !== subclassName
-      ) continue
-      if (typeof sf.level !== 'number') continue
-
-      if (Array.isArray(sf.entries)) {
-        allTraits.push({
-          name: `${sf.name} (Level ${sf.level})`,
-          description: flattenEntries(sf.entries),
-          source: sf.source ?? 'PHB',
-        })
-      }
-    }
-
-    subclassFeaturesCache[cacheKey] = allTraits
-
-    return allTraits.filter((t) => {
-      const levelMatch = t.name.match(/\(Level (\d+)\)/)
-      return levelMatch ? parseInt(levelMatch[1], 10) <= level : true
-    })
-  } catch {
-    return FALLBACK_SUBCLASS_FEATURES
-  }
+  const db = STATIC_SUBCLASS_FEATURES as Record<string, Array<{ name: string; level: number; description: string }>>
+  // Try exact key, then fuzzy match on subclass name portion
+  const exactKey = `${className}::${subclassName}`
+  const feats = db[exactKey]
+    ?? Object.entries(db).find(([k]) =>
+      k.startsWith(`${className}::`) &&
+      k.toLowerCase().includes(subclassName.toLowerCase().split(' ').slice(-1)[0])
+    )?.[1]
+    ?? []
+  return feats
+    .filter(f => f.level <= level)
+    .map(f => ({ name: `${f.name} (Level ${f.level})`, description: f.description, source: subclassName }))
 }
 
 // ── Fallbacks ──

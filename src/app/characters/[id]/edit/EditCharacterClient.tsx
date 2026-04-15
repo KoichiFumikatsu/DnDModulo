@@ -11,6 +11,7 @@ import {
   fetchRaceTraits, fetchClassFeatures, fetchSubclassFeatures,
   fetchClassDetails, fetchBackgroundSkills, fetchRaceSkills,
   fetchRaces, fetchBackgrounds, fetchClasses,
+  fetchFeats, type Feat,
   getLanguageGrants, ALL_LANGUAGES,
   type ClassDetail, type RaceSkillProf, type ClassMap,
 } from '@/lib/5etools/data'
@@ -207,10 +208,13 @@ export default function EditCharacterClient({
   /* ── Equipment ── */
   const [localEquipment, setLocalEquipment] = useState(equipment)
   const [newEquip, setNewEquip] = useState({ name: '', quantity: 1, weight: '', notes: '' })
+  const [equipContents, setEquipContents] = useState<string[] | null>(null)
 
   /* ── Features ── */
   const [localFeatures, setLocalFeatures] = useState(features)
   const [newFeature, setNewFeature] = useState({ name: '', description: '', source: '' })
+  const [allFeats, setAllFeats] = useState<Feat[]>([])
+  const [featQuery, setFeatQuery] = useState('')
 
   /* ── Resources ── */
   const [localResources, setLocalResources] = useState(classResources)
@@ -249,6 +253,7 @@ export default function EditCharacterClient({
     fetchBackgrounds().then(setBackgroundOptions).catch(() => {})
     fetchClasses().then(setClassMap).catch(() => {})
     fetchAllSpells().then(setSpellList).catch(() => {})
+    fetchFeats().then(setAllFeats).catch(() => {})
   }, [])
 
   // Skill suggestions — from class, race, background, features
@@ -573,6 +578,9 @@ export default function EditCharacterClient({
         weight: match.weight ? `${match.weight} lb` : '',
         notes: match.value != null ? `value:${match.value}` : '',
       }))
+      setEquipContents(match.contents && match.contents.length > 0 ? match.contents : null)
+    } else {
+      setEquipContents(null)
     }
   }
 
@@ -583,6 +591,7 @@ export default function EditCharacterClient({
     }).select().single()
     if (data) setLocalEquipment(prev => [...prev, data])
     setNewEquip({ name: '', quantity: 1, weight: '', notes: '' })
+    setEquipContents(null)
   }
 
   async function deleteEquipment(id: string) {
@@ -647,7 +656,7 @@ export default function EditCharacterClient({
       }
 
       // Class features (each class the character has)
-      for (const cls of classes) {
+      for (const cls of localClasses) {
         const classFeats = await fetchClassFeatures(cls.class_name, cls.level)
         for (const t of classFeats) {
           if (!existingNames.has(t.name)) {
@@ -1847,6 +1856,11 @@ export default function EditCharacterClient({
                 Valor: {parseItemValue(newEquip.notes)} gp
               </p>
             )}
+            {equipContents && equipContents.length > 0 && (
+              <p className="text-xs" style={{ color: 'var(--ink-light)', fontStyle: 'italic' }}>
+                Contiene: {equipContents.join(', ')}
+              </p>
+            )}
             <button onClick={addEquipment} className="btn-primary">+ Agregar</button>
           </div>
 
@@ -1919,29 +1933,58 @@ export default function EditCharacterClient({
             {loadingTraits ? 'Loading traits...' : 'Load Auto Traits'}
           </button>
 
+          {/* Feats picker */}
+          <div className="parchment-page rounded-xl p-4 space-y-3">
+            <h3 className="font-semibold text-sm" style={{ color: 'var(--cs-text-muted)' }}>
+              Elegir Dote (Feat)
+            </h3>
+            <Autocomplete
+              value={featQuery}
+              onChange={q => {
+                setFeatQuery(q)
+                const f = allFeats.find(x => x.name === q)
+                if (f) {
+                  setNewFeature({
+                    name: f.name,
+                    description: cleanTaggedText(f.description ?? null),
+                    source: 'Feat',
+                  })
+                  setFeatQuery('')
+                }
+              }}
+              options={allFeats.map(f => f.name)}
+              placeholder="Buscar dote..."
+            />
+            {allFeats.length === 0 && (
+              <p className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>
+                Cargando dotes...
+              </p>
+            )}
+          </div>
+
           {/* Manual add form */}
           <div className="parchment-page rounded-xl p-4 space-y-3">
             <h3 className="font-semibold text-sm" style={{ color: 'var(--cs-text-muted)' }}>
-              Add trait / feature
+              Agregar rasgo / habilidad
             </h3>
             <div className="grid grid-cols-2 gap-3">
-              <F label="Name">
+              <F label="Nombre">
                 <input value={newFeature.name}
                   onChange={e => setNewFeature(p => ({ ...p, name: e.target.value }))}
                   className="ifield" placeholder="Darkvision..." />
               </F>
-              <F label="Source">
+              <F label="Fuente">
                 <input value={newFeature.source}
                   onChange={e => setNewFeature(p => ({ ...p, source: e.target.value }))}
-                  className="ifield" placeholder="race, class, homebrew..." />
+                  className="ifield" placeholder="raza, clase, homebrew..." />
               </F>
             </div>
-            <F label="Description">
+            <F label="Descripción">
               <textarea value={newFeature.description}
                 onChange={e => setNewFeature(p => ({ ...p, description: e.target.value }))}
                 rows={3} className="ifield resize-none" />
             </F>
-            <button onClick={addFeature} className="btn-primary">+ Add</button>
+            <button onClick={addFeature} className="btn-primary">+ Agregar</button>
           </div>
 
           {/* Feature grid — 2 columns */}
