@@ -224,6 +224,15 @@ export default async function CharacterPage({
                 </div>
               </div>
 
+              {/* Backstory */}
+              {character.backstory && (
+                <div className="cs-card--notched">
+                  <span className="cs-section-title">Backstory</span>
+                  <div style={{ height: 2, background: 'var(--cs-gold)', borderRadius: 4, margin: '0.4rem 0' }} />
+                  <p style={{ fontSize: '0.78rem', fontFamily: 'var(--font-montaga)', color: 'var(--cs-text)', whiteSpace: 'pre-wrap' }}>{character.backstory}</p>
+                </div>
+              )}
+
               {/* Personality */}
               {(character.personality || character.ideals || character.bonds || character.flaws) && (
                 <div className="cs-card--notched">

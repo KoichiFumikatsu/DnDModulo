@@ -17,6 +17,7 @@ import type {
   ProficiencyLevel, Ability,
 } from '@/modules/characters/types'
 import { SKILLS, ABILITY_NAMES as AB_LABELS } from '@/lib/constants'
+import { getLevelFromXP, XP_THRESHOLDS } from '@/lib/5etools/xp'
 
 /* ── Constants ── */
 
@@ -216,6 +217,11 @@ export default function EditCharacterClient({
     name: '', atk_bonus: '', damage: '', damage_type: '', range: '', notes: '',
     ability_mod: '' as string, is_proficient: false, extra_damage: '',
   })
+  const [editingWeaponId, setEditingWeaponId] = useState<string | null>(null)
+  const [editWeapon, setEditWeapon] = useState({
+    name: '', atk_bonus: '', damage: '', damage_type: '', range: '', notes: '',
+    ability_mod: '' as string, is_proficient: false, extra_damage: '',
+  })
 
   /* ── Equipment ── */
   const [localEquipment, setLocalEquipment] = useState(equipment)
@@ -232,6 +238,8 @@ export default function EditCharacterClient({
   const [newResource, setNewResource] = useState({
     name: '', current: 0, maximum: 0, reset_on: 'long_rest' as ResetOn,
   })
+  const [editingResourceId, setEditingResourceId] = useState<string | null>(null)
+  const [editResource, setEditResource] = useState({ name: '', current: 0, maximum: 0, reset_on: 'long_rest' as ResetOn })
 
   /* ── Custom Stats ── */
   const [localCustom, setLocalCustom] = useState(customStats)
@@ -554,6 +562,27 @@ export default function EditCharacterClient({
     setLocalWeapons(prev => prev.filter(w => w.id !== id))
   }
 
+  function startEditWeapon(w: typeof localWeapons[0]) {
+    setEditingWeaponId(w.id)
+    setEditWeapon({
+      name: w.name ?? '',
+      atk_bonus: w.atk_bonus ?? '',
+      damage: w.damage ?? '',
+      damage_type: w.damage_type ?? '',
+      range: w.range ?? '',
+      notes: w.notes ?? '',
+      ability_mod: w.ability_mod ?? '',
+      is_proficient: w.is_proficient ?? false,
+      extra_damage: w.extra_damage ?? '',
+    })
+  }
+
+  async function saveWeapon(id: string) {
+    await supabase.from('character_weapons').update({ ...editWeapon }).eq('id', id)
+    setLocalWeapons(prev => prev.map(w => w.id === id ? { ...w, ...editWeapon } : w))
+    setEditingWeaponId(null)
+  }
+
   /* ══════════════════════════════════════════════════════════════
      EQUIPMENT — CRUD + autocomplete + sell
      ══════════════════════════════════════════════════════════════ */
@@ -730,6 +759,17 @@ export default function EditCharacterClient({
     setLocalResources(prev => prev.filter(r => r.id !== id))
   }
 
+  function startEditResource(r: typeof localResources[0]) {
+    setEditingResourceId(r.id)
+    setEditResource({ name: r.name, current: r.current, maximum: r.maximum, reset_on: r.reset_on as ResetOn })
+  }
+
+  async function saveResource(id: string) {
+    await supabase.from('character_class_resources').update({ ...editResource }).eq('id', id)
+    setLocalResources(prev => prev.map(r => r.id === id ? { ...r, ...editResource } : r))
+    setEditingResourceId(null)
+  }
+
   /* ══════════════════════════════════════════════════════════════
      CUSTOM STATS — CRUD
      ══════════════════════════════════════════════════════════════ */
@@ -899,9 +939,14 @@ export default function EditCharacterClient({
                 onChange={v => setBasic(p => ({ ...p, background: v }))}
                 options={backgroundOptions} placeholder="Far Traveler, Sage..." />
               <F label="Alineamiento">
-                <input value={basic.alignment}
+                <select value={basic.alignment}
                   onChange={e => setBasic(p => ({ ...p, alignment: e.target.value }))}
-                  className="ifield" />
+                  className="ifield">
+                  <option value="">— Select —</option>
+                  {['Lawful Good','Neutral Good','Chaotic Good','Lawful Neutral','True Neutral','Chaotic Neutral','Lawful Evil','Neutral Evil','Chaotic Evil'].map(a => (
+                    <option key={a} value={a}>{a}</option>
+                  ))}
+                </select>
               </F>
               <F label="Velocidad">
                 <input type="number" value={basic.speed}
@@ -911,6 +956,11 @@ export default function EditCharacterClient({
               <F label="XP">
                 <input type="number" value={basic.experience_points}
                   onChange={e => setBasic(p => ({ ...p, experience_points: +e.target.value }))}
+                  onKeyDown={e => {
+                    const lvl = getLevelFromXP(basic.experience_points)
+                    if (e.key === 'ArrowUp' && lvl < 20) { e.preventDefault(); setBasic(p => ({ ...p, experience_points: XP_THRESHOLDS[lvl] })) }
+                    if (e.key === 'ArrowDown' && lvl > 1) { e.preventDefault(); setBasic(p => ({ ...p, experience_points: XP_THRESHOLDS[lvl - 2] })) }
+                  }}
                   className="ifield" />
               </F>
             </div>
@@ -1782,36 +1832,88 @@ export default function EditCharacterClient({
 
           <div className="space-y-2">
             {localWeapons.map(w => (
-              <div key={w.id}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg parchment-page">
-                <span className="flex-1 font-medium text-sm"
-                  style={{ color: 'var(--cs-text)' }}>
-                  {w.name}
-                </span>
-                {w.atk_bonus && (
-                  <span className="text-sm" style={{ color: 'var(--cs-gold)' }}>
-                    {w.atk_bonus}
-                  </span>
+              <div key={w.id} className="rounded-lg parchment-page overflow-hidden">
+                {editingWeaponId === w.id ? (
+                  /* ── inline edit form ── */
+                  <div className="p-3 space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <F label="Nombre">
+                        <input value={editWeapon.name}
+                          onChange={e => setEditWeapon(p => ({ ...p, name: e.target.value }))}
+                          className="ifield" />
+                      </F>
+                      <F label="Bonus Ataque">
+                        <input value={editWeapon.atk_bonus}
+                          onChange={e => setEditWeapon(p => ({ ...p, atk_bonus: e.target.value }))}
+                          className="ifield" placeholder="+4" />
+                      </F>
+                      <F label="Daño">
+                        <input value={editWeapon.damage}
+                          onChange={e => setEditWeapon(p => ({ ...p, damage: e.target.value }))}
+                          className="ifield" placeholder="1d8+1" />
+                      </F>
+                      <F label="Tipo de daño">
+                        <input value={editWeapon.damage_type}
+                          onChange={e => setEditWeapon(p => ({ ...p, damage_type: e.target.value }))}
+                          className="ifield" placeholder="Perforante..." />
+                      </F>
+                      <F label="Alcance">
+                        <input value={editWeapon.range}
+                          onChange={e => setEditWeapon(p => ({ ...p, range: e.target.value }))}
+                          className="ifield" placeholder="80/320ft" />
+                      </F>
+                      <F label="Notas">
+                        <input value={editWeapon.notes}
+                          onChange={e => setEditWeapon(p => ({ ...p, notes: e.target.value }))}
+                          className="ifield" />
+                      </F>
+                      <F label="Mod. de habilidad">
+                        <select value={editWeapon.ability_mod}
+                          onChange={e => setEditWeapon(p => ({ ...p, ability_mod: e.target.value }))}
+                          className="ifield">
+                          <option value="">— ninguno —</option>
+                          {(['str','dex','con','int','wis','cha'] as const).map(a => (
+                            <option key={a} value={a}>{ABILITY_LABELS[a] ?? a.toUpperCase()}</option>
+                          ))}
+                        </select>
+                      </F>
+                      <F label="Daño extra (fórmula)">
+                        <input value={editWeapon.extra_damage}
+                          onChange={e => setEditWeapon(p => ({ ...p, extra_damage: e.target.value }))}
+                          className="ifield" placeholder="1d6 frío, 2d4 fuego" />
+                      </F>
+                    </div>
+                    <label className="flex items-center gap-2 text-sm cursor-pointer"
+                      style={{ color: 'var(--cs-text-muted)' }}>
+                      <input type="checkbox" checked={editWeapon.is_proficient}
+                        onChange={e => setEditWeapon(p => ({ ...p, is_proficient: e.target.checked }))} />
+                      Proficiente con esta arma
+                    </label>
+                    <div className="flex gap-2 mt-1">
+                      <button onClick={() => saveWeapon(w.id)} className="btn-primary text-xs px-3 py-1">Guardar</button>
+                      <button onClick={() => setEditingWeaponId(null)}
+                        className="text-xs px-3 py-1 rounded"
+                        style={{ border: '1px solid var(--cs-gold)', color: 'var(--cs-text-muted)', background: 'transparent' }}>
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* ── read row ── */
+                  <div className="flex items-center gap-3 px-4 py-3 text-sm">
+                    <span className="flex-1 font-medium" style={{ color: 'var(--cs-text)' }}>{w.name}</span>
+                    {w.atk_bonus && <span style={{ color: 'var(--cs-gold)' }}>{w.atk_bonus}</span>}
+                    {w.damage && <span style={{ color: 'var(--cs-text-muted)' }}>{w.damage}</span>}
+                    {w.damage_type && <span className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>{w.damage_type}</span>}
+                    {w.range && <span className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>{w.range}</span>}
+                    <button onClick={() => startEditWeapon(w)}
+                      className="text-xs px-2 py-0.5 rounded"
+                      style={{ border: '1px solid var(--cs-gold)', color: 'var(--cs-gold)', background: 'transparent' }}>
+                      Editar
+                    </button>
+                    <button onClick={() => deleteWeapon(w.id)} style={{ color: 'var(--danger)' }}>&#10005;</button>
+                  </div>
                 )}
-                {w.damage && (
-                  <span className="text-sm" style={{ color: 'var(--cs-text-muted)' }}>
-                    {w.damage}
-                  </span>
-                )}
-                {w.damage_type && (
-                  <span className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>
-                    {w.damage_type}
-                  </span>
-                )}
-                {w.range && (
-                  <span className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>
-                    {w.range}
-                  </span>
-                )}
-                <button onClick={() => deleteWeapon(w.id)}
-                  style={{ color: 'var(--danger)' }}>
-                  &#10005;
-                </button>
               </div>
             ))}
           </div>
@@ -2196,44 +2298,80 @@ export default function EditCharacterClient({
 
           <div className="space-y-2">
             {localResources.map(r => (
-              <div key={r.id}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg parchment-page">
-                <span className="flex-1 font-medium text-sm"
-                  style={{ color: 'var(--cs-text)' }}>
-                  {r.name}
-                </span>
-                <span className="text-sm" style={{ color: 'var(--cs-text-muted)' }}>
-                  {r.current}/{r.maximum}
-                </span>
-                <span className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>
-                  {r.reset_on === 'short_rest'
-                    ? 'desc. corto'
-                    : r.reset_on === 'long_rest'
-                      ? 'desc. largo'
-                      : 'manual'}
-                </span>
-                <button onClick={() => deleteResource(r.id)}
-                  style={{ color: 'var(--danger)' }}>
-                  &#10005;
-                </button>
+              <div key={r.id} className="rounded-lg parchment-page overflow-hidden">
+                {editingResourceId === r.id ? (
+                  <div className="p-3 space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <F label="Nombre">
+                        <input value={editResource.name}
+                          onChange={e => setEditResource(p => ({ ...p, name: e.target.value }))}
+                          className="ifield" />
+                      </F>
+                      <F label="Recupera en">
+                        <select value={editResource.reset_on}
+                          onChange={e => setEditResource(p => ({ ...p, reset_on: e.target.value as ResetOn }))}
+                          className="ifield">
+                          <option value="long_rest">Descanso largo</option>
+                          <option value="short_rest">Descanso corto</option>
+                          <option value="manual">Manual</option>
+                        </select>
+                      </F>
+                      <F label="Actual">
+                        <input type="number" value={editResource.current} min={0}
+                          onChange={e => setEditResource(p => ({ ...p, current: +e.target.value }))}
+                          className="ifield" />
+                      </F>
+                      <F label="Máximo">
+                        <input type="number" value={editResource.maximum} min={0}
+                          onChange={e => setEditResource(p => ({ ...p, maximum: +e.target.value }))}
+                          className="ifield" />
+                      </F>
+                    </div>
+                    <div className="flex gap-2 mt-1">
+                      <button onClick={() => saveResource(r.id)} className="btn-primary text-xs px-3 py-1">Guardar</button>
+                      <button onClick={() => setEditingResourceId(null)}
+                        className="text-xs px-3 py-1 rounded"
+                        style={{ border: '1px solid var(--cs-gold)', color: 'var(--cs-text-muted)', background: 'transparent' }}>
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 px-4 py-3 text-sm">
+                    <span className="flex-1 font-medium" style={{ color: 'var(--cs-text)' }}>{r.name}</span>
+                    <span style={{ color: 'var(--cs-text-muted)' }}>{r.current}/{r.maximum}</span>
+                    <span className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>
+                      {r.reset_on === 'short_rest' ? 'desc. corto' : r.reset_on === 'long_rest' ? 'desc. largo' : 'manual'}
+                    </span>
+                    <button onClick={() => startEditResource(r)}
+                      className="text-xs px-2 py-0.5 rounded"
+                      style={{ border: '1px solid var(--cs-gold)', color: 'var(--cs-gold)', background: 'transparent' }}>
+                      Editar
+                    </button>
+                    <button onClick={() => deleteResource(r.id)} style={{ color: 'var(--danger)' }}>&#10005;</button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* ════════════════════════════════════════════════════════
-         CUSTOM STATS TAB
-         ════════════════════════════════════════════════════════ */}
+      {/* Custom tab removed — use Recursos instead */}
       {tab === 'custom' && (
+        <div className="parchment-page rounded-xl p-6 text-center">
+          <p className="text-sm" style={{ color: 'var(--cs-text-muted)' }}>
+            Usa el tab <strong>Recursos</strong> para rastrear contadores y recursos personalizados.
+          </p>
+        </div>
+      )}
+      {/* ════════════════════════════════════ DEAD CODE BELOW ════ */}
+      {false && tab === '_custom_disabled' && (
         <div className="space-y-4">
           <div className="parchment-page rounded-xl p-4 space-y-3">
             <h3 className="font-semibold text-sm" style={{ color: 'var(--cs-text-muted)' }}>
               Agregar stat personalizado / homebrew
             </h3>
-            <p className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>
-              Usalo para cualquier cosa especial de tu campana, como el anillo de recuperacion de tu personaje.
-            </p>
             <div className="grid grid-cols-2 gap-3">
               <F label="Nombre">
                 <input value={newCustom.name}
@@ -2317,7 +2455,7 @@ export default function EditCharacterClient({
             ))}
           </div>
         </div>
-      )}
+      )}{/* end _custom_disabled */}
     </div>
   )
 }
