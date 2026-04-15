@@ -73,7 +73,7 @@ export default async function DashboardPage() {
           </Link>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1.5rem' }}>
           {characters.map(character => {
             const xpData = getXPProgress(character.experience_points ?? 0)
             const hpPct = Math.max(0, Math.min(100, (character.hp_current / character.hp_max) * 100))
@@ -83,96 +83,93 @@ export default async function DashboardPage() {
             return (
               <div key={character.id} style={{ position: 'relative' }}>
                 <DeleteCharacterButton characterId={character.id} characterName={character.name} />
-                <Link
-                  href={`/characters/${character.id}`}
-                  style={{
-                    textDecoration: 'none', display: 'block',
+                <Link href={`/characters/${character.id}`} style={{ textDecoration: 'none', display: 'block' }}>
+                  {/* Portrait card — ornate gold frame */}
+                  <div style={{
                     background: 'var(--cs-card)',
-                    border: '1px solid var(--cs-gold)',
-                    borderRadius: 2, padding: '1.1rem',
-                    transition: 'box-shadow 0.2s',
-                  }}
-                >
-                  {/* Nombre + retrato */}
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.85rem' }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                    border: '2px solid var(--cs-gold)',
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                    boxShadow: '0 2px 12px rgba(140,100,40,0.15)',
+                    transition: 'box-shadow 0.2s, transform 0.15s',
+                  }}>
+                    {/* Portrait area */}
+                    <div style={{ position: 'relative', width: '100%', paddingBottom: '75%', background: 'rgba(201,173,106,0.08)', overflow: 'hidden' }}>
+                      {character.image_url ? (
+                        <img src={character.image_url} alt={character.name}
+                          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} />
+                      ) : (
+                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '4rem', opacity: 0.35 }}>
+                          🧙
+                        </div>
+                      )}
+                      {/* Gold corner ornaments */}
+                      <div style={{ position: 'absolute', top: 4, left: 4, width: 16, height: 16,
+                        borderTop: '2px solid var(--cs-gold)', borderLeft: '2px solid var(--cs-gold)' }} />
+                      <div style={{ position: 'absolute', top: 4, right: 4, width: 16, height: 16,
+                        borderTop: '2px solid var(--cs-gold)', borderRight: '2px solid var(--cs-gold)' }} />
+                      <div style={{ position: 'absolute', bottom: 4, left: 4, width: 16, height: 16,
+                        borderBottom: '2px solid var(--cs-gold)', borderLeft: '2px solid var(--cs-gold)' }} />
+                      <div style={{ position: 'absolute', bottom: 4, right: 4, width: 16, height: 16,
+                        borderBottom: '2px solid var(--cs-gold)', borderRight: '2px solid var(--cs-gold)' }} />
+                      {/* Level shield overlay */}
+                      <div style={{ position: 'absolute', bottom: 8, right: 8 }}>
+                        <svg viewBox="0 0 38 46" width={38} height={46}>
+                          <path d="M2 2 L36 2 L36 30 L19 44 L2 30 Z"
+                            fill="var(--cs-gold)" stroke="var(--cs-gold-dk)" strokeWidth="1.5" />
+                          <text x="19" y="22" textAnchor="middle" dominantBaseline="middle"
+                            fontFamily="Cinzel, serif" fontSize="13" fontWeight="700" fill="var(--cs-card)">
+                            {xpData.level}
+                          </text>
+                        </svg>
+                      </div>
+                    </div>
+
+                    {/* Gold divider line */}
+                    <div style={{ height: 2, background: 'var(--cs-gold)' }} />
+
+                    {/* Info area */}
+                    <div style={{ padding: '0.65rem 0.85rem 0.75rem' }}>
                       <h2 style={{
-                        fontFamily: 'var(--font-cinzel, serif)',
-                        color: 'var(--cs-accent)', fontSize: '1.05rem',
-                        lineHeight: 1.2, marginBottom: '0.2rem',
+                        fontFamily: 'var(--font-cinzel, serif)', color: 'var(--cs-accent)',
+                        fontSize: '1rem', lineHeight: 1.2, marginBottom: '0.15rem',
                         whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                       }}>
                         {character.name}
                       </h2>
-                      <p style={{ color: 'var(--cs-text-muted)', fontSize: '0.8rem', fontStyle: 'italic', fontFamily: 'var(--font-montaga, Georgia, serif)' }}>
+                      <p style={{ color: 'var(--cs-text-muted)', fontSize: '0.72rem', fontStyle: 'italic', fontFamily: 'var(--font-montaga, Georgia, serif)', marginBottom: '0.6rem' }}>
                         {character.race}{classNames.length > 0 && ` · ${classNames.join(' / ')}`}
                       </p>
-                    </div>
 
-                    {/* Retrato + escudo nivel */}
-                    <div style={{ flexShrink: 0, textAlign: 'center' }}>
-                      {character.image_url ? (
-                        <img
-                          src={character.image_url}
-                          alt={character.name}
-                          style={{ width: 52, height: 52, objectFit: 'cover', border: '2px solid var(--cs-gold)', display: 'block' }}
-                        />
-                      ) : (
-                        <div style={{
-                          width: 52, height: 52,
-                          background: 'rgba(201,173,106,0.15)',
-                          border: '2px solid var(--cs-gold)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: '1.4rem',
-                        }}>
-                          🧙
-                        </div>
-                      )}
-                      {/* Escudo nivel */}
-                      <div style={{ marginTop: 4, display: 'flex', justifyContent: 'center' }}>
-                        <div className="cs-shield cs-shield--sm" style={{ width: 36, height: 42 }}>
-                          <svg className="cs-shield-svg" viewBox="0 0 36 42" style={{ position: 'absolute', inset: 0 }}>
-                            <path d="M2 2 L34 2 L34 28 L18 40 L2 28 Z"
-                              fill="var(--cs-gold)" stroke="var(--cs-gold-dk)" strokeWidth="1.5" />
-                          </svg>
-                          <span className="cs-shield-value" style={{ position: 'relative', fontSize: '0.72rem', fontWeight: 700, color: 'var(--cs-card)', fontFamily: 'var(--font-cinzel, serif)' }}>
-                            {xpData.level}
+                      {/* HP bar */}
+                      <div style={{ marginBottom: '0.35rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 2 }}>
+                          <span style={{ fontFamily: 'Cinzel, serif', fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--cs-text-muted)' }}>PV</span>
+                          <span style={{ fontFamily: 'Cinzel, serif', fontSize: '0.75rem', color: hpColor }}>
+                            {character.hp_current}<span style={{ fontSize: '0.6rem', color: 'var(--cs-text-muted)' }}> / {character.hp_max}</span>
                           </span>
                         </div>
+                        <div style={{ height: 4, background: 'rgba(201,173,106,0.2)', borderRadius: 2, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${hpPct}%`, background: hpColor, borderRadius: 2 }} />
+                        </div>
+                      </div>
+
+                      {/* XP bar */}
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 2 }}>
+                          <span style={{ fontFamily: 'Cinzel, serif', fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--cs-text-muted)' }}>XP</span>
+                          <span style={{ fontFamily: 'var(--font-montaga, Georgia, serif)', fontSize: '0.68rem', color: 'var(--cs-text-muted)' }}>
+                            {(character.experience_points ?? 0).toLocaleString()}
+                            {xpData.nextLevelXP ? ` / ${xpData.nextLevelXP.toLocaleString()}` : ''}
+                          </span>
+                        </div>
+                        {xpData.nextLevelXP && (
+                          <div style={{ height: 4, background: 'rgba(201,173,106,0.2)', borderRadius: 2, overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${xpData.pct}%`, background: 'linear-gradient(90deg, var(--cs-gold-dk), var(--cs-gold))', borderRadius: 2 }} />
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
-
-                  <div style={{ height: 1, background: 'rgba(201,173,106,0.4)', marginBottom: '0.65rem' }} />
-
-                  {/* HP */}
-                  <div style={{ marginBottom: '0.55rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 3 }}>
-                      <span style={{ fontFamily: 'var(--font-cinzel, serif)', fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--cs-text-muted)' }}>PV</span>
-                      <span style={{ fontFamily: 'var(--font-cinzel, serif)', fontSize: '0.8rem', color: hpColor }}>
-                        {character.hp_current}
-                        <span style={{ fontSize: '0.65rem', color: 'var(--cs-text-muted)', fontFamily: 'var(--font-montaga, Georgia, serif)' }}> / {character.hp_max}</span>
-                      </span>
-                    </div>
-                    <div style={{ height: 5, background: 'rgba(201,173,106,0.25)', borderRadius: 3, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${hpPct}%`, background: hpColor, borderRadius: 3, transition: 'width 0.3s' }} />
-                    </div>
-                  </div>
-
-                  {/* XP */}
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 3 }}>
-                      <span style={{ fontFamily: 'var(--font-cinzel, serif)', fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--cs-text-muted)' }}>XP</span>
-                      <span style={{ fontFamily: 'var(--font-montaga, Georgia, serif)', fontSize: '0.75rem', color: 'var(--cs-text-muted)' }}>
-                        {(character.experience_points ?? 0).toLocaleString()}
-                        {xpData.nextLevelXP ? ` / ${xpData.nextLevelXP.toLocaleString()}` : ' (máx)'}
-                      </span>
-                    </div>
-                    {xpData.nextLevelXP && (
-                      <div style={{ height: 5, background: 'rgba(201,173,106,0.25)', borderRadius: 3, overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${xpData.pct}%`, background: 'linear-gradient(90deg, var(--cs-gold-dk), var(--cs-gold))', borderRadius: 3, transition: 'width 0.3s' }} />
-                      </div>
-                    )}
                   </div>
                 </Link>
               </div>

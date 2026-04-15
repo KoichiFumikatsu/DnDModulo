@@ -35,11 +35,61 @@ interface Props {
 
 const LEVEL_LABELS = ['Cantrips', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
 
+/* ── Dice rolling (same helpers as WeaponsTab) ── */
+function rollDie(sides: number) { return Math.floor(Math.random() * sides) + 1 }
+
+function rollFormula(formula: string): { total: number; detail: string } {
+  const clean = formula.toLowerCase().replace(/\s/g, '')
+  const parts = clean.match(/[+-]?[^+-]+/g) ?? [clean]
+  let total = 0
+  const details: string[] = []
+  for (const part of parts) {
+    const sign = part.startsWith('-') ? -1 : 1
+    const p = part.replace(/^[+-]/, '')
+    const m = p.match(/^(\d*)d(\d+)$/)
+    if (m) {
+      const count = parseInt(m[1] || '1')
+      const sides = parseInt(m[2])
+      const rolls = Array.from({ length: count }, () => rollDie(sides))
+      total += rolls.reduce((a, b) => a + b, 0) * sign
+      details.push(`[${rolls.join('+')}]`)
+    } else {
+      const n = parseInt(p) * sign
+      if (!isNaN(n) && n !== 0) { total += n; details.push(n > 0 ? `+${n}` : `${n}`) }
+    }
+  }
+  return { total, detail: details.join('') }
+}
+
+function signStr(n: number) { return n >= 0 ? `+${n}` : `${n}` }
+
+/** Parse "2d6 fire, 1d4 cold" from custom_notes if present */
+function parseDamageFromNotes(notes: string | null): { formula: string; type: string } | null {
+  if (!notes) return null
+  // Look for a dice formula at the start or after "dmg:" / "damage:"
+  const clean = notes.replace(/^(dmg|damage|daño)\s*:\s*/i, '').trim()
+  const m = clean.match(/^(\d*d\d+(?:[+-]\d+)?)\s*(.*)$/i)
+  if (m) return { formula: m[1], type: m[2].split(/[,;]/)[0].trim() }
+  return null
+}
+
+interface SpellRollResult {
+  spellName: string
+  type: 'attack' | 'damage'
+  d20?: number
+  total: number
+  detail: string
+  isCrit?: boolean
+  isMiss?: boolean
+  buffDetail?: string
+}
+
 export default function SpellsTab({ characterId, classes, slots: initialSlots, spells }: Props) {
   const [slots, setSlots] = useState<SpellSlot[]>(initialSlots)
   const [, startTransition] = useTransition()
+  const [lastRoll, setLastRoll] = useState<SpellRollResult | null>(null)
+  const [tempBuff, setTempBuff] = useState('')   // e.g. "1d6" for Bardic Inspiration
 
-  // Group spells by level
   const byLevel: Record<number, Spell[]> = {}
   for (const s of spells) {
     if (!byLevel[s.spell_level]) byLevel[s.spell_level] = []
@@ -50,39 +100,57 @@ export default function SpellsTab({ characterId, classes, slots: initialSlots, s
   for (const s of slots) slotsByLevel[s.spell_level] = s
 
   const mainClass = classes.find(c => c.spell_save_dc || c.spell_attack_mod) ?? classes[0]
+  const atkMod = mainClass?.spell_attack_mod ?? 0
 
   function handleDotClick(slot: SpellSlot, dotIndex: number) {
-    // Click dot i: if already used (i < used), restore to i; else use to i+1
     const newUsed = dotIndex < slot.slots_used ? dotIndex : dotIndex + 1
     const clamped = Math.max(0, Math.min(slot.slots_total, newUsed))
-
-    // Optimistic update
     setSlots(prev => prev.map(s =>
-      s.classId === slot.classId && s.spell_level === slot.spell_level
-        ? { ...s, slots_used: clamped }
-        : s
+      s.classId === slot.classId && s.spell_level === slot.spell_level ? { ...s, slots_used: clamped } : s
     ))
+    startTransition(() => { updateSlotUsed(characterId, slot.classId, slot.spell_level, clamped) })
+  }
 
-    startTransition(() => {
-      updateSlotUsed(characterId, slot.classId, slot.spell_level, clamped)
-    })
+  function rollAttack(spell: Spell) {
+    const d20 = rollDie(20)
+    let total = d20 + atkMod
+    const parts = [`d20(${d20})`, signStr(atkMod) + ' atk']
+    let buffDetail = ''
+    if (tempBuff.trim()) {
+      const b = rollFormula(tempBuff)
+      total += b.total
+      buffDetail = `+${b.total} buff(${b.detail})`
+      parts.push(buffDetail)
+    }
+    setLastRoll({ spellName: spell.name, type: 'attack', d20, total, detail: parts.join(' '), isCrit: d20 === 20, isMiss: d20 === 1, buffDetail })
+  }
+
+  function rollDamage(spell: Spell) {
+    const dmg = parseDamageFromNotes(spell.custom_notes)
+    if (!dmg) return
+    const base = rollFormula(dmg.formula)
+    let total = base.total
+    let buffDetail = ''
+    const parts = [`${dmg.formula} → ${base.total}(${base.detail})${dmg.type ? ` ${dmg.type}` : ''}`]
+    if (tempBuff.trim()) {
+      const b = rollFormula(tempBuff)
+      total += b.total
+      buffDetail = `+${b.total} buff(${b.detail})`
+      parts.push(buffDetail)
+    }
+    setLastRoll({ spellName: spell.name, type: 'damage', total, detail: parts.join(' '), buffDetail })
   }
 
   return (
     <div style={{ maxWidth: 860, margin: '0 auto', padding: '0 1rem' }}>
 
-      {/* Page header */}
+      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', marginBottom: '2rem' }}>
         <img src="/assets/dnd/dragon-right.svg" alt="" aria-hidden="true"
           style={{ width: 110, height: 110, transform: 'scaleX(-1)', opacity: 0.95 }} />
-        <div style={{ textAlign: 'center' }}>
-          <h2 style={{
-            fontFamily: 'var(--font-new-rocker, Cinzel, serif)',
-            fontSize: '3rem', color: 'var(--cs-accent)', lineHeight: 1, margin: 0,
-          }}>
-            Magic Spells
-          </h2>
-        </div>
+        <h2 style={{ fontFamily: 'var(--font-new-rocker, Cinzel, serif)', fontSize: '3rem', color: 'var(--cs-accent)', lineHeight: 1, margin: 0 }}>
+          Magic Spells
+        </h2>
         <img src="/assets/dnd/dragon-right.svg" alt="" aria-hidden="true"
           style={{ width: 110, height: 110, opacity: 0.95 }} />
       </div>
@@ -92,15 +160,11 @@ export default function SpellsTab({ characterId, classes, slots: initialSlots, s
         <div style={{ display: 'flex', justifyContent: 'center', gap: '3rem', marginBottom: '1.5rem' }}>
           {([
             { label: 'Spell Save DC', value: String(mainClass.spell_save_dc ?? '') },
-            { label: 'Spell Casting Ability', value: mainClass.spellcasting_ability?.toUpperCase() ?? '' },
-            { label: 'Spell Attack Bonus', value: mainClass.spell_attack_mod != null ? `+${mainClass.spell_attack_mod}` : '' },
+            { label: 'Spellcasting Ability', value: mainClass.spellcasting_ability?.toUpperCase() ?? '' },
+            { label: 'Spell Attack Bonus', value: mainClass.spell_attack_mod != null ? signStr(mainClass.spell_attack_mod) : '' },
           ] as { label: string; value: string }[]).filter(x => x.value).map(({ label, value }) => (
             <div key={label} style={{ textAlign: 'center' }}>
-              <div style={{
-                fontFamily: 'var(--font-new-rocker, Cinzel, serif)',
-                fontSize: '0.65rem', color: 'var(--cs-accent)',
-                textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.2rem',
-              }}>
+              <div style={{ fontFamily: 'Cinzel, serif', fontSize: '0.65rem', color: 'var(--cs-accent)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.2rem' }}>
                 {label}
               </div>
               <div className="cs-num" style={{ fontSize: '2.5rem', lineHeight: 1 }}>{value}</div>
@@ -109,7 +173,55 @@ export default function SpellsTab({ characterId, classes, slots: initialSlots, s
         </div>
       )}
 
-      {/* Spell slots — interactive dots */}
+      {/* Temp buff input */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', justifyContent: 'flex-end' }}>
+        <label style={{ fontFamily: 'Cinzel, serif', fontSize: '0.65rem', color: 'var(--cs-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          Buff temporal (ej: 1d6)
+        </label>
+        <input value={tempBuff} onChange={e => setTempBuff(e.target.value)}
+          placeholder="1d6"
+          style={{
+            width: 90, padding: '3px 8px', fontFamily: 'monospace', fontSize: '0.8rem',
+            background: 'var(--cs-card)', border: '1px solid var(--cs-gold)',
+            color: 'var(--cs-text)', borderRadius: 4,
+          }} />
+        {tempBuff && (
+          <button onClick={() => setTempBuff('')}
+            style={{ fontSize: '0.65rem', color: 'var(--cs-text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>✕</button>
+        )}
+      </div>
+
+      {/* Last roll result */}
+      {lastRoll && (
+        <div style={{
+          marginBottom: '1.5rem', padding: '1rem 1.5rem',
+          border: `2px solid ${lastRoll.isCrit ? 'var(--cs-gold)' : lastRoll.isMiss ? 'var(--danger)' : 'rgba(201,173,106,0.4)'}`,
+          borderRadius: 12, background: 'var(--cs-card)',
+          display: 'flex', flexDirection: 'column', gap: '0.25rem',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem' }}>
+            <span style={{ fontFamily: 'Cinzel, serif', fontSize: '0.7rem', color: 'var(--cs-text-muted)', textTransform: 'uppercase' }}>
+              {lastRoll.spellName} · {lastRoll.type === 'attack' ? 'Ataque' : 'Daño'}
+            </span>
+            {lastRoll.isCrit && <span style={{ fontSize: '0.7rem', color: 'var(--cs-gold)', fontWeight: 700 }}>¡CRÍTICO!</span>}
+            {lastRoll.isMiss && <span style={{ fontSize: '0.7rem', color: 'var(--danger)', fontWeight: 700 }}>PIFIA</span>}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '1rem' }}>
+            <span style={{ fontFamily: 'Cinzel, serif', fontSize: '2.5rem', fontWeight: 700, color: lastRoll.isCrit ? 'var(--cs-gold)' : lastRoll.isMiss ? 'var(--danger)' : 'var(--cs-text)', lineHeight: 1 }}>
+              {lastRoll.total}
+            </span>
+            <span style={{ fontSize: '0.78rem', color: 'var(--cs-text-muted)', fontFamily: 'var(--font-montaga)' }}>
+              {lastRoll.detail}
+            </span>
+          </div>
+          <button onClick={() => setLastRoll(null)}
+            style={{ alignSelf: 'flex-end', fontSize: '0.65rem', color: 'var(--cs-text-muted)', background: 'none', border: 'none', cursor: 'pointer', marginTop: 2 }}>
+            cerrar ✕
+          </button>
+        </div>
+      )}
+
+      {/* Spell slots */}
       {slots.some(s => s.slots_total > 0) && (
         <div style={{ marginBottom: '1.5rem' }}>
           <div style={{ height: 2, background: 'var(--cs-gold)', borderRadius: 4, marginBottom: '1rem' }} />
@@ -121,39 +233,28 @@ export default function SpellsTab({ characterId, classes, slots: initialSlots, s
               return (
                 <div key={lvl} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <div style={{ textAlign: 'right', minWidth: 72 }}>
-                    <div style={{
-                      fontFamily: 'var(--font-cinzel, Cinzel, serif)',
-                      fontSize: '0.58rem', color: 'var(--cs-text-muted)', textTransform: 'uppercase',
-                    }}>
+                    <div style={{ fontFamily: 'Cinzel, serif', fontSize: '0.58rem', color: 'var(--cs-text-muted)', textTransform: 'uppercase' }}>
                       {LEVEL_LABELS[lvl]} Level
                     </div>
                     <div className="cs-num" style={{ fontSize: '1.4rem', lineHeight: 1 }}>
                       {String(remaining).padStart(2, '0')}
                     </div>
-                    <div style={{
-                      fontSize: '0.55rem', color: 'var(--cs-text-muted)',
-                      fontFamily: 'var(--font-cinzel, Cinzel, serif)', textTransform: 'uppercase',
-                    }}>
+                    <div style={{ fontSize: '0.55rem', color: 'var(--cs-text-muted)', fontFamily: 'Cinzel, serif', textTransform: 'uppercase' }}>
                       Remaining
                     </div>
                   </div>
-                  {/* Clickable dots */}
                   <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', maxWidth: 100 }}>
                     {Array.from({ length: slot.slots_total }).map((_, i) => {
                       const used = i < slot.slots_used
                       return (
-                        <button
-                          key={i}
-                          onClick={() => handleDotClick(slot, i)}
+                        <button key={i} onClick={() => handleDotClick(slot, i)}
                           title={used ? 'Click to restore' : 'Click to use'}
                           style={{
                             width: 14, height: 14, borderRadius: '50%',
                             background: used ? 'var(--cs-accent)' : 'transparent',
                             border: `2px solid ${used ? 'var(--cs-accent)' : 'var(--cs-text-muted)'}`,
                             cursor: 'pointer', padding: 0, flexShrink: 0,
-                            transition: 'background 0.1s, border-color 0.1s',
-                          }}
-                        />
+                          }} />
                       )
                     })}
                   </div>
@@ -175,48 +276,80 @@ export default function SpellsTab({ characterId, classes, slots: initialSlots, s
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid var(--cs-gold)' }}>
-                {['Spell Name', 'Bonus/DC', 'Damage', 'Notes'].map(h => (
-                  <th key={h} style={{
-                    fontFamily: 'var(--font-cinzel, Cinzel, serif)',
-                    fontSize: '0.68rem', fontWeight: 700,
-                    textTransform: 'uppercase', letterSpacing: '0.08em',
-                    color: 'var(--cs-text-muted)', padding: '0 0 0.6rem', textAlign: 'left',
-                  }}>
+                {['Hechizo', 'Ataque / DC', 'Daño', 'Notas'].map(h => (
+                  <th key={h} style={{ fontFamily: 'Cinzel, serif', fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--cs-text-muted)', padding: '0 0 0.6rem', textAlign: 'left' }}>
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {spells.map((s, i) => (
-                <tr key={s.id} style={{ borderBottom: i < spells.length - 1 ? '1px solid rgba(201,173,106,0.35)' : 'none' }}>
-                  <td style={{ padding: '0.5rem 0.5rem 0.5rem 0', verticalAlign: 'top' }}>
-                    <span style={{
-                      fontFamily: 'var(--font-cinzel, Cinzel, serif)',
-                      fontSize: '0.85rem', fontStyle: 'italic',
-                      color: 'var(--cs-accent)', fontWeight: 600,
-                    }}>
-                      {s.name}
-                    </span>
-                  </td>
-                  <td style={{ padding: '0.5rem 1rem 0.5rem 0.5rem', verticalAlign: 'top', fontFamily: 'var(--font-montaga, Georgia, serif)', fontSize: '0.82rem', color: 'var(--cs-text-muted)' }}>
-                    —
-                  </td>
-                  <td style={{ padding: '0.5rem 1rem 0.5rem 0.5rem', verticalAlign: 'top', fontFamily: 'var(--font-montaga, Georgia, serif)', fontSize: '0.82rem', color: 'var(--cs-text-muted)' }}>
-                    —
-                  </td>
-                  <td style={{ padding: '0.5rem 0 0.5rem 0.5rem', verticalAlign: 'top' }}>
-                    <span style={{ fontFamily: 'var(--font-montaga, Georgia, serif)', fontSize: '0.82rem', color: 'var(--cs-text)' }}>
-                      {s.spell_level === 0 ? 'Cantrip' : `Lvl ${s.spell_level}`}
-                      {s.custom_notes && ` · ${s.custom_notes}`}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {spells.map((s, i) => {
+                const dmg = parseDamageFromNotes(s.custom_notes)
+                return (
+                  <tr key={s.id} style={{ borderBottom: i < spells.length - 1 ? '1px solid rgba(201,173,106,0.35)' : 'none' }}>
+                    {/* Name */}
+                    <td style={{ padding: '0.6rem 0.5rem 0.6rem 0', verticalAlign: 'middle' }}>
+                      <span style={{ fontFamily: 'Cinzel, serif', fontSize: '0.85rem', fontStyle: 'italic', color: 'var(--cs-accent)', fontWeight: 600 }}>
+                        {s.name}
+                      </span>
+                      <div style={{ fontSize: '0.65rem', color: 'var(--cs-text-muted)', marginTop: 2, fontFamily: 'Cinzel, serif', textTransform: 'uppercase' }}>
+                        {s.spell_level === 0 ? 'Cantrip' : `Nivel ${s.spell_level}`}
+                      </div>
+                    </td>
+
+                    {/* Attack / DC */}
+                    <td style={{ padding: '0.6rem 1rem 0.6rem 0.5rem', verticalAlign: 'middle' }}>
+                      {mainClass?.spell_attack_mod != null ? (
+                        <div>
+                          <div style={{ fontFamily: 'var(--font-montaga)', fontSize: '0.82rem', color: 'var(--cs-text)', marginBottom: '0.25rem' }}>
+                            {signStr(atkMod)} atk · DC {mainClass.spell_save_dc ?? '—'}
+                          </div>
+                          <button onClick={() => rollAttack(s)}
+                            style={{ fontFamily: 'Cinzel, serif', fontSize: '0.65rem', padding: '2px 10px', borderRadius: 20, border: '1px solid var(--cs-gold)', background: 'transparent', color: 'var(--cs-gold)', cursor: 'pointer', letterSpacing: '0.05em' }}>
+                            🎲 Tirar
+                          </button>
+                        </div>
+                      ) : (
+                        <span style={{ color: 'var(--cs-text-muted)', fontSize: '0.78rem' }}>—</span>
+                      )}
+                    </td>
+
+                    {/* Damage */}
+                    <td style={{ padding: '0.6rem 1rem 0.6rem 0.5rem', verticalAlign: 'middle' }}>
+                      {dmg ? (
+                        <div>
+                          <div style={{ fontFamily: 'var(--font-montaga)', fontSize: '0.82rem', color: 'var(--cs-text)', marginBottom: '0.25rem' }}>
+                            {dmg.formula}
+                            {dmg.type && <span style={{ color: 'var(--cs-text-muted)', fontSize: '0.72rem', marginLeft: 4 }}>{dmg.type}</span>}
+                          </div>
+                          <button onClick={() => rollDamage(s)}
+                            style={{ fontFamily: 'Cinzel, serif', fontSize: '0.65rem', padding: '2px 10px', borderRadius: 20, border: '1px solid var(--cs-accent)', background: 'transparent', color: 'var(--cs-accent)', cursor: 'pointer', letterSpacing: '0.05em' }}>
+                            🎲 Daño
+                          </button>
+                        </div>
+                      ) : (
+                        <span style={{ color: 'var(--cs-text-muted)', fontSize: '0.78rem' }}>—</span>
+                      )}
+                    </td>
+
+                    {/* Notes */}
+                    <td style={{ padding: '0.6rem 0 0.6rem 0.5rem', verticalAlign: 'middle' }}>
+                      <span style={{ fontFamily: 'var(--font-montaga)', fontSize: '0.78rem', color: 'var(--cs-text)' }}>
+                        {s.custom_notes && !parseDamageFromNotes(s.custom_notes) ? s.custom_notes : (s.custom_notes ? '' : '')}
+                      </span>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         )}
       </div>
+
+      <p style={{ textAlign: 'center', fontSize: '0.65rem', color: 'var(--cs-text-muted)', fontFamily: 'var(--font-montaga)', marginTop: '0.75rem', fontStyle: 'italic' }}>
+        Para agregar daño a un hechizo, escribe la fórmula en Notas al editarlo, ej: <strong>2d6 fuego</strong>
+      </p>
     </div>
   )
 }
