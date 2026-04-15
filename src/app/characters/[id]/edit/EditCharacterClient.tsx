@@ -576,10 +576,25 @@ export default function EditCharacterClient({
 
   async function addEquipment() {
     if (!newEquip.name.trim()) return
-    const { data } = await supabase.from('character_equipment').insert({
+    const { data: packRow } = await supabase.from('character_equipment').insert({
       character_id: character.id, ...newEquip, sort_order: localEquipment.length,
     }).select().single()
-    if (data) setLocalEquipment(prev => [...prev, data])
+    const added: typeof localEquipment = packRow ? [packRow] : []
+
+    // Auto-expand pack contents as individual rows
+    if (equipContents && equipContents.length > 0) {
+      const contentInserts = equipContents.map((c, i) => {
+        const multiMatch = c.match(/^(\d+)x (.+)$/)
+        const qty = multiMatch ? parseInt(multiMatch[1]) : 1
+        const rawName = multiMatch ? multiMatch[2] : c.split('|')[0]
+        const name = rawName.charAt(0).toUpperCase() + rawName.slice(1)
+        return { character_id: character.id, name, quantity: qty, weight: '', notes: '', sort_order: localEquipment.length + 1 + i }
+      })
+      const { data: contentRows } = await supabase.from('character_equipment').insert(contentInserts).select()
+      if (contentRows) added.push(...contentRows)
+    }
+
+    setLocalEquipment(prev => [...prev, ...added])
     setNewEquip({ name: '', quantity: 1, weight: '', notes: '' })
     setEquipContents(null)
   }

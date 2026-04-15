@@ -9,6 +9,7 @@ import WeaponsTab from '@/components/ui/WeaponsTab'
 import SpellsTab from '@/components/ui/SpellsTab'
 import HpManager from '@/components/ui/HpManager'
 import ResourceTracker from '@/components/ui/ResourceTracker'
+import EquipmentTracker from './play/EquipmentTracker'
 
 /* ── Helpers ── */
 
@@ -348,20 +349,7 @@ export default async function CharacterPage({
 
               {(equipment ?? []).length > 0 && (
                 <div className="cs-card--notched" style={{ padding: '0.75rem 1rem' }}>
-                  <span className="cs-section-title">Equipo</span>
-                  <div style={{ height: 2, background: 'var(--cs-gold)', borderRadius: 4, margin: '0.4rem 0 0.5rem' }} />
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                    {(equipment ?? []).map(item => (
-                      <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <span className="cs-num" style={{ fontSize: '0.85rem', minWidth: 20 }}>
-                          {item.quantity}×
-                        </span>
-                        <span style={{ flex: 1, fontSize: '0.8rem', fontFamily: 'var(--font-montaga)', color: 'var(--cs-text)' }}>
-                          {item.name}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                  <EquipmentTracker initialEquipment={equipment ?? []} variant="parchment" />
                 </div>
               )}
             </div>
