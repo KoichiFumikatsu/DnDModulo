@@ -4,16 +4,14 @@ import { createClient } from '@/lib/supabase/server'
 import {
   fetchAllSpells,
   fetchBackgrounds,
+  fetchBackgroundSkills,
   fetchClasses,
+  fetchClassDetails,
   fetchEquipmentItems,
   fetchFeats,
   fetchRaces,
+  fetchRaceSkills,
 } from '@/lib/5etools/data'
-import {
-  loadLocalBackgroundSkills,
-  loadLocalClassDetails,
-  loadLocalRaceSkills,
-} from '@/lib/5etools/local'
 import EditCharacterClient from './EditCharacterClient'
 
 export default async function EditCharacterPage({ params }: { params: Promise<{ id: string }> }) {
@@ -64,9 +62,9 @@ export default async function EditCharacterPage({ params }: { params: Promise<{ 
     fetchAllSpells(),
     fetchEquipmentItems(),
     fetchFeats(),
-    loadLocalClassDetails(),
-    loadLocalBackgroundSkills(),
-    loadLocalRaceSkills(),
+    fetchClassDetails(),
+    fetchBackgroundSkills(),
+    fetchRaceSkills(),
   ])
 
   return (
