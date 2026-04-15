@@ -1484,10 +1484,10 @@ export default function EditCharacterClient({
                           {label}
                         </div>
                         {items.map((s, i) => {
-                          const isApplicable = s.type === 'proficiency' || s.type === 'advantage'
+                          const isApplicable = s.type === 'proficiency' || s.type === 'advantage' || s.type === 'choice'
                           const skillKey = s.skill.charAt(0).toUpperCase() + s.skill.slice(1)
                           const alreadySet = localProfs.some(p => p.name.toLowerCase() === s.skill.toLowerCase() &&
-                            (s.type === 'proficiency' ? p.proficiency_level !== 'none' : s.type === 'advantage' ? p.has_advantage : false))
+                            (s.type === 'proficiency' || s.type === 'choice' ? p.proficiency_level !== 'none' : s.type === 'advantage' ? p.has_advantage : false))
                           return (
                             <div key={`${s.skill}-${s.source}-${i}`}
                               className="flex items-center gap-1.5 py-0.5"
@@ -1504,26 +1504,21 @@ export default function EditCharacterClient({
                               {isApplicable && !alreadySet && (
                                 <button
                                   onClick={() => {
-                                    if (s.type === 'proficiency') {
-                                      const existing = getSkillProf(s.skill.charAt(0).toUpperCase() + s.skill.slice(1))
-                                        ?? getSkillProf(s.skill)
-                                        ?? getSkillProf(skillKey)
-                                      // Find the matching SKILLS key
+                                    if (s.type === 'proficiency' || s.type === 'choice') {
                                       const match = SKILLS.find(sk => sk.key.toLowerCase() === s.skill.toLowerCase())
                                       const key = match?.key ?? skillKey
-                                      if (!existing || existing.proficiency_level === 'none') {
-                                        if (!existing) {
-                                          setLocalProfs(prev => [...prev, {
-                                            id: `new_${key}`,
-                                            character_id: character.id,
-                                            type: 'skill' as const,
-                                            name: key,
-                                            proficiency_level: 'proficient',
-                                            has_advantage: false,
-                                          }])
-                                        } else {
-                                          setLocalProfs(prev => prev.map(p => p.name === key ? { ...p, proficiency_level: 'proficient' as const } : p))
-                                        }
+                                      const existing = localProfs.find(p => p.name === key)
+                                      if (!existing) {
+                                        setLocalProfs(prev => [...prev, {
+                                          id: `new_${key}`,
+                                          character_id: character.id,
+                                          type: 'skill' as const,
+                                          name: key,
+                                          proficiency_level: 'proficient' as ProficiencyLevel,
+                                          has_advantage: false,
+                                        }])
+                                      } else if (existing.proficiency_level === 'none') {
+                                        setLocalProfs(prev => prev.map(p => p.name === key ? { ...p, proficiency_level: 'proficient' as ProficiencyLevel } : p))
                                       }
                                     } else if (s.type === 'advantage') {
                                       const match = SKILLS.find(sk => sk.key.toLowerCase() === s.skill.toLowerCase())
@@ -2365,97 +2360,6 @@ export default function EditCharacterClient({
           </p>
         </div>
       )}
-      {/* ════════════════════════════════════ DEAD CODE BELOW ════ */}
-      {false && tab === '_custom_disabled' && (
-        <div className="space-y-4">
-          <div className="parchment-page rounded-xl p-4 space-y-3">
-            <h3 className="font-semibold text-sm" style={{ color: 'var(--cs-text-muted)' }}>
-              Agregar stat personalizado / homebrew
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              <F label="Nombre">
-                <input value={newCustom.name}
-                  onChange={e => setNewCustom(p => ({ ...p, name: e.target.value }))}
-                  className="ifield" placeholder="Anillo de Recuperacion..." />
-              </F>
-              <F label="Tipo">
-                <select value={newCustom.stat_type}
-                  onChange={e => setNewCustom(p => ({
-                    ...p, stat_type: e.target.value as CustomStatType,
-                  }))}
-                  className="ifield">
-                  <option value="counter">Contador (actual/max)</option>
-                  <option value="tracker">Tracker (sin max)</option>
-                  <option value="checkbox">Checkbox (si/no)</option>
-                  <option value="text">Texto libre</option>
-                </select>
-              </F>
-              {(newCustom.stat_type === 'counter' || newCustom.stat_type === 'tracker') && (
-                <>
-                  <F label="Valor actual">
-                    <input type="number" value={newCustom.current_value}
-                      onChange={e => setNewCustom(p => ({ ...p, current_value: +e.target.value }))}
-                      className="ifield" />
-                  </F>
-                  {newCustom.stat_type === 'counter' && (
-                    <F label="Maximo">
-                      <input type="number" value={newCustom.max_value}
-                        onChange={e => setNewCustom(p => ({ ...p, max_value: +e.target.value }))}
-                        className="ifield" />
-                    </F>
-                  )}
-                </>
-              )}
-              {newCustom.stat_type === 'text' && (
-                <F label="Valor">
-                  <input value={newCustom.text_value}
-                    onChange={e => setNewCustom(p => ({ ...p, text_value: e.target.value }))}
-                    className="ifield" />
-                </F>
-              )}
-              <F label="Notas">
-                <input value={newCustom.notes}
-                  onChange={e => setNewCustom(p => ({ ...p, notes: e.target.value }))}
-                  className="ifield" placeholder="Descripcion opcional..." />
-              </F>
-            </div>
-            <button onClick={addCustomStat} className="btn-primary">+ Agregar stat</button>
-          </div>
-
-          <div className="space-y-2">
-            {localCustom.map(c => (
-              <div key={c.id}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg parchment-page">
-                <span className="flex-1 font-medium text-sm"
-                  style={{ color: 'var(--cs-text)' }}>
-                  {c.name}
-                </span>
-                <span className="text-xs px-2 py-0.5 rounded"
-                  style={{
-                    background: 'rgba(201,173,106,0.3)',
-                    color: 'var(--cs-text-muted)',
-                  }}>
-                  {c.stat_type}
-                </span>
-                {(c.stat_type === 'counter' || c.stat_type === 'tracker') && (
-                  <span className="text-sm" style={{ color: 'var(--cs-text-muted)' }}>
-                    {c.current_value}{c.max_value ? `/${c.max_value}` : ''}
-                  </span>
-                )}
-                {c.notes && (
-                  <span className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>
-                    {c.notes}
-                  </span>
-                )}
-                <button onClick={() => deleteCustomStat(c.id)}
-                  style={{ color: 'var(--danger)' }}>
-                  &#10005;
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}{/* end _custom_disabled */}
     </div>
   )
 }

@@ -1,0 +1,450 @@
+{
+  "Aberrant Heir": [
+    "history",
+    "intimidation"
+  ],
+  "Acolyte": [
+    "insight",
+    "religion"
+  ],
+  "Anthropologist": [
+    "insight",
+    "religion"
+  ],
+  "Archaeologist": [
+    "history",
+    "survival"
+  ],
+  "Artisan": [
+    "investigation",
+    "persuasion"
+  ],
+  "Astral Drifter": [
+    "insight",
+    "religion"
+  ],
+  "Athlete": [
+    "acrobatics",
+    "athletics"
+  ],
+  "Azorius Functionary": [
+    "insight",
+    "intimidation"
+  ],
+  "Boros Legionnaire": [
+    "athletics",
+    "intimidation"
+  ],
+  "Carouser": [
+    "deception",
+    "persuasion"
+  ],
+  "Celebrity Adventurer's Scion": [
+    "perception",
+    "performance"
+  ],
+  "Charlatan": [
+    "deception",
+    "sleight of hand"
+  ],
+  "Chondathan Freebooter": [
+    "athletics",
+    "sleight of hand"
+  ],
+  "City Watch": [
+    "athletics",
+    "insight"
+  ],
+  "Clan Crafter": [
+    "history",
+    "insight"
+  ],
+  "Courtier": [
+    "insight",
+    "persuasion"
+  ],
+  "Criminal": [
+    "deception",
+    "stealth"
+  ],
+  "Dead Magic Dweller": [
+    "medicine",
+    "survival"
+  ],
+  "Dimir Operative": [
+    "deception",
+    "stealth"
+  ],
+  "Dragon Cultist": [
+    "deception",
+    "stealth"
+  ],
+  "Emerald Enclave Caretaker": [
+    "nature",
+    "survival"
+  ],
+  "Entertainer": [
+    "acrobatics",
+    "performance"
+  ],
+  "Faceless": [
+    "deception",
+    "intimidation"
+  ],
+  "Failed Merchant": [
+    "investigation",
+    "persuasion"
+  ],
+  "Far Traveler": [
+    "insight",
+    "perception"
+  ],
+  "Farmer": [
+    "animal handling",
+    "nature"
+  ],
+  "Feylost": [
+    "deception",
+    "survival"
+  ],
+  "Fisher": [
+    "history",
+    "survival"
+  ],
+  "Flaming Fist Mercenary": [
+    "intimidation",
+    "perception"
+  ],
+  "Folk Hero": [
+    "animal handling",
+    "survival"
+  ],
+  "Gambler": [
+    "deception",
+    "insight"
+  ],
+  "Gate Warden": [
+    "persuasion",
+    "survival"
+  ],
+  "Genie Touched": [
+    "perception",
+    "persuasion"
+  ],
+  "Giant Foundling": [
+    "intimidation",
+    "survival"
+  ],
+  "Golgari Agent": [
+    "nature",
+    "survival"
+  ],
+  "Grinner": [
+    "deception",
+    "performance"
+  ],
+  "Gruul Anarch": [
+    "animal handling",
+    "athletics"
+  ],
+  "Guard": [
+    "athletics",
+    "perception"
+  ],
+  "Guide": [
+    "stealth",
+    "survival"
+  ],
+  "Guild Artisan": [
+    "insight",
+    "persuasion"
+  ],
+  "Harper": [
+    "performance",
+    "sleight of hand"
+  ],
+  "Hermit": [
+    "medicine",
+    "religion"
+  ],
+  "House Agent": [
+    "investigation",
+    "persuasion"
+  ],
+  "House Cannith Heir": [
+    "investigation",
+    "sleight of hand"
+  ],
+  "House Deneith Heir": [
+    "insight",
+    "perception"
+  ],
+  "House Ghallanda Heir": [
+    "insight",
+    "persuasion"
+  ],
+  "House Jorasco Heir": [
+    "medicine",
+    "stealth"
+  ],
+  "House Kundarak Heir": [
+    "arcana",
+    "investigation"
+  ],
+  "House Lyrandar Heir": [
+    "acrobatics",
+    "nature"
+  ],
+  "House Medani Heir": [
+    "insight",
+    "investigation"
+  ],
+  "House Orien Heir": [
+    "acrobatics",
+    "athletics"
+  ],
+  "House Phiarlan Heir": [
+    "deception",
+    "stealth"
+  ],
+  "House Sivis Heir": [
+    "history",
+    "perception"
+  ],
+  "House Tharashk Heir": [
+    "perception",
+    "survival"
+  ],
+  "House Thuranni Heir": [
+    "performance",
+    "stealth"
+  ],
+  "House Vadalis Heir": [
+    "animal handling",
+    "nature"
+  ],
+  "Ice Fisher": [
+    "animal handling",
+    "athletics"
+  ],
+  "Initiate": [
+    "athletics",
+    "intimidation"
+  ],
+  "Inquisitive": [
+    "insight",
+    "investigation"
+  ],
+  "Inquisitor": [
+    "investigation",
+    "religion"
+  ],
+  "Izzet Engineer": [
+    "arcana",
+    "investigation"
+  ],
+  "Knight of Solamnia": [
+    "athletics",
+    "survival"
+  ],
+  "Knight of the Gauntlet": [
+    "athletics",
+    "medicine"
+  ],
+  "Lords' Alliance Vassal": [
+    "insight",
+    "persuasion"
+  ],
+  "Lorehold Student": [
+    "history",
+    "religion"
+  ],
+  "Lorwyn Expert": [
+    "athletics",
+    "nature"
+  ],
+  "Mage of High Sorcery": [
+    "arcana",
+    "history"
+  ],
+  "Marine": [
+    "athletics",
+    "survival"
+  ],
+  "Mercenary Veteran": [
+    "athletics",
+    "persuasion"
+  ],
+  "Merchant": [
+    "animal handling",
+    "persuasion"
+  ],
+  "Moonwell Pilgrim": [
+    "nature",
+    "performance"
+  ],
+  "Mulhorandi Tomb Raider": [
+    "investigation",
+    "religion"
+  ],
+  "Mythalkeeper": [
+    "arcana",
+    "history"
+  ],
+  "Noble": [
+    "history",
+    "persuasion"
+  ],
+  "Orzhov Representative": [
+    "intimidation",
+    "religion"
+  ],
+  "Outlander": [
+    "athletics",
+    "survival"
+  ],
+  "Plaintiff": [
+    "medicine",
+    "persuasion"
+  ],
+  "Prismari Student": [
+    "acrobatics",
+    "performance"
+  ],
+  "Purple Dragon Squire": [
+    "animal handling",
+    "insight"
+  ],
+  "Quandrix Student": [
+    "arcana",
+    "nature"
+  ],
+  "Rakdos Cultist": [
+    "acrobatics",
+    "performance"
+  ],
+  "Rashemi Wanderer": [
+    "intimidation",
+    "perception"
+  ],
+  "Rewarded": [
+    "insight",
+    "persuasion"
+  ],
+  "Rival Intern": [
+    "history",
+    "investigation"
+  ],
+  "Ruined": [
+    "stealth",
+    "survival"
+  ],
+  "Rune Carver": [
+    "history",
+    "perception"
+  ],
+  "Sage": [
+    "arcana",
+    "history"
+  ],
+  "Sailor": [
+    "athletics",
+    "perception"
+  ],
+  "Scribe": [
+    "investigation",
+    "perception"
+  ],
+  "Selesnya Initiate": [
+    "nature",
+    "persuasion"
+  ],
+  "Shadowmasters Exile": [
+    "acrobatics",
+    "stealth"
+  ],
+  "Shadowmoor Expert": [
+    "acrobatics",
+    "deception"
+  ],
+  "Shipwright": [
+    "history",
+    "perception"
+  ],
+  "Silverquill Student": [
+    "intimidation",
+    "persuasion"
+  ],
+  "Simic Scientist": [
+    "arcana",
+    "medicine"
+  ],
+  "Smuggler": [
+    "athletics",
+    "deception"
+  ],
+  "Soldier": [
+    "athletics",
+    "intimidation"
+  ],
+  "Spellfire Initiate": [
+    "arcana",
+    "perception"
+  ],
+  "Urchin": [
+    "sleight of hand",
+    "stealth"
+  ],
+  "Uthgardt Tribe Member": [
+    "athletics",
+    "survival"
+  ],
+  "Vampire Devotee": [
+    "persuasion",
+    "stealth"
+  ],
+  "Vampire Survivor": [
+    "insight",
+    "religion"
+  ],
+  "Variant City Watch (Investigator)": [
+    "insight",
+    "investigation"
+  ],
+  "Variant Guild Artisan (Guild Merchant)": [
+    "insight",
+    "persuasion"
+  ],
+  "Vizier": [
+    "history",
+    "religion"
+  ],
+  "Volstrucker Agent": [
+    "deception",
+    "stealth"
+  ],
+  "Waterdhavian Noble": [
+    "history",
+    "persuasion"
+  ],
+  "Wayfarer": [
+    "insight",
+    "stealth"
+  ],
+  "Wildspacer": [
+    "athletics",
+    "survival"
+  ],
+  "Witchlight Hand": [
+    "performance",
+    "sleight of hand"
+  ],
+  "Witherbloom Student": [
+    "nature",
+    "survival"
+  ],
+  "Zhentarim Mercenary": [
+    "intimidation",
+    "perception"
+  ]
+}

@@ -1,0 +1,162 @@
+{
+  "Artificer": {
+    "from": [
+      "Arcana",
+      "History",
+      "Investigation",
+      "Medicine",
+      "Nature",
+      "Perception",
+      "Sleight of hand"
+    ],
+    "count": 2
+  },
+  "Barbarian": {
+    "from": [
+      "Animal handling",
+      "Athletics",
+      "Intimidation",
+      "Nature",
+      "Perception",
+      "Survival"
+    ],
+    "count": 2
+  },
+  "Bard": {
+    "any": 3
+  },
+  "Cleric": {
+    "from": [
+      "History",
+      "Insight",
+      "Medicine",
+      "Persuasion",
+      "Religion"
+    ],
+    "count": 2
+  },
+  "Druid": {
+    "from": [
+      "Arcana",
+      "Animal handling",
+      "Insight",
+      "Medicine",
+      "Nature",
+      "Perception",
+      "Religion",
+      "Survival"
+    ],
+    "count": 2
+  },
+  "Fighter": {
+    "from": [
+      "Acrobatics",
+      "Animal handling",
+      "Athletics",
+      "History",
+      "Insight",
+      "Intimidation",
+      "Persuasion",
+      "Perception",
+      "Survival"
+    ],
+    "count": 2
+  },
+  "Monk": {
+    "from": [
+      "Acrobatics",
+      "Athletics",
+      "History",
+      "Insight",
+      "Religion",
+      "Stealth"
+    ],
+    "count": 2
+  },
+  "Mystic": {
+    "from": [
+      "Arcana",
+      "History",
+      "Insight",
+      "Medicine",
+      "Nature",
+      "Perception",
+      "Religion"
+    ],
+    "count": 2
+  },
+  "Paladin": {
+    "from": [
+      "Athletics",
+      "Insight",
+      "Intimidation",
+      "Medicine",
+      "Persuasion",
+      "Religion"
+    ],
+    "count": 2
+  },
+  "Ranger": {
+    "from": [
+      "Animal handling",
+      "Athletics",
+      "Insight",
+      "Investigation",
+      "Nature",
+      "Perception",
+      "Stealth",
+      "Survival"
+    ],
+    "count": 3
+  },
+  "Rogue": {
+    "from": [
+      "Acrobatics",
+      "Athletics",
+      "Deception",
+      "Insight",
+      "Intimidation",
+      "Investigation",
+      "Perception",
+      "Persuasion",
+      "Sleight of hand",
+      "Stealth"
+    ],
+    "count": 4
+  },
+  "Sorcerer": {
+    "from": [
+      "Arcana",
+      "Deception",
+      "Insight",
+      "Intimidation",
+      "Persuasion",
+      "Religion"
+    ],
+    "count": 2
+  },
+  "Warlock": {
+    "from": [
+      "Arcana",
+      "Deception",
+      "History",
+      "Intimidation",
+      "Investigation",
+      "Nature",
+      "Religion"
+    ],
+    "count": 2
+  },
+  "Wizard": {
+    "from": [
+      "Arcana",
+      "History",
+      "Insight",
+      "Investigation",
+      "Medicine",
+      "Nature",
+      "Religion"
+    ],
+    "count": 2
+  }
+}

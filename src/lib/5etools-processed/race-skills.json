@@ -1,0 +1,294 @@
+{
+  "Aetherborn": {
+    "fixed": [
+      "intimidation"
+    ]
+  },
+  "Astral Elf": {
+    "fixed": [
+      "perception"
+    ]
+  },
+  "Aven": {
+    "fixed": [
+      "perception"
+    ]
+  },
+  "Bugbear": {
+    "fixed": [
+      "stealth"
+    ]
+  },
+  "Centaur": {
+    "fixed": [],
+    "choose": {
+      "from": [
+        "animal handling",
+        "medicine",
+        "nature",
+        "survival"
+      ],
+      "count": 1
+    }
+  },
+  "Changeling": {
+    "fixed": [],
+    "choose": {
+      "from": [
+        "deception",
+        "insight",
+        "intimidation",
+        "persuasion"
+      ],
+      "count": 2
+    }
+  },
+  "Custom Lineage": {
+    "fixed": [],
+    "any": 1
+  },
+  "Eladrin": {
+    "fixed": [
+      "perception"
+    ]
+  },
+  "Elf": {
+    "fixed": [
+      "perception"
+    ]
+  },
+  "Elf (Kaladesh)": {
+    "fixed": [
+      "perception"
+    ]
+  },
+  "Elf (Zendikar)": {
+    "fixed": [
+      "perception"
+    ]
+  },
+  "Githyanki": {
+    "fixed": [],
+    "any": 1
+  },
+  "Goliath": {
+    "fixed": [
+      "athletics"
+    ]
+  },
+  "Grung": {
+    "fixed": [
+      "perception"
+    ]
+  },
+  "Half-Elf": {
+    "fixed": [],
+    "any": 2
+  },
+  "Half-Orc": {
+    "fixed": [
+      "intimidation"
+    ]
+  },
+  "Harengon": {
+    "fixed": [
+      "perception"
+    ]
+  },
+  "Hexblood": {
+    "fixed": [],
+    "any": 2
+  },
+  "Human": {
+    "fixed": [],
+    "any": 1
+  },
+  "Kender": {
+    "fixed": [],
+    "choose": {
+      "from": [
+        "insight",
+        "investigation",
+        "sleight of hand",
+        "stealth",
+        "survival"
+      ],
+      "count": 1
+    }
+  },
+  "Kenku": {
+    "fixed": [],
+    "any": 2
+  },
+  "Kobold": {
+    "fixed": [],
+    "choose": {
+      "from": [
+        "arcana",
+        "investigation",
+        "medicine",
+        "sleight of hand",
+        "survival"
+      ],
+      "count": 1
+    }
+  },
+  "Kor": {
+    "fixed": [
+      "athletics",
+      "acrobatics"
+    ]
+  },
+  "Leonin": {
+    "fixed": [],
+    "choose": {
+      "from": [
+        "athletics",
+        "intimidation",
+        "perception",
+        "survival"
+      ],
+      "count": 1
+    }
+  },
+  "Lizardfolk": {
+    "fixed": [],
+    "choose": {
+      "from": [
+        "animal handling",
+        "medicine",
+        "nature",
+        "perception",
+        "stealth",
+        "survival"
+      ],
+      "count": 2
+    }
+  },
+  "Locathah": {
+    "fixed": [
+      "athletics",
+      "perception"
+    ]
+  },
+  "Lorwyn Changeling": {
+    "fixed": [],
+    "choose": {
+      "from": [
+        "deception",
+        "performance"
+      ],
+      "count": 1
+    }
+  },
+  "Minotaur": {
+    "fixed": [],
+    "choose": {
+      "from": [
+        "intimidation",
+        "persuasion"
+      ],
+      "count": 1
+    }
+  },
+  "Minotaur (Amonkhet)": {
+    "fixed": [
+      "intimidation"
+    ]
+  },
+  "Orc": {
+    "fixed": [],
+    "choose": {
+      "from": [
+        "animal handling",
+        "insight",
+        "intimidation",
+        "medicine",
+        "perception",
+        "survival"
+      ],
+      "count": 2
+    }
+  },
+  "Orc (Ixalan)": {
+    "fixed": [
+      "intimidation"
+    ]
+  },
+  "Owlin": {
+    "fixed": [
+      "stealth"
+    ]
+  },
+  "Satyr": {
+    "fixed": [
+      "performance",
+      "persuasion"
+    ]
+  },
+  "Sea Elf": {
+    "fixed": [
+      "perception"
+    ]
+  },
+  "Shadar-Kai": {
+    "fixed": [
+      "perception"
+    ]
+  },
+  "Shifter": {
+    "fixed": [],
+    "choose": {
+      "from": [
+        "acrobatics",
+        "athletics",
+        "intimidation",
+        "survival"
+      ],
+      "count": 1
+    }
+  },
+  "Tabaxi": {
+    "fixed": [
+      "perception",
+      "stealth"
+    ]
+  },
+  "Tortle": {
+    "fixed": [],
+    "choose": {
+      "from": [
+        "animal handling",
+        "medicine",
+        "nature",
+        "perception",
+        "stealth",
+        "survival"
+      ],
+      "count": 1
+    }
+  },
+  "Vedalken": {
+    "fixed": [],
+    "choose": {
+      "from": [
+        "arcana",
+        "history",
+        "investigation",
+        "medicine",
+        "performance",
+        "sleight of hand"
+      ],
+      "count": 1
+    }
+  },
+  "Verdan": {
+    "fixed": [
+      "persuasion"
+    ]
+  },
+  "Warforged": {
+    "fixed": [],
+    "any": 1
+  }
+}
