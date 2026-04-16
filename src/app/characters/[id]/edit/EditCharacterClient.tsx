@@ -6,6 +6,7 @@ import Autocomplete from '@/components/ui/Autocomplete'
 import SpellModal from '@/components/ui/SpellModal'
 import {
   fetchRaceTraits, fetchClassFeatures, fetchSubclassFeatures,
+  fetchSubclassSpells,
   getLanguageGrants, ALL_LANGUAGES,
   type SpellEntry, type EquipmentItem, type Feat,
   type ClassDetail, type RaceSkillProf, type ClassMap,
@@ -322,6 +323,11 @@ export default function EditCharacterClient({
   /* ── Spells ── */
   const [localSpells, setLocalSpells] = useState(spells)
   const [isOffClassSpell, setIsOffClassSpell] = useState(false)
+  const [editingSpellId, setEditingSpellId] = useState<string | null>(null)
+  const [editSpell, setEditSpell] = useState({
+    name: '', spell_level: 0, range: '', damage: '', components: '', custom_notes: '',
+    is_prepared: true, is_always_prepared: false,
+  })
   const [newSpell, setNewSpell] = useState({
     class_id: localClasses[0]?.id ?? '',
     spell_level: 0,
@@ -648,7 +654,15 @@ export default function EditCharacterClient({
       character_id: character.id,
       ...clsPayload(newCls),
     }).select().single()
-    if (data) setLocalClasses(prev => [...prev, data as CharacterClass])
+    if (data) {
+      const added = data as CharacterClass
+      setLocalClasses(prev => [...prev, added])
+      // Auto-add subclass spells if subclass was set
+      if (newCls.subclass_name && added.id) {
+        const grants = fetchSubclassSpells(newCls.class_name, newCls.subclass_name, newCls.level)
+        await autoAddGrantedSpells(added.id, grants.map(g => g.spell), localSpells)
+      }
+    }
     setNewCls({
       class_name: '', subclass_name: '', level: 1, is_primary: false,
       spellcasting_ability: '', spell_save_dc: null, spell_attack_mod: null,
@@ -690,7 +704,7 @@ export default function EditCharacterClient({
       name: spell.name,
       spell_level: spell.level,
       range: spell.range ?? '',
-      damage: '',
+      damage: spell.damage ?? spell.healingFormula ?? '',
       components: spell.components ?? '',
       custom_notes: [
         spell.concentration ? 'Concentration' : '',
@@ -734,6 +748,71 @@ export default function EditCharacterClient({
   async function deleteSpell(id: string) {
     await supabase.from('character_spells').delete().eq('id', id)
     setLocalSpells(prev => prev.filter(s => s.id !== id))
+  }
+
+  /** Auto-add spells granted by a subclass/feat at the given character level */
+  async function autoAddGrantedSpells(
+    classId: string,
+    spellNames: string[],
+    existingSpells: typeof localSpells
+  ) {
+    if (!spellNames.length) return []
+    const added: typeof localSpells = []
+    for (const spellName of spellNames) {
+      // Skip if already in spell list
+      const alreadyAdded = existingSpells.some(s => s.name.toLowerCase() === spellName.toLowerCase())
+      if (alreadyAdded) continue
+      const catalog = spellList.find(s => s.name.toLowerCase() === spellName.toLowerCase())
+      const base = {
+        character_id: character.id,
+        class_id: classId,
+        spell_level: catalog?.level ?? 0,
+        name: catalog?.name ?? spellName,
+        custom_notes: catalog?.concentration ? 'Concentration' : null,
+        range: catalog?.range ?? null,
+        damage: catalog?.damage ?? catalog?.healingFormula ?? null,
+        components: catalog?.components ?? null,
+        is_prepared: true,
+        is_always_prepared: true,
+        sort_order: existingSpells.length + added.length,
+      }
+      const { data } = await supabase.from('character_spells').insert({
+        ...base, source_type: 'spell', charges_used: 0,
+      }).select().single()
+      if (data) added.push(data)
+    }
+    if (added.length) setLocalSpells(prev => [...prev, ...added])
+    return added
+  }
+
+  function startEditSpell(s: typeof localSpells[0]) {
+    setEditingSpellId(s.id)
+    setEditSpell({
+      name: s.name,
+      spell_level: s.spell_level,
+      range: s.range ?? '',
+      damage: s.damage ?? '',
+      components: s.components ?? '',
+      custom_notes: s.custom_notes ?? '',
+      is_prepared: s.is_prepared,
+      is_always_prepared: s.is_always_prepared,
+    })
+  }
+
+  async function saveSpellEdit(id: string) {
+    const payload = {
+      name: editSpell.name,
+      spell_level: editSpell.spell_level,
+      range: editSpell.range || null,
+      damage: editSpell.damage || null,
+      components: editSpell.components || null,
+      custom_notes: editSpell.custom_notes || null,
+      is_prepared: editSpell.is_prepared,
+      is_always_prepared: editSpell.is_always_prepared,
+    }
+    await supabase.from('character_spells').update(payload).eq('id', id)
+    setLocalSpells(prev => prev.map(s => s.id === id ? { ...s, ...payload } : s))
+    setEditingSpellId(null)
   }
 
   /* ══════════════════════════════════════════════════════════════
@@ -884,6 +963,16 @@ export default function EditCharacterClient({
       character_id: character.id, ...newFeature, sort_order: localFeatures.length,
     }).select().single()
     if (data) setLocalFeatures(prev => [...prev, data])
+
+    // Auto-add spells granted by this feat
+    const catalog = allFeats.find(f => f.name.toLowerCase() === newFeature.name.toLowerCase())
+    if (catalog?.grantedSpells?.length) {
+      const primaryCls = localClasses.find(c => c.is_primary) ?? localClasses[0]
+      if (primaryCls) {
+        await autoAddGrantedSpells(primaryCls.id, catalog.grantedSpells, localSpells)
+      }
+    }
+
     setNewFeature({ name: '', description: '', source: '' })
   }
 
@@ -1315,7 +1404,14 @@ export default function EditCharacterClient({
                       className="ifield" placeholder="Nombre de la subclase homebrew..." />
                   ) : (
                     <select value={cls.subclass_name ?? ''}
-                      onChange={e => updateLocalClass(cls.id, { subclass_name: e.target.value || null })}
+                      onChange={async e => {
+                        const sc = e.target.value || null
+                        updateLocalClass(cls.id, { subclass_name: sc })
+                        if (sc) {
+                          const grants = fetchSubclassSpells(cls.class_name, sc, cls.level)
+                          await autoAddGrantedSpells(cls.id, grants.map(g => g.spell), localSpells)
+                        }
+                      }}
                       className="ifield">
                       <option value="">— Sin subclase —</option>
                       {(classMap[cls.class_name] ?? []).map(sc => (
@@ -1947,53 +2043,116 @@ export default function EditCharacterClient({
                 </h4>
                 <div className="space-y-2">
                   {lvlSpells.map(s => (
-                    <div key={s.id}
-                      className="flex items-center gap-3 px-3 py-2 rounded-lg parchment-page">
-                      {s.is_always_prepared && (
-                        <span title="Always prepared" className="text-xs opacity-70">&#128274;</span>
+                    <div key={s.id} className="rounded-lg parchment-page overflow-hidden">
+                      {editingSpellId === s.id ? (
+                        /* ── inline edit form ── */
+                        <div className="p-3 space-y-2">
+                          <div className="grid grid-cols-2 gap-2">
+                            <F label="Nombre">
+                              <input value={editSpell.name}
+                                onChange={e => setEditSpell(p => ({ ...p, name: e.target.value }))}
+                                className="ifield" />
+                            </F>
+                            <F label="Nivel">
+                              <select value={editSpell.spell_level}
+                                onChange={e => setEditSpell(p => ({ ...p, spell_level: Number(e.target.value) }))}
+                                className="ifield">
+                                <option value={0}>Cantrip</option>
+                                {[1,2,3,4,5,6,7,8,9].map(n => (
+                                  <option key={n} value={n}>Nivel {n}</option>
+                                ))}
+                              </select>
+                            </F>
+                            <F label="Daño / Curación">
+                              <input value={editSpell.damage}
+                                onChange={e => setEditSpell(p => ({ ...p, damage: e.target.value }))}
+                                className="ifield" placeholder="1d10 fuego" />
+                            </F>
+                            <F label="Alcance">
+                              <input value={editSpell.range}
+                                onChange={e => setEditSpell(p => ({ ...p, range: e.target.value }))}
+                                className="ifield" placeholder="60 pies" />
+                            </F>
+                            <F label="Componentes">
+                              <input value={editSpell.components}
+                                onChange={e => setEditSpell(p => ({ ...p, components: e.target.value }))}
+                                className="ifield" placeholder="V, S, M" />
+                            </F>
+                            <F label="Notas">
+                              <input value={editSpell.custom_notes}
+                                onChange={e => setEditSpell(p => ({ ...p, custom_notes: e.target.value }))}
+                                className="ifield" placeholder="Concentración, Ritual..." />
+                            </F>
+                          </div>
+                          <div className="flex gap-3">
+                            <label className="flex items-center gap-1.5 text-xs cursor-pointer"
+                              style={{ color: 'var(--cs-text-muted)' }}>
+                              <input type="checkbox" checked={editSpell.is_prepared}
+                                onChange={e => setEditSpell(p => ({ ...p, is_prepared: e.target.checked }))} />
+                              Preparado
+                            </label>
+                            <label className="flex items-center gap-1.5 text-xs cursor-pointer"
+                              style={{ color: 'var(--cs-text-muted)' }}>
+                              <input type="checkbox" checked={editSpell.is_always_prepared}
+                                onChange={e => setEditSpell(p => ({ ...p, is_always_prepared: e.target.checked }))} />
+                              Siempre preparado
+                            </label>
+                          </div>
+                          <div className="flex gap-2">
+                            <button onClick={() => saveSpellEdit(s.id)} className="btn-primary text-xs px-3 py-1">Guardar</button>
+                            <button onClick={() => setEditingSpellId(null)}
+                              className="text-xs px-3 py-1 rounded"
+                              style={{ border: '1px solid var(--cs-gold)', color: 'var(--cs-text-muted)', background: 'transparent' }}>
+                              Cancelar
+                            </button>
+                            <button onClick={() => deleteSpell(s.id)}
+                              className="text-xs px-3 py-1 rounded ml-auto"
+                              style={{ color: 'var(--danger)' }}>
+                              Eliminar
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        /* ── read row ── */
+                        <div className="flex items-center gap-3 px-3 py-2">
+                          {s.is_always_prepared && (
+                            <span title="Always prepared" className="text-xs opacity-70">&#128274;</span>
+                          )}
+                          {s.source_type === 'scroll' && (
+                            <span title="Pergamino" className="text-xs"
+                              style={{ color: 'var(--cs-gold-dk)', fontWeight: 600 }}>
+                              &#128220;
+                            </span>
+                          )}
+                          {s.source_type === 'charges' && (
+                            <span title={`Cargas: ${(s.charges_max ?? 0) - (s.charges_used ?? 0)}/${s.charges_max ?? 0}`}
+                              className="text-xs"
+                              style={{ color: 'var(--hp-warn)', fontWeight: 600 }}>
+                              &#9889; {(s.charges_max ?? 0) - (s.charges_used ?? 0)}/{s.charges_max ?? 0}
+                            </span>
+                          )}
+                          <span className="flex-1 text-sm font-medium" style={{ color: 'var(--cs-text)' }}>
+                            {s.name}
+                          </span>
+                          {s.damage && (
+                            <span className="text-xs" style={{ color: 'var(--cs-gold)' }}>{s.damage}</span>
+                          )}
+                          {s.range && (
+                            <span className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>{s.range}</span>
+                          )}
+                          {s.components && (
+                            <span className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>{s.components}</span>
+                          )}
+                          {s.custom_notes && (
+                            <span className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>{s.custom_notes}</span>
+                          )}
+                          <button onClick={() => startEditSpell(s)}
+                            className="text-xs px-2 py-0.5 rounded"
+                            style={{ border: '1px solid var(--cs-gold)', color: 'var(--cs-gold)', background: 'transparent' }}>
+                            Editar
+                          </button>
+                        </div>
                       )}
-                      {/* Source type badge */}
-                      {s.source_type === 'scroll' && (
-                        <span title="Pergamino" className="text-xs"
-                          style={{ color: 'var(--cs-gold-dk)', fontWeight: 600 }}>
-                          &#128220;
-                        </span>
-                      )}
-                      {s.source_type === 'charges' && (
-                        <span title={`Cargas: ${(s.charges_max ?? 0) - (s.charges_used ?? 0)}/${s.charges_max ?? 0}`}
-                          className="text-xs"
-                          style={{ color: 'var(--hp-warn)', fontWeight: 600 }}>
-                          &#9889; {(s.charges_max ?? 0) - (s.charges_used ?? 0)}/{s.charges_max ?? 0}
-                        </span>
-                      )}
-                      <span className="flex-1 text-sm font-medium"
-                        style={{ color: 'var(--cs-text)' }}>
-                        {s.name}
-                      </span>
-                      {s.components && (
-                        <span className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>
-                          {s.components}
-                        </span>
-                      )}
-                      {s.range && (
-                        <span className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>
-                          {s.range}
-                        </span>
-                      )}
-                      {s.damage && (
-                        <span className="text-xs" style={{ color: 'var(--cs-gold)' }}>
-                          {s.damage}
-                        </span>
-                      )}
-                      {s.custom_notes && (
-                        <span className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>
-                          {s.custom_notes}
-                        </span>
-                      )}
-                      <button onClick={() => deleteSpell(s.id)}
-                        className="text-xs" style={{ color: 'var(--danger)' }}>
-                        &#10005;
-                      </button>
                     </div>
                   ))}
                 </div>

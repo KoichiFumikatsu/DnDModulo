@@ -1,0 +1,2654 @@
+{
+  "Artificer": {
+    "Alchemist": [
+      {
+        "spell": "Healing Word",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Ray Of Sickness",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Flaming Sphere",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Melf's Acid Arrow",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Gaseous Form",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Mass Healing Word",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Blight",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Death Ward",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Cloudkill",
+        "minCharLevel": 17
+      },
+      {
+        "spell": "Raise Dead",
+        "minCharLevel": 17
+      }
+    ],
+    "Armorer": [
+      {
+        "spell": "Magic Missile",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Thunderwave",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Mirror Image",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Shatter",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Hypnotic Pattern",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Lightning Bolt",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Fire Shield",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Greater Invisibility",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Passwall",
+        "minCharLevel": 17
+      },
+      {
+        "spell": "Wall Of Force",
+        "minCharLevel": 17
+      }
+    ],
+    "Artillerist": [
+      {
+        "spell": "Shield",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Thunderwave",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Scorching Ray",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Shatter",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Fireball",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Wind Wall",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Ice Storm",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Wall Of Fire",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Cone Of Cold",
+        "minCharLevel": 17
+      },
+      {
+        "spell": "Wall Of Force",
+        "minCharLevel": 17
+      }
+    ],
+    "Battle Smith": [
+      {
+        "spell": "Heroism",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Shield",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Branding Smite",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Warding Bond",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Aura Of Vitality",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Conjure Barrage",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Aura Of Purity",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Fire Shield",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Banishing Smite",
+        "minCharLevel": 17
+      },
+      {
+        "spell": "Mass Cure Wounds",
+        "minCharLevel": 17
+      }
+    ],
+    "Cartographer": [
+      {
+        "spell": "Faerie Fire",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Guiding Bolt",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Healing Word",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Locate Object",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Mind Spike",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Call Lightning",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Clairvoyance",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Banishment",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Locate Creature",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Scrying",
+        "minCharLevel": 17
+      },
+      {
+        "spell": "Teleportation Circle",
+        "minCharLevel": 17
+      }
+    ]
+  },
+  "Barbarian": {
+    "Path of the Totem Warrior": [
+      {
+        "spell": "Beast Sense",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Speak With Animals",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Commune With Nature",
+        "minCharLevel": 10
+      }
+    ],
+    "Path of the Ancestral Guardian": [
+      {
+        "spell": "Augury",
+        "minCharLevel": 10
+      },
+      {
+        "spell": "Clairvoyance",
+        "minCharLevel": 10
+      }
+    ],
+    "Path of the Giant": [
+      {
+        "spell": "Druidcraft#c",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Thaumaturgy#c",
+        "minCharLevel": 3
+      }
+    ],
+    "Path of the Wild Heart": [
+      {
+        "spell": "Beast Sense",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Speak With Animals",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Commune With Nature",
+        "minCharLevel": 10
+      }
+    ]
+  },
+  "Bard": {
+    "College of Glamour": [
+      {
+        "spell": "Charm Person",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Mirror Image",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Command",
+        "minCharLevel": 6
+      }
+    ],
+    "College of Spirits": [
+      {
+        "spell": "Guidance#c",
+        "minCharLevel": 3
+      }
+    ]
+  },
+  "Cleric": {
+    "Knowledge Domain": [
+      {
+        "spell": "Command",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Identify",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Augury",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Suggestion",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Nondetection",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Speak With Dead",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Arcane Eye",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Confusion",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Legend Lore",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Scrying",
+        "minCharLevel": 9
+      }
+    ],
+    "Life Domain": [
+      {
+        "spell": "Bless",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Cure Wounds",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Lesser Restoration",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Spiritual Weapon",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Beacon Of Hope",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Revivify",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Death Ward",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Guardian Of Faith",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Mass Cure Wounds",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Raise Dead",
+        "minCharLevel": 9
+      }
+    ],
+    "Light Domain": [
+      {
+        "spell": "Burning Hands",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Faerie Fire",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Flaming Sphere",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Scorching Ray",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Daylight",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Fireball",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Guardian Of Faith",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Wall Of Fire",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Flame Strike",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Scrying",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Light#c",
+        "minCharLevel": 1
+      }
+    ],
+    "Nature Domain": [
+      {
+        "spell": "Animal Friendship",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Speak With Animals",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Barkskin",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Spike Growth",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Plant Growth",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Wind Wall",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Dominate Beast",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Grasping Vine",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Insect Plague",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Tree Stride",
+        "minCharLevel": 9
+      }
+    ],
+    "Tempest Domain": [
+      {
+        "spell": "Fog Cloud",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Thunderwave",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Gust Of Wind",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Shatter",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Call Lightning",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Sleet Storm",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Control Water",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Ice Storm",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Destructive Wave",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Insect Plague",
+        "minCharLevel": 9
+      }
+    ],
+    "Trickery Domain": [
+      {
+        "spell": "Charm Person",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Disguise Self",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Mirror Image",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Pass Without Trace",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Blink",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Dispel Magic",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Dimension Door",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Polymorph",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Dominate Person",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Modify Memory",
+        "minCharLevel": 9
+      }
+    ],
+    "War Domain": [
+      {
+        "spell": "Divine Favor",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Shield Of Faith",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Magic Weapon",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Spiritual Weapon",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Crusader's Mantle",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Spirit Guardians",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Freedom Of Movement",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Stoneskin",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Flame Strike",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Hold Monster",
+        "minCharLevel": 9
+      }
+    ],
+    "Death Domain": [
+      {
+        "spell": "False Life",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Ray Of Sickness",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Blindness/deafness",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Ray Of Enfeeblement",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Animate Dead",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Vampiric Touch",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Blight",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Death Ward",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Antilife Shell",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Cloudkill",
+        "minCharLevel": 9
+      }
+    ],
+    "Arcana Domain": [
+      {
+        "spell": "Detect Magic",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Magic Missile",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Magic Weapon",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Nystul's Magic Aura",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Dispel Magic",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Magic Circle",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Arcane Eye",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Leomund's Secret Chest",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Planar Binding",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Teleportation Circle",
+        "minCharLevel": 9
+      }
+    ],
+    "Ambition Domain (PSA)": [
+      {
+        "spell": "Bane",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Disguise Self",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Mirror Image",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Ray Of Enfeeblement",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Bestow Curse",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Vampiric Touch",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Death Ward",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Dimension Door",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Dominate Person",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Modify Memory",
+        "minCharLevel": 9
+      }
+    ],
+    "Knowledge Domain (PSA)": [
+      {
+        "spell": "Command",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Identify",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Augury",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Suggestion",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Nondetection",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Speak With Dead",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Arcane Eye",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Confusion",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Legend Lore",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Scrying",
+        "minCharLevel": 9
+      }
+    ],
+    "Solidarity Domain (PSA)": [
+      {
+        "spell": "Bless",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Guiding Bolt",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Aid",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Warding Bond",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Beacon Of Hope",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Crusader's Mantle",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Aura Of Life",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Guardian Of Faith",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Circle Of Power",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Mass Cure Wounds",
+        "minCharLevel": 9
+      }
+    ],
+    "Strength Domain (PSA)": [
+      {
+        "spell": "Divine Favor",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Shield Of Faith",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Enhance Ability",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Protection From Poison",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Haste",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Protection From Energy",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Dominate Beast",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Stoneskin",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Destructive Wave",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Insect Plague",
+        "minCharLevel": 9
+      }
+    ],
+    "Zeal Domain (PSA)": [
+      {
+        "spell": "Searing Smite",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Thunderous Smite",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Magic Weapon",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Shatter",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Haste",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Fireball",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Fire Shield",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Freedom Of Movement",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Destructive Wave",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Flame Strike",
+        "minCharLevel": 9
+      }
+    ],
+    "Forge Domain": [
+      {
+        "spell": "Identify",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Searing Smite",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Heat Metal",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Magic Weapon",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Elemental Weapon",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Protection From Energy",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Fabricate",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Wall Of Fire",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Animate Objects",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Creation",
+        "minCharLevel": 9
+      }
+    ],
+    "Grave Domain": [
+      {
+        "spell": "Bane",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "False Life",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Gentle Repose",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Ray Of Enfeeblement",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Revivify",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Vampiric Touch",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Blight",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Death Ward",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Antilife Shell",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Raise Dead",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Spare The Dying#c",
+        "minCharLevel": 1
+      }
+    ],
+    "Order Domain": [
+      {
+        "spell": "Command",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Heroism",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Hold Person",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Zone Of Truth",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Mass Healing Word",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Slow",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Compulsion",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Locate Creature",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Commune",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Dominate Person",
+        "minCharLevel": 9
+      }
+    ],
+    "Peace Domain": [
+      {
+        "spell": "Heroism",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Sanctuary",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Aid",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Warding Bond",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Beacon Of Hope",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Sending",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Aura Of Purity",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Otiluke's Resilient Sphere",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Greater Restoration",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Rary's Telepathic Bond",
+        "minCharLevel": 9
+      }
+    ],
+    "Twilight Domain": [
+      {
+        "spell": "Faerie Fire",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Sleep",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Moonbeam",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "See Invisibility",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Aura Of Vitality",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Leomund's Tiny Hut",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Aura Of Life",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Greater Invisibility",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Circle Of Power",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Mislead",
+        "minCharLevel": 9
+      }
+    ]
+  },
+  "Druid": {
+    "Circle of the Land": [
+      {
+        "spell": "Hold Person",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Spike Growth",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Sleet Storm",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Slow",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Freedom Of Movement",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Ice Storm",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Commune With Nature",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Cone Of Cold",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Mirror Image",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Misty Step",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Water Breathing",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Water Walk",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Control Water",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Conjure Elemental",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Scrying",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Blur",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Silence",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Create Food And Water",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Protection From Energy",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Blight",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Hallucinatory Terrain",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Insect Plague",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Wall Of Stone",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Barkskin",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Spider Climb",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Call Lightning",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Plant Growth",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Divination",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Tree Stride",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Invisibility",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Pass Without Trace",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Daylight",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Haste",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Dream",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Lightning Bolt",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Meld Into Stone",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Stone Shape",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Stoneskin",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Passwall",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Darkness",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Melf's Acid Arrow",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Stinking Cloud",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Locate Creature",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Web",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Gaseous Form",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Greater Invisibility",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Cloudkill",
+        "minCharLevel": 9
+      }
+    ],
+    "Circle of the Moon": [
+      {
+        "spell": "Alter Self",
+        "minCharLevel": 14
+      }
+    ],
+    "Circle of Spores": [
+      {
+        "spell": "Blindness/deafness",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Gentle Repose",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Animate Dead",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Gaseous Form",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Blight",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Confusion",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Cloudkill",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Contagion",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Chill Touch#c",
+        "minCharLevel": 2
+      }
+    ],
+    "Circle of Stars": [
+      {
+        "spell": "Guiding Bolt",
+        "minCharLevel": 2
+      },
+      {
+        "spell": "Guidance#c",
+        "minCharLevel": 2
+      }
+    ],
+    "Circle of Wildfire": [
+      {
+        "spell": "Burning Hands",
+        "minCharLevel": 2
+      },
+      {
+        "spell": "Cure Wounds",
+        "minCharLevel": 2
+      },
+      {
+        "spell": "Flaming Sphere",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Scorching Ray",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Plant Growth",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Revivify",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Aura Of Life",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Fire Shield",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Flame Strike",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Mass Cure Wounds",
+        "minCharLevel": 9
+      }
+    ],
+    "Circle of the Sea": [
+      {
+        "spell": "Fog Cloud",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Gust Of Wind",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Ray Of Frost",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Shatter",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Thunderwave",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Lightning Bolt",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Water Breathing",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Control Water",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Ice Storm",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Conjure Elemental",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Hold Monster",
+        "minCharLevel": 9
+      }
+    ],
+    "Circle of the Stars": [
+      {
+        "spell": "Guiding Bolt",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Guidance",
+        "minCharLevel": 3
+      }
+    ]
+  },
+  "Fighter": {
+    "Arcane Archer": [
+      {
+        "spell": "Prestidigitation#c",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Druidcraft#c",
+        "minCharLevel": 3
+      }
+    ],
+    "Banneret": [
+      {
+        "spell": "Comprehend Languages",
+        "minCharLevel": 3
+      }
+    ]
+  },
+  "Monk": {
+    "Way of Shadow": [
+      {
+        "spell": "Minor Illusion#c",
+        "minCharLevel": 3
+      }
+    ],
+    "Warrior of Shadow": [
+      {
+        "spell": "Minor Illusion",
+        "minCharLevel": 3
+      }
+    ],
+    "Warrior of the Elements": [
+      {
+        "spell": "Elementalism",
+        "minCharLevel": 3
+      }
+    ]
+  },
+  "Paladin": {
+    "Oath of Devotion": [
+      {
+        "spell": "Protection From Evil And Good",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Sanctuary",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Lesser Restoration",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Zone Of Truth",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Beacon Of Hope",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Dispel Magic",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Freedom Of Movement",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Guardian Of Faith",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Commune",
+        "minCharLevel": 17
+      },
+      {
+        "spell": "Flame Strike",
+        "minCharLevel": 17
+      }
+    ],
+    "Oath of the Ancients": [
+      {
+        "spell": "Ensnaring Strike",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Speak With Animals",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Moonbeam",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Misty Step",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Plant Growth",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Protection From Energy",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Ice Storm",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Stoneskin",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Commune With Nature",
+        "minCharLevel": 17
+      },
+      {
+        "spell": "Tree Stride",
+        "minCharLevel": 17
+      }
+    ],
+    "Oath of Vengeance": [
+      {
+        "spell": "Bane",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Hunter's Mark",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Hold Person",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Misty Step",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Haste",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Protection From Energy",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Banishment",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Dimension Door",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Hold Monster",
+        "minCharLevel": 17
+      },
+      {
+        "spell": "Scrying",
+        "minCharLevel": 17
+      }
+    ],
+    "Oathbreaker": [
+      {
+        "spell": "Hellish Rebuke",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Inflict Wounds",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Crown Of Madness",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Darkness",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Animate Dead",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Bestow Curse",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Blight",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Confusion",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Contagion",
+        "minCharLevel": 17
+      },
+      {
+        "spell": "Dominate Person",
+        "minCharLevel": 17
+      }
+    ],
+    "Oath of the Crown": [
+      {
+        "spell": "Command",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Compelled Duel",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Warding Bond",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Zone Of Truth",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Aura Of Vitality",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Spirit Guardians",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Banishment",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Guardian Of Faith",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Circle Of Power",
+        "minCharLevel": 17
+      },
+      {
+        "spell": "Geas",
+        "minCharLevel": 17
+      }
+    ],
+    "Oath of Conquest": [
+      {
+        "spell": "Armor Of Agathys",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Command",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Hold Person",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Spiritual Weapon",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Bestow Curse",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Fear",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Dominate Beast",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Stoneskin",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Cloudkill",
+        "minCharLevel": 17
+      },
+      {
+        "spell": "Dominate Person",
+        "minCharLevel": 17
+      }
+    ],
+    "Oath of Redemption": [
+      {
+        "spell": "Sanctuary",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Sleep",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Calm Emotions",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Hold Person",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Counterspell",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Hypnotic Pattern",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Otiluke's Resilient Sphere",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Stoneskin",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Hold Monster",
+        "minCharLevel": 17
+      },
+      {
+        "spell": "Wall Of Force",
+        "minCharLevel": 17
+      }
+    ],
+    "Oath of Glory": [
+      {
+        "spell": "Guiding Bolt",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Heroism",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Enhance Ability",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Magic Weapon",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Haste",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Protection From Energy",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Compulsion",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Freedom Of Movement",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Legend Lore",
+        "minCharLevel": 17
+      },
+      {
+        "spell": "Yolande's Regal Presence",
+        "minCharLevel": 17
+      }
+    ],
+    "Oath of the Watchers": [
+      {
+        "spell": "Alarm",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Detect Magic",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Moonbeam",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "See Invisibility",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Counterspell",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Nondetection",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Aura Of Purity",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Banishment",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Hold Monster",
+        "minCharLevel": 17
+      },
+      {
+        "spell": "Scrying",
+        "minCharLevel": 17
+      }
+    ],
+    "Oath of the Noble Genies": [
+      {
+        "spell": "Chromatic Orb",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Elementalism",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Thunderous Smite",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Mirror Image",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Phantasmal Force",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Fly",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Gaseous Form",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Conjure Minor Elementals",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Summon Elemental",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Banishing Smite",
+        "minCharLevel": 17
+      },
+      {
+        "spell": "Contact Other Plane",
+        "minCharLevel": 17
+      }
+    ]
+  },
+  "Ranger": {
+    "Gloom Stalker": [
+      {
+        "spell": "Disguise Self",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Rope Trick",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Fear",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Greater Invisibility",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Seeming",
+        "minCharLevel": 17
+      }
+    ],
+    "Horizon Walker": [
+      {
+        "spell": "Protection From Evil And Good",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Misty Step",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Haste",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Banishment",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Teleportation Circle",
+        "minCharLevel": 17
+      }
+    ],
+    "Monster Slayer": [
+      {
+        "spell": "Protection From Evil And Good",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Zone Of Truth",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Magic Circle",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Banishment",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Hold Monster",
+        "minCharLevel": 17
+      }
+    ],
+    "Fey Wanderer": [
+      {
+        "spell": "Charm Person",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Misty Step",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Summon Fey",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Dimension Door",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Mislead",
+        "minCharLevel": 17
+      }
+    ],
+    "Swarmkeeper": [
+      {
+        "spell": "Mage Hand#c",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Faerie Fire",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Web",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Gaseous Form",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Arcane Eye",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Insect Plague",
+        "minCharLevel": 17
+      }
+    ],
+    "Drakewarden": [
+      {
+        "spell": "Thaumaturgy#c",
+        "minCharLevel": 3
+      }
+    ],
+    "Winter Walker": [
+      {
+        "spell": "Ice Knife",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Hold Person",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Remove Curse",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Ice Storm",
+        "minCharLevel": 13
+      },
+      {
+        "spell": "Cone Of Cold",
+        "minCharLevel": 17
+      }
+    ]
+  },
+  "Rogue": {
+    "Arcane Trickster": [
+      {
+        "spell": "Mage Hand#c",
+        "minCharLevel": 3
+      }
+    ]
+  },
+  "Sorcerer": {
+    "Divine Soul": [
+      {
+        "spell": "Cure Wounds",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Inflict Wounds",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Bless",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Bane",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Protection From Evil And Good",
+        "minCharLevel": 1
+      }
+    ],
+    "Shadow Magic": [
+      {
+        "spell": "Darkness",
+        "minCharLevel": 3
+      }
+    ],
+    "Aberrant Mind": [
+      {
+        "spell": "Mind Sliver",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Arms Of Hadar",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Dissonant Whispers",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Calm Emotions",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Detect Thoughts",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Hunger Of Hadar",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Sending",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Evard's Black Tentacles",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Summon Aberration",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Rary's Telepathic Bond",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Telekinesis",
+        "minCharLevel": 9
+      }
+    ],
+    "Clockwork Soul": [
+      {
+        "spell": "Alarm",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Protection From Evil And Good",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Aid",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Lesser Restoration",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Dispel Magic",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Protection From Energy",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Freedom Of Movement",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Summon Construct",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Greater Restoration",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Wall Of Force",
+        "minCharLevel": 9
+      }
+    ],
+    "Lunar Sorcery": [
+      {
+        "spell": "Shield",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Ray Of Sickness",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Color Spray",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Lesser Restoration",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Blindness/deafness",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Alter Self",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Dispel Magic",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Vampiric Touch",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Phantom Steed",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Death Ward",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Confusion",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Hallucinatory Terrain",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Rary's Telepathic Bond",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Hold Monster",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Mislead",
+        "minCharLevel": 9
+      }
+    ],
+    "Aberrant Sorcery": [
+      {
+        "spell": "Arms Of Hadar",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Calm Emotions",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Detect Thoughts",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Dissonant Whispers",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Mind Sliver",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Hunger Of Hadar",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Sending",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Evard's Black Tentacles",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Summon Aberration",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Rary's Telepathic Bond",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Telekinesis",
+        "minCharLevel": 9
+      }
+    ],
+    "Clockwork Sorcery": [
+      {
+        "spell": "Aid",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Alarm",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Lesser Restoration",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Protection From Evil And Good",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Dispel Magic",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Protection From Energy",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Freedom Of Movement",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Summon Construct",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Greater Restoration",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Wall Of Force",
+        "minCharLevel": 9
+      }
+    ],
+    "Draconic Sorcery": [
+      {
+        "spell": "Alter Self",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Chromatic Orb",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Command",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Dragon's Breath",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Fear",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Fly",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Arcane Eye",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Charm Monster",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Legend Lore",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Summon Dragon",
+        "minCharLevel": 9
+      }
+    ],
+    "Spellfire Sorcery": [
+      {
+        "spell": "Cure Wounds",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Guiding Bolt",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Lesser Restoration",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Scorching Ray",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Aura Of Vitality",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Dispel Magic",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Counterspell",
+        "minCharLevel": 6
+      },
+      {
+        "spell": "Fire Shield",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Wall Of Fire",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Greater Restoration",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Flame Strike",
+        "minCharLevel": 9
+      }
+    ]
+  },
+  "Warlock": {
+    "The Undying": [
+      {
+        "spell": "Spare The Dying#c",
+        "minCharLevel": 1
+      }
+    ],
+    "The Celestial": [
+      {
+        "spell": "Sacred Flame#c",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Light#c",
+        "minCharLevel": 1
+      }
+    ],
+    "Archfey Patron": [
+      {
+        "spell": "Calm Emotions",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Faerie Fire",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Misty Step",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Phantasmal Force",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Sleep",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Blink",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Plant Growth",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Dominate Beast",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Greater Invisibility",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Dominate Person",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Seeming",
+        "minCharLevel": 9
+      }
+    ],
+    "Celestial Patron": [
+      {
+        "spell": "Aid",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Cure Wounds",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Guiding Bolt",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Lesser Restoration",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Daylight",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Revivify",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Guardian Of Faith",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Wall Of Fire",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Greater Restoration",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Summon Celestial",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Sacred Flame",
+        "minCharLevel": 1
+      },
+      {
+        "spell": "Light",
+        "minCharLevel": 1
+      }
+    ],
+    "Fiend Patron": [
+      {
+        "spell": "Burning Hands",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Command",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Scorching Ray",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Suggestion",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Fireball",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Stinking Cloud",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Fire Shield",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Wall Of Fire",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Geas",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Insect Plague",
+        "minCharLevel": 9
+      }
+    ],
+    "Great Old One Patron": [
+      {
+        "spell": "Detect Thoughts",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Dissonant Whispers",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Phantasmal Force",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Tasha's Hideous Laughter",
+        "minCharLevel": 3
+      },
+      {
+        "spell": "Clairvoyance",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Hunger Of Hadar",
+        "minCharLevel": 5
+      },
+      {
+        "spell": "Confusion",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Summon Aberration",
+        "minCharLevel": 7
+      },
+      {
+        "spell": "Modify Memory",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Telekinesis",
+        "minCharLevel": 9
+      },
+      {
+        "spell": "Hex",
+        "minCharLevel": 10
+      }
+    ]
+  },
+  "Wizard": {
+    "School of Illusion": [
+      {
+        "spell": "Minor Illusion#c",
+        "minCharLevel": 1
+      }
+    ],
+    "Abjurer": [
+      {
+        "spell": "Counterspell",
+        "minCharLevel": 10
+      },
+      {
+        "spell": "Dispel Magic",
+        "minCharLevel": 10
+      }
+    ],
+    "Diviner": [
+      {
+        "spell": "See Invisibility",
+        "minCharLevel": 10
+      }
+    ],
+    "Illusionist": [
+      {
+        "spell": "Summon Beast",
+        "minCharLevel": 6
+      },
+      {
+        "spell": "Summon Fey",
+        "minCharLevel": 6
+      },
+      {
+        "spell": "Minor Illusion",
+        "minCharLevel": 3
+      }
+    ]
+  }
+}

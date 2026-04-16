@@ -14,6 +14,7 @@ import STATIC_RACE_TRAITS from '../5etools-processed/race-traits.json'
 import STATIC_BACKGROUND_SKILLS from '../5etools-processed/background-skills.json'
 import STATIC_RACE_SKILLS from '../5etools-processed/race-skills.json'
 import STATIC_CLASS_SKILL_CHOICES from '../5etools-processed/class-skill-choices.json'
+import STATIC_SUBCLASS_SPELLS from '../5etools-processed/subclass-spells.json'
 
 // â”€â”€ Types â”€â”€
 
@@ -36,6 +37,12 @@ export interface Feat {
   expertise?: Array<Record<string, unknown>>
   entries?: unknown[]
   description?: string
+  grantedSpells?: string[]
+}
+
+export interface SubclassSpellGrant {
+  spell: string
+  minCharLevel: number
 }
 
 export interface ClassDetail {
@@ -59,6 +66,8 @@ export interface SpellEntry {
   ritual?: boolean
   concentration?: boolean
   classes?: string[]
+  damage?: string | null
+  healingFormula?: string | null
 }
 
 export interface EquipmentItem {
@@ -312,6 +321,21 @@ export async function fetchSubclassFeatures(
   return feats
     .filter(f => f.level <= level)
     .map(f => ({ name: `${f.name} (Level ${f.level})`, description: f.description, source: subclassName }))
+}
+
+// â”€â”€ Subclass Spell Grants â”€â”€
+
+export function fetchSubclassSpells(
+  className: string,
+  subclassName: string,
+  characterLevel: number
+): SubclassSpellGrant[] {
+  const db = STATIC_SUBCLASS_SPELLS as Record<string, Record<string, SubclassSpellGrant[]>>
+  const subclassMap = db[className] ?? {}
+  const grants = subclassMap[subclassName]
+    ?? Object.entries(subclassMap).find(([k]) => k.toLowerCase() === subclassName.toLowerCase())?.[1]
+    ?? []
+  return grants.filter(g => g.minCharLevel <= characterLevel)
 }
 
 // â”€â”€ Fallbacks â”€â”€

@@ -3,7 +3,7 @@
     "name": "Aberrant Dragonmark",
     "source": "EFA",
     "category": "D",
-    "prerequisite": "",
+    "prerequisite": "campaign, exclusiveFeatCategory",
     "ability": null,
     "description": null
   },
@@ -11,7 +11,7 @@
     "name": "Aberrant Dragonmark",
     "source": "ERLW",
     "category": null,
-    "prerequisite": "",
+    "prerequisite": "other",
     "ability": [
       {
         "con": 1
@@ -60,7 +60,7 @@
     "name": "Actor",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": [
       {
         "cha": 1
@@ -130,7 +130,7 @@
     "name": "Alert",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -138,7 +138,7 @@
     "name": "Alert",
     "source": "XPHB",
     "category": "O",
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -154,7 +154,7 @@
     "name": "Artificer Initiate",
     "source": "TCE",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -162,7 +162,7 @@
     "name": "Athlete",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": [
       {
         "choose": {
@@ -180,7 +180,7 @@
     "name": "Athlete",
     "source": "XPHB",
     "category": "G",
-    "prerequisite": "Level 4, Level 4",
+    "prerequisite": "Level 4; Level 4",
     "ability": [
       {
         "choose": {
@@ -219,7 +219,7 @@
     "name": "Blessed Warrior",
     "source": "XPHB",
     "category": "FS:P",
-    "prerequisite": "",
+    "prerequisite": "otherSummary",
     "ability": null,
     "description": null
   },
@@ -594,7 +594,10 @@
         "max": 30
       }
     ],
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Gaseous Form"
+    ]
   },
   {
     "name": "Boon of Poison Mastery",
@@ -657,7 +660,10 @@
         "max": 30
       }
     ],
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Otto's Irresistible Dance"
+    ]
   },
   {
     "name": "Boon of Siberys",
@@ -679,7 +685,21 @@
         "max": 30
       }
     ],
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Animal Shapes",
+      "Control Weather",
+      "Demiplane",
+      "Heroes' Feast",
+      "Maze",
+      "Mind Blank",
+      "Plane Shift",
+      "Project Image",
+      "Regenerate",
+      "Symbol",
+      "Teleport",
+      "True Seeing"
+    ]
   },
   {
     "name": "Boon of Skill",
@@ -902,7 +922,7 @@
     "name": "Bountiful Luck",
     "source": "XGE",
     "category": null,
-    "prerequisite": "Race",
+    "prerequisite": "halfling",
     "ability": null,
     "description": null
   },
@@ -912,13 +932,16 @@
     "category": null,
     "prerequisite": "Level 4",
     "ability": null,
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Prestidigitation"
+    ]
   },
   {
     "name": "Charger",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -926,7 +949,7 @@
     "name": "Charger",
     "source": "XPHB",
     "category": "G",
-    "prerequisite": "Level 4, Level 4",
+    "prerequisite": "Level 4; Level 4",
     "ability": [
       {
         "choose": {
@@ -943,7 +966,7 @@
     "name": "Chef",
     "source": "TCE",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": [
       {
         "choose": {
@@ -978,9 +1001,12 @@
     "name": "Child of the Sun",
     "source": "LFL",
     "category": "O",
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Faerie Fire"
+    ]
   },
   {
     "name": "Cloying Mists",
@@ -998,7 +1024,10 @@
         }
       }
     ],
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Fog Cloud"
+    ]
   },
   {
     "name": "Cohort of Chaos",
@@ -1038,13 +1067,16 @@
         }
       }
     ],
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Ray Of Frost"
+    ]
   },
   {
     "name": "Crafter",
     "source": "XPHB",
     "category": "O",
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -1052,7 +1084,7 @@
     "name": "Crossbow Expert",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -1072,7 +1104,7 @@
     "name": "Crusher",
     "source": "TCE",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": [
       {
         "choose": {
@@ -1107,7 +1139,7 @@
     "name": "Cult of the Dragon Initiate",
     "source": "FRHoF",
     "category": "O",
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -1123,7 +1155,7 @@
     "name": "Defensive Duelist",
     "source": "PHB",
     "category": null,
-    "prerequisite": "DEX 13",
+    "prerequisite": "0 [object Object]+",
     "ability": null,
     "description": null
   },
@@ -1166,13 +1198,16 @@
     "category": null,
     "prerequisite": "Level 4",
     "ability": null,
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Augury"
+    ]
   },
   {
     "name": "Dragon Fear",
     "source": "XGE",
     "category": null,
-    "prerequisite": "Race",
+    "prerequisite": "dragonborn",
     "ability": [
       {
         "choose": {
@@ -1191,7 +1226,7 @@
     "name": "Dragon Hide",
     "source": "XGE",
     "category": null,
-    "prerequisite": "Race",
+    "prerequisite": "dragonborn",
     "ability": [
       {
         "choose": {
@@ -1227,15 +1262,28 @@
     "name": "Drow High Magic",
     "source": "XGE",
     "category": null,
-    "prerequisite": "Race",
+    "prerequisite": "elf",
     "ability": null,
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "D",
+      "E",
+      "T",
+      "C",
+      "",
+      "M",
+      "A",
+      "G",
+      "I",
+      "Levitate",
+      "Dispel Magic"
+    ]
   },
   {
     "name": "Druidic Warrior",
     "source": "XPHB",
     "category": "FS:R",
-    "prerequisite": "",
+    "prerequisite": "otherSummary",
     "ability": null,
     "description": null
   },
@@ -1243,7 +1291,7 @@
     "name": "Dual Wielder",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -1251,7 +1299,7 @@
     "name": "Dual Wielder",
     "source": "XPHB",
     "category": "G",
-    "prerequisite": "Level 4, Level 4",
+    "prerequisite": "Level 4; Level 4",
     "ability": [
       {
         "choose": {
@@ -1276,7 +1324,7 @@
     "name": "Dungeon Delver",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -1284,7 +1332,7 @@
     "name": "Durable",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": [
       {
         "con": 1
@@ -1308,7 +1356,7 @@
     "name": "Dwarven Fortitude",
     "source": "XGE",
     "category": null,
-    "prerequisite": "Race",
+    "prerequisite": "dwarf",
     "ability": [
       {
         "con": 1
@@ -1328,7 +1376,7 @@
     "name": "Elemental Adept",
     "source": "PHB",
     "category": null,
-    "prerequisite": "",
+    "prerequisite": "Spellcasting",
     "ability": null,
     "description": null
   },
@@ -1354,7 +1402,7 @@
     "name": "Elven Accuracy",
     "source": "XGE",
     "category": null,
-    "prerequisite": "Race",
+    "prerequisite": "elf, half-elf",
     "ability": [
       {
         "choose": {
@@ -1393,9 +1441,12 @@
     "name": "Emerald Enclave Fledgling",
     "source": "FRHoF",
     "category": "O",
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Speak With Animals"
+    ]
   },
   {
     "name": "Enclave Magic",
@@ -1413,13 +1464,16 @@
         }
       }
     ],
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Beast Sense"
+    ]
   },
   {
     "name": "Fade Away",
     "source": "XGE",
     "category": null,
-    "prerequisite": "Race",
+    "prerequisite": "gnome",
     "ability": [
       {
         "choose": {
@@ -1454,7 +1508,7 @@
     "name": "Fey Teleportation",
     "source": "XGE",
     "category": null,
-    "prerequisite": "Race",
+    "prerequisite": "elf",
     "ability": [
       {
         "choose": {
@@ -1466,13 +1520,16 @@
         }
       }
     ],
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Misty Step"
+    ]
   },
   {
     "name": "Fey Touched",
     "source": "TCE",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": [
       {
         "choose": {
@@ -1485,7 +1542,10 @@
         }
       }
     ],
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Misty Step"
+    ]
   },
   {
     "name": "Fey-Touched",
@@ -1503,13 +1563,16 @@
         }
       }
     ],
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Misty Step"
+    ]
   },
   {
     "name": "Fighting Initiate",
     "source": "TCE",
     "category": null,
-    "prerequisite": "",
+    "prerequisite": "proficiency",
     "ability": null,
     "description": null
   },
@@ -1517,7 +1580,7 @@
     "name": "Flames of Phlegethos",
     "source": "XGE",
     "category": null,
-    "prerequisite": "Race",
+    "prerequisite": "tiefling",
     "ability": [
       {
         "choose": {
@@ -1572,7 +1635,7 @@
     "name": "Gift of the Chromatic Dragon",
     "source": "FTD",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -1580,7 +1643,7 @@
     "name": "Gift of the Gem Dragon",
     "source": "FTD",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": [
       {
         "choose": {
@@ -1599,15 +1662,18 @@
     "name": "Gift of the Metallic Dragon",
     "source": "FTD",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Cure Wounds"
+    ]
   },
   {
     "name": "Grappler",
     "source": "PHB",
     "category": null,
-    "prerequisite": "STR 13",
+    "prerequisite": "0 [object Object]+",
     "ability": null,
     "description": null
   },
@@ -1615,7 +1681,7 @@
     "name": "Grappler",
     "source": "XPHB",
     "category": "G",
-    "prerequisite": "Level 4, Level 4",
+    "prerequisite": "Level 4; Level 4",
     "ability": [
       {
         "choose": {
@@ -1640,7 +1706,7 @@
     "name": "Great Weapon Master",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -1943,7 +2009,7 @@
     "name": "Gunner",
     "source": "TCE",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": [
       {
         "dex": 1
@@ -1955,7 +2021,7 @@
     "name": "Harper Agent",
     "source": "FRHoF",
     "category": "O",
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -1980,7 +2046,7 @@
     "name": "Healer",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -1988,7 +2054,7 @@
     "name": "Healer",
     "source": "XPHB",
     "category": "O",
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -1996,7 +2062,7 @@
     "name": "Heavily Armored",
     "source": "PHB",
     "category": null,
-    "prerequisite": "",
+    "prerequisite": "proficiency",
     "ability": [
       {
         "str": 1
@@ -2025,7 +2091,7 @@
     "name": "Heavy Armor Master",
     "source": "PHB",
     "category": null,
-    "prerequisite": "",
+    "prerequisite": "proficiency",
     "ability": [
       {
         "str": 1
@@ -2054,7 +2120,7 @@
     "name": "Infernal Constitution",
     "source": "XGE",
     "category": null,
-    "prerequisite": "Race",
+    "prerequisite": "tiefling",
     "ability": [
       {
         "con": 1
@@ -2066,7 +2132,7 @@
     "name": "Initiate of High Sorcery",
     "source": "DSotDQ",
     "category": null,
-    "prerequisite": "Level [object Object], Level [object Object]",
+    "prerequisite": "Level 1; Level 1; campaign, background",
     "ability": null,
     "description": null
   },
@@ -2074,7 +2140,7 @@
     "name": "Inspiring Leader",
     "source": "PHB",
     "category": null,
-    "prerequisite": "CHA 13",
+    "prerequisite": "0 [object Object]+",
     "ability": null,
     "description": null
   },
@@ -2082,7 +2148,7 @@
     "name": "Inspiring Leader",
     "source": "XPHB",
     "category": "G",
-    "prerequisite": "Level 4, Level 4",
+    "prerequisite": "Level 4; Level 4",
     "ability": [
       {
         "choose": {
@@ -2107,7 +2173,7 @@
     "name": "Keen Mind",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": [
       {
         "int": 1
@@ -2232,13 +2298,16 @@
         }
       }
     ],
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Light"
+    ]
   },
   {
     "name": "Lightly Armored",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": [
       {
         "choose": {
@@ -2273,7 +2342,7 @@
     "name": "Linguist",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": [
       {
         "int": 1
@@ -2302,7 +2371,7 @@
     "name": "Lords' Alliance Agent",
     "source": "FRHoF",
     "category": "O",
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -2331,7 +2400,7 @@
     "name": "Lucky",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -2339,7 +2408,7 @@
     "name": "Lucky",
     "source": "XPHB",
     "category": "O",
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -2347,7 +2416,7 @@
     "name": "Mage Slayer",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -2372,7 +2441,7 @@
     "name": "Magic Initiate",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -2380,7 +2449,7 @@
     "name": "Magic Initiate",
     "source": "XPHB",
     "category": "O",
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -2388,103 +2457,152 @@
     "name": "Mark of Detection",
     "source": "EFA",
     "category": "D",
-    "prerequisite": "",
+    "prerequisite": "campaign, exclusiveFeatCategory",
     "ability": null,
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "See Invisibility",
+      "Detect Magic"
+    ]
   },
   {
     "name": "Mark of Finding",
     "source": "EFA",
     "category": "D",
-    "prerequisite": "",
+    "prerequisite": "campaign, exclusiveFeatCategory",
     "ability": null,
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Locate Object",
+      "Hunter's Mark"
+    ]
   },
   {
     "name": "Mark of Handling",
     "source": "EFA",
     "category": "D",
-    "prerequisite": "",
+    "prerequisite": "campaign, exclusiveFeatCategory",
     "ability": null,
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Animal Friendship",
+      "Speak With Animals"
+    ]
   },
   {
     "name": "Mark of Healing",
     "source": "EFA",
     "category": "D",
-    "prerequisite": "",
+    "prerequisite": "campaign, exclusiveFeatCategory",
     "ability": null,
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Lesser Restoration",
+      "Cure Wounds"
+    ]
   },
   {
     "name": "Mark of Hospitality",
     "source": "EFA",
     "category": "D",
-    "prerequisite": "",
+    "prerequisite": "campaign, exclusiveFeatCategory",
     "ability": null,
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Calm Emotions",
+      "Purify Food And Drink",
+      "Unseen Servant"
+    ]
   },
   {
     "name": "Mark of Making",
     "source": "EFA",
     "category": "D",
-    "prerequisite": "",
+    "prerequisite": "campaign, exclusiveFeatCategory",
     "ability": null,
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Magic Weapon",
+      "Mending"
+    ]
   },
   {
     "name": "Mark of Passage",
     "source": "EFA",
     "category": "D",
-    "prerequisite": "",
+    "prerequisite": "campaign, exclusiveFeatCategory",
     "ability": null,
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Misty Step"
+    ]
   },
   {
     "name": "Mark of Scribing",
     "source": "EFA",
     "category": "D",
-    "prerequisite": "",
+    "prerequisite": "campaign, exclusiveFeatCategory",
     "ability": null,
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Magic Mouth",
+      "Comprehend Languages",
+      "Message"
+    ]
   },
   {
     "name": "Mark of Sentinel",
     "source": "EFA",
     "category": "D",
-    "prerequisite": "",
+    "prerequisite": "campaign, exclusiveFeatCategory",
     "ability": null,
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Shield"
+    ]
   },
   {
     "name": "Mark of Shadow",
     "source": "EFA",
     "category": "D",
-    "prerequisite": "",
+    "prerequisite": "campaign, exclusiveFeatCategory",
     "ability": null,
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Invisibility",
+      "Minor Illusion"
+    ]
   },
   {
     "name": "Mark of Storm",
     "source": "EFA",
     "category": "D",
-    "prerequisite": "",
+    "prerequisite": "campaign, exclusiveFeatCategory",
     "ability": null,
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Gust Of Wind",
+      "Thunderclap"
+    ]
   },
   {
     "name": "Mark of Warding",
     "source": "EFA",
     "category": "D",
-    "prerequisite": "",
+    "prerequisite": "campaign, exclusiveFeatCategory",
     "ability": null,
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Arcane Lock",
+      "Alarm",
+      "Mage Armor"
+    ]
   },
   {
     "name": "Martial Adept",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -2509,7 +2627,7 @@
     "name": "Medium Armor Master",
     "source": "PHB",
     "category": null,
-    "prerequisite": "",
+    "prerequisite": "proficiency",
     "ability": null,
     "description": null
   },
@@ -2542,7 +2660,7 @@
     "name": "Mobile",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -2550,7 +2668,7 @@
     "name": "Moderately Armored",
     "source": "PHB",
     "category": null,
-    "prerequisite": "",
+    "prerequisite": "proficiency",
     "ability": [
       {
         "choose": {
@@ -2585,7 +2703,7 @@
     "name": "Mounted Combatant",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -2611,7 +2729,7 @@
     "name": "Musician",
     "source": "XPHB",
     "category": "O",
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -2637,7 +2755,7 @@
     "name": "Observant",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": [
       {
         "choose": {
@@ -2655,7 +2773,7 @@
     "name": "Observant",
     "source": "XPHB",
     "category": "G",
-    "prerequisite": "Level 4, Level 4",
+    "prerequisite": "Level 4; Level 4",
     "ability": [
       {
         "choose": {
@@ -2683,7 +2801,7 @@
     "name": "Orcish Fury",
     "source": "XGE",
     "category": null,
-    "prerequisite": "Race",
+    "prerequisite": "half-orc",
     "ability": [
       {
         "choose": {
@@ -2735,13 +2853,17 @@
         }
       }
     ],
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Misty Step",
+      "Tongues"
+    ]
   },
   {
     "name": "Piercer",
     "source": "TCE",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": [
       {
         "choose": {
@@ -2784,7 +2906,7 @@
     "name": "Poisoner",
     "source": "TCE",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -2809,7 +2931,7 @@
     "name": "Polearm Master",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -2817,7 +2939,7 @@
     "name": "Polearm Master",
     "source": "XPHB",
     "category": "G",
-    "prerequisite": "Level 4, Level 4",
+    "prerequisite": "Level 4; Level 4",
     "ability": [
       {
         "choose": {
@@ -2857,7 +2979,7 @@
     "name": "Prodigy",
     "source": "XGE",
     "category": null,
-    "prerequisite": "Race",
+    "prerequisite": "half-elf, half-orc, human",
     "ability": null,
     "description": null,
     "skillProficiencies": [
@@ -2904,7 +3026,7 @@
     "name": "Purple Dragon Commandant",
     "source": "FRHoF",
     "category": "G",
-    "prerequisite": "Level 4",
+    "prerequisite": "Level 4; proficiency",
     "ability": [
       {
         "choose": {
@@ -2921,7 +3043,7 @@
     "name": "Purple Dragon Rook",
     "source": "FRHoF",
     "category": "O",
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null,
     "skillProficiencies": [
@@ -2961,7 +3083,7 @@
     "name": "Quicksmithing",
     "source": "PSK",
     "category": null,
-    "prerequisite": "INT 13",
+    "prerequisite": "0 [object Object]+",
     "ability": null,
     "description": null
   },
@@ -2990,7 +3112,7 @@
     "name": "Resilient",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": [
       {
         "choose": {
@@ -3036,7 +3158,7 @@
     "name": "Revenant Blade",
     "source": "ERLW",
     "category": null,
-    "prerequisite": "Race",
+    "prerequisite": "elf",
     "ability": [
       {
         "choose": {
@@ -3076,7 +3198,7 @@
     "name": "Ritual Caster",
     "source": "PHB",
     "category": null,
-    "prerequisite": "INT 13",
+    "prerequisite": "0 [object Object]+, 1 [object Object]+",
     "ability": null,
     "description": null
   },
@@ -3084,7 +3206,7 @@
     "name": "Ritual Caster",
     "source": "XPHB",
     "category": "G",
-    "prerequisite": "Level 4, Level 4, Level 4",
+    "prerequisite": "Level 4; Level 4; Level 4",
     "ability": [
       {
         "choose": {
@@ -3102,15 +3224,31 @@
     "name": "Rune Shaper",
     "source": "BGG",
     "category": null,
-    "prerequisite": "",
+    "prerequisite": "spellcastingFeature; background",
     "ability": null,
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Comprehend Languages",
+      "Fog Cloud",
+      "Inflict Wounds",
+      "Chromatic Orb",
+      "Disguise Self",
+      "Burning Hands",
+      "Speak With Animals",
+      "Armor Of Agathys",
+      "Goodberry",
+      "Longstrider",
+      "Command",
+      "Entangle",
+      "Sanctuary",
+      "Thunderwave"
+    ]
   },
   {
     "name": "Savage Attacker",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -3118,7 +3256,7 @@
     "name": "Savage Attacker",
     "source": "XPHB",
     "category": "O",
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -3126,15 +3264,22 @@
     "name": "Scion of the Outer Planes",
     "source": "SatO",
     "category": null,
-    "prerequisite": "",
+    "prerequisite": "campaign",
     "ability": null,
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Minor Illusion",
+      "Chill Touch",
+      "Sacred Flame",
+      "Guidance",
+      "Mage Hand"
+    ]
   },
   {
     "name": "Second Chance",
     "source": "XGE",
     "category": null,
-    "prerequisite": "Race",
+    "prerequisite": "halfling",
     "ability": [
       {
         "choose": {
@@ -3153,7 +3298,7 @@
     "name": "Sentinel",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -3161,7 +3306,7 @@
     "name": "Sentinel",
     "source": "XPHB",
     "category": "G",
-    "prerequisite": "Level 4, Level 4",
+    "prerequisite": "Level 4; Level 4",
     "ability": [
       {
         "choose": {
@@ -3178,15 +3323,26 @@
     "name": "Servo Crafting",
     "source": "PSK",
     "category": null,
-    "prerequisite": "INT 13",
+    "prerequisite": "0 [object Object]+",
     "ability": null,
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "F",
+      "I",
+      "N",
+      "D",
+      "",
+      "A",
+      "M",
+      "L",
+      "R"
+    ]
   },
   {
     "name": "Shadow Touched",
     "source": "TCE",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": [
       {
         "choose": {
@@ -3199,7 +3355,10 @@
         }
       }
     ],
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Invisibility"
+    ]
   },
   {
     "name": "Shadow-Touched",
@@ -3217,21 +3376,27 @@
         }
       }
     ],
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Invisibility"
+    ]
   },
   {
     "name": "Shadowmoor Hexer",
     "source": "LFL",
     "category": "O",
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Hex"
+    ]
   },
   {
     "name": "Sharpshooter",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -3251,7 +3416,7 @@
     "name": "Shield Master",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -3271,7 +3436,7 @@
     "name": "Skill Expert",
     "source": "TCE",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": [
       {
         "choose": {
@@ -3355,7 +3520,7 @@
     "name": "Skilled",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -3363,7 +3528,7 @@
     "name": "Skilled",
     "source": "XPHB",
     "category": "O",
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -3371,7 +3536,7 @@
     "name": "Skulker",
     "source": "PHB",
     "category": null,
-    "prerequisite": "DEX 13",
+    "prerequisite": "0 [object Object]+",
     "ability": null,
     "description": null
   },
@@ -3391,7 +3556,7 @@
     "name": "Slasher",
     "source": "TCE",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": [
       {
         "choose": {
@@ -3445,7 +3610,7 @@
     "name": "Speedy",
     "source": "XPHB",
     "category": "G",
-    "prerequisite": "Level 4, Level 4",
+    "prerequisite": "Level 4; Level 4",
     "ability": [
       {
         "choose": {
@@ -3462,7 +3627,7 @@
     "name": "Spell Sniper",
     "source": "PHB",
     "category": null,
-    "prerequisite": "",
+    "prerequisite": "Spellcasting",
     "ability": null,
     "description": null
   },
@@ -3488,7 +3653,7 @@
     "name": "Spellfire Adept",
     "source": "FRHoF",
     "category": "G",
-    "prerequisite": "Level 4",
+    "prerequisite": "Level 4; , ",
     "ability": [
       {
         "choose": {
@@ -3506,15 +3671,18 @@
     "name": "Spellfire Spark",
     "source": "FRHoF",
     "category": "O",
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Sacred Flame"
+    ]
   },
   {
     "name": "Squat Nimbleness",
     "source": "XGE",
     "category": null,
-    "prerequisite": "Race",
+    "prerequisite": "dwarf, small race",
     "ability": [
       {
         "choose": {
@@ -3542,7 +3710,7 @@
     "name": "Squire of Solamnia",
     "source": "DSotDQ",
     "category": null,
-    "prerequisite": "Level [object Object], Level [object Object]",
+    "prerequisite": "Level 1; Level 1; campaign, background",
     "ability": null,
     "description": null
   },
@@ -3567,7 +3735,7 @@
     "name": "Strike of the Giants",
     "source": "BGG",
     "category": null,
-    "prerequisite": "",
+    "prerequisite": "proficiency; background",
     "ability": null,
     "description": null
   },
@@ -3575,9 +3743,23 @@
     "name": "Strixhaven Initiate",
     "source": "SCC",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Light",
+      "Sacred Flame",
+      "Thaumaturgy",
+      "Fire Bolt",
+      "Prestidigitation",
+      "Ray Of Frost",
+      "Druidcraft",
+      "Guidance",
+      "Mage Hand",
+      "Vicious Mockery",
+      "Chill Touch",
+      "Spare The Dying"
+    ]
   },
   {
     "name": "Strixhaven Mascot",
@@ -3585,21 +3767,44 @@
     "category": null,
     "prerequisite": "Level 4",
     "ability": null,
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "F",
+      "I",
+      "N",
+      "D",
+      "",
+      "A",
+      "M",
+      "L",
+      "R"
+    ]
   },
   {
     "name": "Svirfneblin Magic",
     "source": "MTF",
     "category": null,
-    "prerequisite": "Race",
+    "prerequisite": "gnome",
     "ability": null,
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "N",
+      "O",
+      "D",
+      "E",
+      "T",
+      "C",
+      "I",
+      "Blindness/deafness",
+      "Blur",
+      "Disguise Self"
+    ]
   },
   {
     "name": "Tavern Brawler",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": [
       {
         "choose": {
@@ -3617,7 +3822,7 @@
     "name": "Tavern Brawler",
     "source": "XPHB",
     "category": "O",
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -3625,7 +3830,7 @@
     "name": "Telekinetic",
     "source": "TCE",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": [
       {
         "choose": {
@@ -3638,7 +3843,10 @@
         }
       }
     ],
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Mage Hand"
+    ]
   },
   {
     "name": "Telekinetic",
@@ -3656,13 +3864,16 @@
         }
       }
     ],
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Mage Hand"
+    ]
   },
   {
     "name": "Telepathic",
     "source": "TCE",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": [
       {
         "choose": {
@@ -3675,7 +3886,10 @@
         }
       }
     ],
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Detect Thoughts"
+    ]
   },
   {
     "name": "Telepathic",
@@ -3693,7 +3907,10 @@
         }
       }
     ],
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Detect Thoughts"
+    ]
   },
   {
     "name": "Thrown Weapon Fighting",
@@ -3707,7 +3924,7 @@
     "name": "Tireless Reveler",
     "source": "ABH",
     "category": "O",
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -3715,7 +3932,7 @@
     "name": "Tough",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -3723,7 +3940,7 @@
     "name": "Tough",
     "source": "XPHB",
     "category": "O",
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -3743,7 +3960,10 @@
         }
       }
     ],
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Charm Person"
+    ]
   },
   {
     "name": "Two-Weapon Fighting",
@@ -3757,7 +3977,7 @@
     "name": "Tyro of the Gauntlet",
     "source": "FRHoF",
     "category": "O",
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -3773,7 +3993,7 @@
     "name": "Vampire Hunter",
     "source": "ABH",
     "category": "O",
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -3793,13 +4013,16 @@
         }
       }
     ],
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Spider Climb"
+    ]
   },
   {
     "name": "Vampire's Plaything",
     "source": "ABH",
     "category": "O",
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
@@ -3807,7 +4030,7 @@
     "name": "Vampiric Exultation",
     "source": "PSX",
     "category": null,
-    "prerequisite": "Race",
+    "prerequisite": "Vampire (Ixalan)",
     "ability": null,
     "description": null
   },
@@ -3834,7 +4057,7 @@
     "name": "War Caster",
     "source": "PHB",
     "category": null,
-    "prerequisite": "",
+    "prerequisite": "Spellcasting",
     "ability": null,
     "description": null
   },
@@ -3860,7 +4083,7 @@
     "name": "Weapon Master",
     "source": "PHB",
     "category": null,
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": [
       {
         "choose": {
@@ -3895,15 +4118,19 @@
     "name": "Wood Elf Magic",
     "source": "XGE",
     "category": null,
-    "prerequisite": "Race",
+    "prerequisite": "elf",
     "ability": null,
-    "description": null
+    "description": null,
+    "grantedSpells": [
+      "Longstrider",
+      "Pass Without Trace"
+    ]
   },
   {
     "name": "Zhentarim Ruffian",
     "source": "FRHoF",
     "category": "O",
-    "prerequisite": null,
+    "prerequisite": "",
     "ability": null,
     "description": null
   },
