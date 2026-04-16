@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Autocomplete from '@/components/ui/Autocomplete'
 import SpellModal from '@/components/ui/SpellModal'
@@ -54,6 +54,27 @@ const SPELLS_KNOWN_EDIT: Record<string, number[]> = {
 }
 
 const SKILL_NAMES_LOWER = ['acrobatics','animal handling','arcana','athletics','deception','history','insight','intimidation','investigation','medicine','nature','perception','performance','persuasion','religion','sleight of hand','stealth','survival']
+
+// Racial natural armor: base AC and how DEX/CON/prof modifies it
+const RACIAL_NATURAL_ARMOR: Record<string, { base: number; mod?: 'dex' | 'con' | 'prof'; maxDex?: number }> = {
+  'Tortle':     { base: 17 },
+  'Lizardfolk': { base: 13, mod: 'dex' },
+  'Loxodon':    { base: 12, mod: 'con' },
+  'Locathah':   { base: 12 },
+  'Warforged':  { base: 11, mod: 'prof' },
+  'Simic Hybrid': { base: 11, mod: 'dex' },
+}
+
+// Class resource progression (index = level, 0 = placeholder)
+const CLASS_RESOURCE_TABLE: Record<string, { name: string; reset: ResetOn; max: number[] }[]> = {
+  Barbarian: [{ name: 'Furia', reset: 'long_rest',  max: [0,2,2,3,3,3,4,4,4,4,4,4,5,5,5,5,5,6,6,6,99] }],
+  Sorcerer:  [{ name: 'Puntos de hechicería', reset: 'long_rest', max: [0,0,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20] }],
+  Monk:      [{ name: 'Puntos de ki', reset: 'short_rest', max: [0,0,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20] }],
+  Fighter:   [{ name: 'Oleada de acción', reset: 'short_rest', max: [0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2] }],
+  Paladin:   [{ name: 'Imposición de manos (pts)', reset: 'long_rest', max: [0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100] }],
+  Warlock:   [{ name: 'Ranuras Pacto Mágico', reset: 'short_rest', max: [0,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2] }],
+  Rogue:     [{ name: 'Dados de ingenio', reset: 'short_rest', max: [0,1,1,1,1,2,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4] }],
+}
 
 const RARITY_COLORS: Record<string, string> = {
   common: '#9CAF88', uncommon: '#4D9B4D', rare: '#4A90D9',
@@ -401,6 +422,19 @@ export default function EditCharacterClient({
     text_value: '', stat_type: 'counter' as CustomStatType, notes: '',
   })
 
+  /* ── Level Up ── */
+  type LevelUpInfo = {
+    className: string; subclass: string | null
+    fromLevel: number; toLevel: number
+    profBonusOld: number; profBonusNew: number
+    newSubclassSpells: string[]
+    resources: { name: string; reset: ResetOn; newMax: number }[]
+  }
+  const [levelUpInfo, setLevelUpInfo] = useState<LevelUpInfo | null>(null)
+  const origLevels = useRef<Record<string, number>>(
+    Object.fromEntries(classes.map(c => [c.id, c.level]))
+  )
+
   /* ── Grants ── */
   const [grants, setGrants] = useState<Grant[]>(() => (character.grants as Grant[] ?? []))
 
@@ -693,6 +727,46 @@ export default function EditCharacterClient({
 
   async function saveClass(cls: CharacterClass) {
     await supabase.from('character_classes').update(clsPayload(cls)).eq('id', cls.id)
+  }
+
+  async function saveClassWithLevelUp(cls: CharacterClass) {
+    const prevLevel = origLevels.current[cls.id] ?? cls.level
+    await saveClass(cls)
+    origLevels.current[cls.id] = cls.level
+
+    if (cls.level <= prevLevel) return // not a level up
+
+    // Compute new proficiency bonus based on total character level
+    const totalLevel = localClasses.reduce((sum, c) => sum + (c.id === cls.id ? cls.level : c.level), 0)
+    const profBonusNew = 2 + Math.floor((totalLevel - 1) / 4)
+    const profBonusOld = combat.proficiency_bonus
+
+    if (profBonusNew !== profBonusOld) {
+      setCombat(p => ({ ...p, proficiency_bonus: profBonusNew }))
+      await supabase.from('characters').update({ proficiency_bonus: profBonusNew }).eq('id', character.id)
+    }
+
+    // Auto-add subclass spells newly unlocked at this level
+    let newSubclassSpells: string[] = []
+    if (cls.subclass_name && !cls.is_homebrew) {
+      const allGrants = fetchSubclassSpells(cls.class_name, cls.subclass_name, cls.level)
+      const oldGrants = fetchSubclassSpells(cls.class_name, cls.subclass_name, prevLevel)
+      const newGrants = allGrants.filter(g => !oldGrants.some(og => og.spell === g.spell))
+      newSubclassSpells = newGrants.map(g => g.spell)
+      if (newGrants.length) {
+        await autoAddGrantedSpells(cls.id, newSubclassSpells, localSpells)
+      }
+    }
+
+    // Build resource suggestions
+    const resTables = CLASS_RESOURCE_TABLE[cls.class_name] ?? []
+    const resources = resTables.flatMap(rt => {
+      const newMax = rt.max[Math.min(cls.level, 20)] ?? 0
+      if (newMax <= 0) return []
+      return [{ name: rt.name, reset: rt.reset, newMax }]
+    })
+
+    setLevelUpInfo({ className: cls.class_name, subclass: cls.subclass_name ?? null, fromLevel: prevLevel, toLevel: cls.level, profBonusOld, profBonusNew, newSubclassSpells, resources })
   }
 
   async function addClass() {
@@ -1433,6 +1507,46 @@ export default function EditCharacterClient({
          ════════════════════════════════════════════════════════ */}
       {tab === 'classes' && (
         <div className="space-y-4">
+          {/* Level-up notification */}
+          {levelUpInfo && (
+            <div style={{ background: 'linear-gradient(135deg,rgba(201,173,106,0.15),rgba(100,180,100,0.08))',
+              border: '2px solid var(--cs-gold)', borderRadius: 12, padding: '1rem 1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                <h3 style={{ fontFamily: 'Cinzel, serif', fontWeight: 700, fontSize: '1rem', color: 'var(--cs-gold)' }}>
+                  ⬆ Subida de nivel — {levelUpInfo.className} {levelUpInfo.subclass ? `(${levelUpInfo.subclass})` : ''}: {levelUpInfo.fromLevel} → {levelUpInfo.toLevel}
+                </h3>
+                <button onClick={() => setLevelUpInfo(null)}
+                  style={{ color: 'var(--cs-text-muted)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.82rem' }}>
+                {levelUpInfo.profBonusNew !== levelUpInfo.profBonusOld && (
+                  <div style={{ color: 'var(--hp-good)' }}>
+                    ✓ Bonus de proficiencia actualizado: +{levelUpInfo.profBonusOld} → +{levelUpInfo.profBonusNew} (guardado automáticamente)
+                  </div>
+                )}
+                {levelUpInfo.newSubclassSpells.length > 0 && (
+                  <div style={{ color: 'var(--cs-accent)' }}>
+                    ✓ Hechizos de subclase agregados: {levelUpInfo.newSubclassSpells.join(', ')}
+                  </div>
+                )}
+                {levelUpInfo.resources.length > 0 && (
+                  <div style={{ marginTop: '0.3rem' }}>
+                    <div style={{ color: 'var(--cs-text-muted)', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.3rem' }}>
+                      Actualiza tus recursos (tab Recursos):
+                    </div>
+                    {levelUpInfo.resources.map(r => (
+                      <div key={r.name} style={{ color: 'var(--cs-text)', paddingLeft: '0.75rem' }}>
+                        • {r.name}: máx {r.newMax} (se reinicia: {r.reset === 'long_rest' ? 'descanso largo' : r.reset === 'short_rest' ? 'descanso corto' : 'manual'})
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div style={{ color: 'var(--cs-text-muted)', fontSize: '0.72rem', marginTop: '0.3rem' }}>
+                  Recuerda actualizar HP máx (tab Combate) y hacer tu tirada de dado de golpe.
+                </div>
+              </div>
+            </div>
+          )}
           {/* Existing classes */}
           {localClasses.map(cls => (
             <div key={cls.id} className="parchment-page rounded-xl p-4 space-y-3">
@@ -1552,7 +1666,7 @@ export default function EditCharacterClient({
                 </div>
               )}
               <div className="flex gap-2 flex-wrap">
-                <button onClick={async () => { await saveClass(cls); await saveGrants() }}
+                <button onClick={async () => { await saveClassWithLevelUp(cls); await saveGrants() }}
                   className="btn-primary text-sm">
                   Guardar esta clase
                 </button>
@@ -1774,10 +1888,15 @@ export default function EditCharacterClient({
                   placeholder="5d6+1d8" className="ifield" />
               </F>
             </div>
-            {/* Equipment AC suggestion */}
+            {/* Equipment + Racial AC suggestion */}
             {(() => {
               type ArmorType = 'LA' | 'MA' | 'HA' | 'S'
               const armorTypes: ArmorType[] = ['LA', 'MA', 'HA', 'S']
+              const dexMod = Math.floor((combat.dex - 10) / 2)
+              const conMod = Math.floor((combat.con - 10) / 2)
+              const prof = combat.proficiency_bonus
+
+              // Equipment armor
               const armorItems = localEquipment.flatMap(eq => {
                 const catalog = equipmentItems.find(i => i.name.toLowerCase() === eq.name.toLowerCase())
                 if (!catalog?.ac) return []
@@ -1785,25 +1904,35 @@ export default function EditCharacterClient({
                 if (!armorTypes.includes(t)) return []
                 return [{ name: eq.name, ac: catalog.ac, type: t }]
               })
-              if (armorItems.length === 0) return null
-              const dexMod = Math.floor((combat.dex - 10) / 2)
-              const armor = armorItems.filter(a => a.type !== 'S').sort((a, b) => b.ac - a.ac)[0]
+              const equippedArmor = armorItems.filter(a => a.type !== 'S').sort((a, b) => b.ac - a.ac)[0]
               const shield = armorItems.find(a => a.type === 'S')
-              if (!armor && !shield) return null
-              let computedAC = 0
+
+              // Racial natural armor
+              const raceKey = basic.subrace ? `${basic.subrace} (${basic.race})` : basic.race ?? ''
+              const racialArmor = RACIAL_NATURAL_ARMOR[raceKey] ?? RACIAL_NATURAL_ARMOR[basic.race ?? '']
+
+              if (!equippedArmor && !racialArmor && !shield) return null
+
+              let computedAC = 10 + dexMod // unarmored default
               const parts: string[] = []
-              if (armor) {
-                const bonus = armor.type === 'HA' ? 0 : armor.type === 'MA' ? Math.min(dexMod, 2) : dexMod
-                computedAC = armor.ac + bonus
-                parts.push(`${armor.ac} (${armor.name})${bonus !== 0 ? ` + ${bonus} DEX` : ''}`)
+
+              if (equippedArmor) {
+                const dexBonus = equippedArmor.type === 'HA' ? 0 : equippedArmor.type === 'MA' ? Math.min(dexMod, 2) : dexMod
+                computedAC = equippedArmor.ac + dexBonus
+                parts.push(`${equippedArmor.ac} (${equippedArmor.name})${dexBonus !== 0 ? ` +${dexBonus} DEX` : ''}`)
+              } else if (racialArmor) {
+                const modVal = racialArmor.mod === 'dex' ? dexMod : racialArmor.mod === 'con' ? conMod : racialArmor.mod === 'prof' ? prof : 0
+                computedAC = racialArmor.base + modVal
+                parts.push(`${racialArmor.base} (Armadura natural: ${raceKey || basic.race})${modVal !== 0 ? ` +${modVal} ${racialArmor.mod?.toUpperCase()}` : ''}`)
               }
               if (shield) { computedAC += shield.ac; parts.push(`+${shield.ac} (${shield.name})`) }
+
               return (
                 <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '0.75rem',
                   background: 'rgba(201,173,106,0.12)', border: '1px solid var(--cs-gold)',
                   borderRadius: 8, padding: '0.4rem 0.75rem', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
                   <span style={{ color: 'var(--cs-text-muted)', fontFamily: 'Cinzel, serif', fontSize: '0.65rem', textTransform: 'uppercase' }}>
-                    CA del equipo:
+                    CA calculada:
                   </span>
                   <span style={{ fontWeight: 700, color: 'var(--cs-gold)', fontSize: '1rem' }}>{computedAC}</span>
                   <span style={{ color: 'var(--cs-text-muted)', fontSize: '0.68rem' }}>{parts.join(' ')}</span>
