@@ -115,12 +115,20 @@ function formatComponents(components) {
   return parts.join(', ')
 }
 
-function formatClasses(spellClasses) {
-  if (!spellClasses) return []
-  const fromArr = spellClasses.fromClassList || []
-  const classNames = fromArr.map(c => c.name)
-  // dedupe
-  return [...new Set(classNames)]
+// Build class-spell lookup from sources.json
+// sources.json format: { "SOURCE": { "Spell Name": { "class": [{name, source}] } } }
+const SOURCES_FILE = path.join(SPELLS_DIR, 'sources.json')
+const sourcesRaw = JSON.parse(fs.readFileSync(SOURCES_FILE, 'utf8'))
+// Build: spellNameLower -> Set<className>
+const spellClassMap = {}
+for (const sourceData of Object.values(sourcesRaw)) {
+  for (const [spellName, spellData] of Object.entries(sourceData)) {
+    const key = spellName.toLowerCase()
+    if (!spellClassMap[key]) spellClassMap[key] = new Set()
+    for (const cls of (spellData.class || [])) {
+      if (cls.name) spellClassMap[key].add(cls.name)
+    }
+  }
 }
 
 // Load index
@@ -143,6 +151,7 @@ for (const file of spellFiles) {
     seenNames.add(key)
 
     const dmgInfo = extractDamage(spell)
+    const classSet = spellClassMap[key] ?? new Set()
     const entry = {
       name: spell.name,
       level: spell.level ?? 0,
@@ -152,7 +161,7 @@ for (const file of spellFiles) {
       range: formatRange(spell.range),
       components: formatComponents(spell.components),
       duration: formatDuration(spell.duration),
-      classes: formatClasses(spell.classes),
+      classes: [...classSet],
     }
 
     if (dmgInfo.damage) entry.damage = dmgInfo.damage

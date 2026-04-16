@@ -1,0 +1,8 @@
+const s = require('../src/lib/5etools-processed/spells.json')
+const artificer = s.filter(x => Array.isArray(x.classes) && x.classes.some(c => c.toLowerCase() === 'artificer'))
+console.log('Artificer spells:', artificer.length)
+const noClass = s.filter(x => !x.classes || x.classes.length === 0)
+console.log('Spells with no/empty class:', noClass.length)
+const withClass = s.filter(x => x.classes && x.classes.length > 0)
+console.log('Spells with class data:', withClass.length)
+console.log('Sample artificer:', artificer.slice(0, 3).map(x => ({ name: x.name, classes: x.classes })))
