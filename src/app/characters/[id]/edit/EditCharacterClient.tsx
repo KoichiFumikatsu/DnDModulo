@@ -12,6 +12,7 @@ import {
   type SpellEntry, type EquipmentItem, type Feat,
   type ClassDetail, type RaceSkillProf, type ClassMap,
 } from '@/lib/5etools/data'
+import RACE_ABILITIES_JSON from '@/lib/5etools-processed/race-abilities.json'
 import type {
   Character, CharacterClass, CharacterSpell,
   CharacterWeapon, CharacterEquipment, CharacterFeature,
@@ -32,6 +33,27 @@ const DMG_TYPE_MAP: Record<string, string> = {
 }
 
 const SPELLCASTING_ABILITIES = ['int', 'wis', 'cha'] as const
+
+// Cantrips known per class per level (index = level, 0 = placeholder)
+const CANTRIPS_KNOWN: Record<string, number[]> = {
+  Artificer: [0, 2,2,2,2,2,2,2,2,2,3,3,3,3,4,4,4,4,4,4,4],
+  Bard:      [0, 2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4],
+  Cleric:    [0, 3,3,3,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5],
+  Druid:     [0, 2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4],
+  Sorcerer:  [0, 4,4,4,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6],
+  Warlock:   [0, 2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4],
+  Wizard:    [0, 3,3,3,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5],
+}
+
+// Spells known (fixed table) for non-preparation classes
+const SPELLS_KNOWN_EDIT: Record<string, number[]> = {
+  Bard:     [0, 4, 5, 6, 7, 8, 9,10,11,12,14,15,15,16,18,19,19,20,22,22,22],
+  Ranger:   [0, 0, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9,10,10,11,11],
+  Sorcerer: [0, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,12,13,13,14,14,15,15,15,15],
+  Warlock:  [0, 2, 3, 4, 5, 6, 7, 8, 9,10,10,11,11,12,12,13,13,14,14,15,15],
+}
+
+const SKILL_NAMES_LOWER = ['acrobatics','animal handling','arcana','athletics','deception','history','insight','intimidation','investigation','medicine','nature','perception','performance','persuasion','religion','sleight of hand','stealth','survival']
 
 const RARITY_COLORS: Record<string, string> = {
   common: '#9CAF88', uncommon: '#4D9B4D', rare: '#4A90D9',
@@ -482,6 +504,18 @@ export default function EditCharacterClient({
             }
           }
 
+          // Advantages from feat description text (5etools has no structured advantage data)
+          const advMatch = /advantage\b(.{0,250})/i.exec(catalog.description ?? '')
+          if (advMatch) {
+            const snippet = advMatch[1].toLowerCase()
+            for (const sk of SKILL_NAMES_LOWER) {
+              if (snippet.includes(sk)) {
+                const alreadyAdded = suggestions.some(s => s.skill === sk && s.source.startsWith(feature.name))
+                if (!alreadyAdded) suggestions.push({ skill: sk, source: `${feature.name} (ventaja)`, type: 'advantage' })
+              }
+            }
+          }
+
           // Expertise
           for (const entry of (catalog.expertise ?? []) as Record<string, unknown>[]) {
             if ('anyProficientSkill' in entry) {
@@ -540,7 +574,19 @@ export default function EditCharacterClient({
       }
     }
 
-    // 2. From structured grants (ability type)
+    // 2. From race fixed bonuses
+    const raceKey = basic.subrace ? `${basic.subrace} (${basic.race})` : basic.race ?? ''
+    const raceAbilData = (RACE_ABILITIES_JSON as Record<string, { fixed?: Record<string, number> }>)[raceKey]
+      ?? (RACE_ABILITIES_JSON as Record<string, { fixed?: Record<string, number> }>)[basic.race ?? '']
+    if (raceAbilData?.fixed) {
+      for (const [ab, val] of Object.entries(raceAbilData.fixed)) {
+        if (typeof val === 'number' && val !== 0) {
+          results.push({ ability: ab, value: val, source: `Raza: ${basic.race}` })
+        }
+      }
+    }
+
+    // 3. From structured grants (ability type)
     for (const g of grants) {
       if (g.type === 'ability' && g.ability && g.value) {
         results.push({ ability: g.ability, value: g.value, source: 'Homebrew' })
@@ -1728,6 +1774,49 @@ export default function EditCharacterClient({
                   placeholder="5d6+1d8" className="ifield" />
               </F>
             </div>
+            {/* Equipment AC suggestion */}
+            {(() => {
+              type ArmorType = 'LA' | 'MA' | 'HA' | 'S'
+              const armorTypes: ArmorType[] = ['LA', 'MA', 'HA', 'S']
+              const armorItems = localEquipment.flatMap(eq => {
+                const catalog = equipmentItems.find(i => i.name.toLowerCase() === eq.name.toLowerCase())
+                if (!catalog?.ac) return []
+                const t = catalog.type?.replace(/\|.*/, '') as ArmorType
+                if (!armorTypes.includes(t)) return []
+                return [{ name: eq.name, ac: catalog.ac, type: t }]
+              })
+              if (armorItems.length === 0) return null
+              const dexMod = Math.floor((combat.dex - 10) / 2)
+              const armor = armorItems.filter(a => a.type !== 'S').sort((a, b) => b.ac - a.ac)[0]
+              const shield = armorItems.find(a => a.type === 'S')
+              if (!armor && !shield) return null
+              let computedAC = 0
+              const parts: string[] = []
+              if (armor) {
+                const bonus = armor.type === 'HA' ? 0 : armor.type === 'MA' ? Math.min(dexMod, 2) : dexMod
+                computedAC = armor.ac + bonus
+                parts.push(`${armor.ac} (${armor.name})${bonus !== 0 ? ` + ${bonus} DEX` : ''}`)
+              }
+              if (shield) { computedAC += shield.ac; parts.push(`+${shield.ac} (${shield.name})`) }
+              return (
+                <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '0.75rem',
+                  background: 'rgba(201,173,106,0.12)', border: '1px solid var(--cs-gold)',
+                  borderRadius: 8, padding: '0.4rem 0.75rem', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
+                  <span style={{ color: 'var(--cs-text-muted)', fontFamily: 'Cinzel, serif', fontSize: '0.65rem', textTransform: 'uppercase' }}>
+                    CA del equipo:
+                  </span>
+                  <span style={{ fontWeight: 700, color: 'var(--cs-gold)', fontSize: '1rem' }}>{computedAC}</span>
+                  <span style={{ color: 'var(--cs-text-muted)', fontSize: '0.68rem' }}>{parts.join(' ')}</span>
+                  {combat.ac !== computedAC && (
+                    <button onClick={() => setCombat(p => ({ ...p, ac: computedAC }))}
+                      style={{ marginLeft: 'auto', fontSize: '0.65rem', padding: '2px 8px', borderRadius: 4,
+                        background: 'var(--cs-gold)', color: 'var(--cs-bg)', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
+                      Aplicar
+                    </button>
+                  )}
+                </div>
+              )
+            })()}
             <div className="grid grid-cols-3 gap-3">
               <F label="CA">
                 <input type="number" value={combat.ac}
@@ -1998,6 +2087,56 @@ export default function EditCharacterClient({
          ════════════════════════════════════════════════════════ */}
       {tab === 'spells' && (
         <div className="space-y-4">
+          {/* Spell limits summary */}
+          {localClasses.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem' }}>
+              {localClasses.map(cls => {
+                const level = cls.level
+                const name = cls.class_name
+                const cantripLimit = CANTRIPS_KNOWN[name]?.[Math.min(level, 20)] ?? null
+                const abilKey = cls.spellcasting_ability as string | null
+                const abilScore = abilKey ? (combat[abilKey as keyof typeof combat] as number ?? 10) : 10
+                const abilMod = Math.floor((abilScore - 10) / 2)
+                let spellLimit: { label: string; count: number } | null = null
+                if (SPELLS_KNOWN_EDIT[name]) {
+                  const c = SPELLS_KNOWN_EDIT[name][Math.min(level, 20)]
+                  if (c > 0) spellLimit = { label: 'Conocidos', count: c }
+                } else if (name === 'Cleric' || name === 'Druid' || name === 'Wizard') {
+                  spellLimit = { label: 'Preparados/día', count: Math.max(1, abilMod + level) }
+                } else if (name === 'Paladin' || name === 'Artificer') {
+                  spellLimit = { label: 'Preparados/día', count: Math.max(1, abilMod + Math.floor(level / 2)) }
+                }
+                if (!cantripLimit && !spellLimit) return null
+                const cantripCount = localSpells.filter(s => s.class_id === cls.id && s.spell_level === 0).length
+                const spellCount = localSpells.filter(s => s.class_id === cls.id && s.spell_level > 0).length
+                return (
+                  <div key={cls.id} className="parchment-page rounded-xl p-3"
+                    style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', fontSize: '0.78rem' }}>
+                    <span style={{ fontFamily: 'Cinzel, serif', fontWeight: 700, fontSize: '0.7rem', color: 'var(--cs-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                      {name} Lv{level}
+                    </span>
+                    {cantripLimit != null && (
+                      <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                        <span style={{ fontSize: '0.6rem', color: 'var(--cs-text-muted)', textTransform: 'uppercase' }}>Cantrips</span>
+                        <span style={{ fontWeight: 700, color: cantripCount > cantripLimit ? 'var(--cs-accent)' : 'var(--cs-gold)', fontSize: '1rem' }}>
+                          {cantripCount} / {cantripLimit}
+                        </span>
+                      </span>
+                    )}
+                    {spellLimit != null && (
+                      <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                        <span style={{ fontSize: '0.6rem', color: 'var(--cs-text-muted)', textTransform: 'uppercase' }}>{spellLimit.label}</span>
+                        <span style={{ fontWeight: 700, color: spellCount > spellLimit.count ? 'var(--cs-accent)' : 'var(--cs-gold)', fontSize: '1rem' }}>
+                          {spellCount} / {spellLimit.count}
+                        </span>
+                      </span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
           {/* Add spell form */}
           <div className="parchment-page rounded-xl p-4 space-y-3">
             <h3 className="font-semibold text-sm" style={{ color: 'var(--cs-text-muted)' }}>
