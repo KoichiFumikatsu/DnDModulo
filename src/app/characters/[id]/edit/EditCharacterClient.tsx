@@ -1489,10 +1489,29 @@ export default function EditCharacterClient({
                   />
                 </div>
               )}
-              <button onClick={async () => { await saveClass(cls); await saveGrants() }}
-                className="btn-primary text-sm">
-                Guardar esta clase
-              </button>
+              <div className="flex gap-2 flex-wrap">
+                <button onClick={async () => { await saveClass(cls); await saveGrants() }}
+                  className="btn-primary text-sm">
+                  Guardar esta clase
+                </button>
+                {cls.subclass_name && !cls.is_homebrew && (() => {
+                  const grants = fetchSubclassSpells(cls.class_name, cls.subclass_name, cls.level)
+                  const missing = grants.filter(g => !localSpells.some(s => s.name.toLowerCase() === g.spell.toLowerCase()))
+                  if (!missing.length) return (
+                    <span className="text-xs flex items-center" style={{ color: 'var(--cs-text-muted)' }}>
+                      ✓ Hechizos sincronizados
+                    </span>
+                  )
+                  return (
+                    <button
+                      onClick={() => autoAddGrantedSpells(cls.id, missing.map(g => g.spell), localSpells)}
+                      className="text-xs px-3 py-1 rounded"
+                      style={{ border: '1px solid var(--cs-gold)', color: 'var(--cs-gold)', background: 'transparent', cursor: 'pointer' }}>
+                      + Agregar {missing.length} hechizo{missing.length !== 1 ? 's' : ''} de {cls.subclass_name}
+                    </button>
+                  )
+                })()}
+              </div>
             </div>
           ))}
 
