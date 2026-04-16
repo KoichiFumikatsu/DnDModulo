@@ -10,6 +10,14 @@ import SpellsTab from '@/components/ui/SpellsTab'
 import HpManager from '@/components/ui/HpManager'
 import ResourceTracker from '@/components/ui/ResourceTracker'
 import EquipmentTracker from './play/EquipmentTracker'
+import FEATS_DATA from '@/lib/5etools-processed/feats.json'
+
+const FEAT_DESC_MAP: Record<string, string> = {}
+for (const f of FEATS_DATA as { name: string; description: string | null }[]) {
+  if (f.name && f.description && !FEAT_DESC_MAP[f.name]) {
+    FEAT_DESC_MAP[f.name] = f.description
+  }
+}
 
 /* ── Helpers ── */
 
@@ -418,7 +426,8 @@ export default async function CharacterPage({
           <div style={{ maxWidth: 860, margin: '0 auto' }}>
             <FeaturesCompact
               features={(features ?? []).map(f => ({
-                id: f.id, name: f.name, description: f.description,
+                id: f.id, name: f.name,
+                description: f.description || (f.source === 'feat' ? (FEAT_DESC_MAP[f.name] ?? '') : ''),
                 source: f.source, summary: f.summary ?? null,
               }))}
               proficiencyBonus={profBonus}

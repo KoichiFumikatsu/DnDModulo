@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import {
   type ClassMap, type RaceAbility, type Feat, type ClassDetail,
+  getFeatFixedSkills,
 } from '@/lib/5etools/data'
 import { getLevelFromXP, getProficiencyBonus, XP_THRESHOLDS } from '@/lib/5etools/xp'
 import Autocomplete from '@/components/ui/Autocomplete'
@@ -390,6 +391,20 @@ export default function NewCharacterClient({
           description: '',
           source: 'feat',
         })
+        // Add skill proficiencies granted by the feat
+        const featData = feats.find(f => f.name === asi.feat_name)
+        if (featData) {
+          const skills = getFeatFixedSkills(featData)
+          for (const skill of skills) {
+            await supabase.from('character_proficiencies').insert({
+              character_id: character.id,
+              name: skill,
+              type: 'skill',
+              proficiency_level: 'proficient',
+              source: `feat:${asi.feat_name}`,
+            })
+          }
+        }
       }
     }
 

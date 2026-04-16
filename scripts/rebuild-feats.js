@@ -9,6 +9,30 @@ const OUTPUT_FILE = path.join(__dirname, '../src/lib/5etools-processed/feats.jso
 
 const raw = JSON.parse(fs.readFileSync(RAW_FILE, 'utf8'))
 
+function extractText(entry) {
+  if (typeof entry === 'string') return entry
+  if (!entry || typeof entry !== 'object') return ''
+  if (entry.type === 'list' && Array.isArray(entry.items)) return entry.items.map(extractText).join(' ')
+  if (entry.type === 'entries' || entry.type === 'section') {
+    const parts = []
+    if (entry.name) parts.push(entry.name + ':')
+    if (Array.isArray(entry.entries)) parts.push(...entry.entries.map(extractText))
+    return parts.join(' ')
+  }
+  if (entry.type === 'table') return ''
+  if (Array.isArray(entry.entries)) return entry.entries.map(extractText).join(' ')
+  return ''
+}
+
+function extractDescription(feat) {
+  if (!feat.entries || !feat.entries.length) return null
+  const raw = feat.entries.map(extractText).join(' ')
+  return raw
+    .replace(/\{@\w+\s([^}|]*)[^}]*\}/g, '$1')
+    .replace(/\s{2,}/g, ' ')
+    .trim() || null
+}
+
 function cleanSpellName(raw) {
   return raw
     .replace(/\|.*$/, '')   // remove source suffix
@@ -60,7 +84,7 @@ const processed = raw.feat.map(feat => {
         }).join('; ')
       : '',
     ability: feat.ability ?? null,
-    description: null,
+    description: extractDescription(feat),
   }
 
   if (feat.skillProficiencies) entry.skillProficiencies = feat.skillProficiencies

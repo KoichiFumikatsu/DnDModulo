@@ -8,6 +8,7 @@ import {
   fetchRaceTraits, fetchClassFeatures, fetchSubclassFeatures,
   fetchSubclassSpells,
   getLanguageGrants, ALL_LANGUAGES,
+  getFeatFixedSkills,
   type SpellEntry, type EquipmentItem, type Feat,
   type ClassDetail, type RaceSkillProf, type ClassMap,
 } from '@/lib/5etools/data'
@@ -964,12 +965,27 @@ export default function EditCharacterClient({
     }).select().single()
     if (data) setLocalFeatures(prev => [...prev, data])
 
-    // Auto-add spells granted by this feat
+    // Auto-add spells and skill proficiencies granted by this feat
     const catalog = allFeats.find(f => f.name.toLowerCase() === newFeature.name.toLowerCase())
-    if (catalog?.grantedSpells?.length) {
-      const primaryCls = localClasses.find(c => c.is_primary) ?? localClasses[0]
-      if (primaryCls) {
-        await autoAddGrantedSpells(primaryCls.id, catalog.grantedSpells, localSpells)
+    if (catalog) {
+      if (catalog.grantedSpells?.length) {
+        const primaryCls = localClasses.find(c => c.is_primary) ?? localClasses[0]
+        if (primaryCls) {
+          await autoAddGrantedSpells(primaryCls.id, catalog.grantedSpells, localSpells)
+        }
+      }
+      const skills = getFeatFixedSkills(catalog)
+      for (const skill of skills) {
+        const already = localProfs.some(p => p.name === skill && p.type === 'skill')
+        if (!already) {
+          const { data: newProf } = await supabase.from('character_proficiencies').insert({
+            character_id: character.id,
+            name: skill, type: 'skill',
+            proficiency_level: 'proficient',
+            source: `feat:${catalog.name}`,
+          }).select().single()
+          if (newProf) setLocalProfs(prev => [...prev, newProf as CharacterProficiency])
+        }
       }
     }
 

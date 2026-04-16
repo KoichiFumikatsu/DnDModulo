@@ -251,6 +251,19 @@ export async function fetchFeats(): Promise<Feat[]> {
   return featsCache
 }
 
+/** Returns concrete (non-choose) skill names granted by a feat */
+export function getFeatFixedSkills(feat: Feat): string[] {
+  if (!feat.skillProficiencies) return []
+  const skills: string[] = []
+  for (const entry of feat.skillProficiencies) {
+    for (const [k, v] of Object.entries(entry)) {
+      if (k === 'choose') continue
+      if (v === true) skills.push(k)
+    }
+  }
+  return skills
+}
+
 // â”€â”€ Helpers â”€â”€
 
 // â”€â”€ Spells â”€â”€
