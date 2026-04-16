@@ -23,6 +23,12 @@ function extractText(entry) {
   return ''
 }
 
+function extractDescription(spell) {
+  const raw = (spell.entries || []).map(extractText).join(' ')
+  // Strip 5etools tags like {@damage 1d6}, {@spell cure wounds}, {@condition poisoned}
+  return raw.replace(/\{@\w+\s([^}|]*)[^}]*\}/g, '$1').replace(/\s{2,}/g, ' ').trim().slice(0, 600) || null
+}
+
 function extractDamage(spell) {
   const isHealing = Array.isArray(spell.healingInflict) ||
     (Array.isArray(spell.entries) && spell.entries.some(e => {
@@ -166,6 +172,8 @@ for (const file of spellFiles) {
 
     if (dmgInfo.damage) entry.damage = dmgInfo.damage
     if (dmgInfo.healingFormula) entry.healingFormula = dmgInfo.healingFormula
+    const desc = extractDescription(spell)
+    if (desc) entry.description = desc
 
     allSpells.push(entry)
   }

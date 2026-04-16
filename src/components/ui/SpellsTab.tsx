@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect, useRef } from 'react'
 import { updateSlotUsed } from '@/app/characters/[id]/actions'
 
 interface SpellSlot {
@@ -114,6 +114,97 @@ interface SpellRollResult {
   isMiss?: boolean
 }
 
+/* ── Spell info popover ── */
+interface SpellInfo {
+  name: string; level: number; school: string
+  time?: string; range?: string; components?: string; duration?: string
+  description?: string | null
+}
+
+function SpellPopover({ spellName, onClose }: { spellName: string; onClose: () => void }) {
+  const [info, setInfo] = useState<SpellInfo | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [translated, setTranslated] = useState<string | null>(null)
+  const [translating, setTranslating] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    fetch(`/api/spell-info?name=${encodeURIComponent(spellName)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { setInfo(d); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [spellName])
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [onClose])
+
+  async function translate() {
+    if (!info?.description) return
+    setTranslating(true)
+    try {
+      const r = await fetch('/api/translate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: info.description }) })
+      const d = await r.json()
+      if (d.translated) setTranslated(d.translated)
+    } finally { setTranslating(false) }
+  }
+
+  const SCHOOL_COLORS: Record<string, string> = {
+    Abjuration: '#2563eb', Conjuration: '#7c3aed', Divination: '#0891b2',
+    Enchantment: '#db2777', Evocation: '#dc2626', Illusion: '#8b5cf6',
+    Necromancy: '#4b5563', Transmutation: '#d97706',
+  }
+
+  return (
+    <div ref={ref} style={{
+      position: 'absolute', zIndex: 50, left: 0, top: '100%', marginTop: 4,
+      width: 340, background: 'var(--parchment, #f5f0e0)',
+      border: '1px solid var(--cs-gold)', borderRadius: 8,
+      boxShadow: '0 4px 24px rgba(0,0,0,0.35)', padding: '1rem',
+    }}>
+      {loading && <p style={{ color: 'var(--cs-text-muted)', fontSize: '0.8rem', margin: 0 }}>Cargando...</p>}
+      {!loading && !info && <p style={{ color: 'var(--cs-text-muted)', fontSize: '0.8rem', margin: 0 }}>Sin descripción disponible.</p>}
+      {info && (<>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.4rem' }}>
+          <span style={{ fontFamily: 'Cinzel, serif', fontSize: '0.95rem', fontWeight: 700, color: 'var(--cs-accent)' }}>{info.name}</span>
+          <span style={{ fontSize: '0.68rem', fontWeight: 600, color: SCHOOL_COLORS[info.school] ?? 'var(--cs-text-muted)' }}>{info.school}</span>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem 0.75rem', fontSize: '0.68rem', color: 'var(--cs-text-muted)', marginBottom: '0.6rem', fontFamily: 'var(--font-montaga)' }}>
+          {info.time && <span>⏱ {info.time}</span>}
+          {info.range && <span>📏 {info.range}</span>}
+          {info.components && <span>✋ {info.components}</span>}
+          {info.duration && <span>🕐 {info.duration}</span>}
+        </div>
+        {info.description ? (<>
+          <p style={{ fontSize: '0.78rem', color: '#3a2e1e', lineHeight: 1.5, margin: 0, fontFamily: 'var(--font-montaga)' }}>
+            {translated ?? info.description}
+          </p>
+          <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            {!translated && (
+              <button onClick={translate} disabled={translating}
+                style={{ fontSize: '0.65rem', padding: '2px 9px', borderRadius: 10, border: '1px solid var(--cs-gold)', background: 'transparent', color: 'var(--cs-gold)', cursor: 'pointer' }}>
+                {translating ? 'Traduciendo...' : '🌐 Traducir al español'}
+              </button>
+            )}
+            {translated && (
+              <button onClick={() => setTranslated(null)}
+                style={{ fontSize: '0.65rem', padding: '2px 9px', borderRadius: 10, border: '1px solid rgba(0,0,0,0.2)', background: 'transparent', color: 'var(--cs-text-muted)', cursor: 'pointer' }}>
+                EN
+              </button>
+            )}
+          </div>
+        </>) : (
+          <p style={{ fontSize: '0.75rem', color: 'var(--cs-text-muted)', fontStyle: 'italic', margin: 0 }}>Sin descripción disponible.</p>
+        )}
+      </>)}
+    </div>
+  )
+}
+
 const inputStyle: React.CSSProperties = {
   padding: '3px 7px', fontFamily: 'var(--font-montaga, serif)', fontSize: '0.78rem',
   background: 'var(--cs-card)', border: '1px solid rgba(201,173,106,0.5)',
@@ -124,6 +215,7 @@ export default function SpellsTab({ characterId, classes, slots: initialSlots, s
   const [slots, setSlots] = useState<SpellSlot[]>(initialSlots)
   const [, startTransition] = useTransition()
   const [lastRoll, setLastRoll] = useState<SpellRollResult | null>(null)
+  const [selectedSpell, setSelectedSpell] = useState<string | null>(null)
 
   /* ── Structured multi-buff system ── */
   const [tempBuffs, setTempBuffs] = useState<TempBuff[]>([])
@@ -392,11 +484,20 @@ export default function SpellsTab({ characterId, classes, slots: initialSlots, s
                 return (
                   <tr key={s.id} style={{ borderBottom: i < spells.length - 1 ? '1px solid rgba(201,173,106,0.35)' : 'none' }}>
                     {/* Name */}
-                    <td style={{ padding: '0.6rem 0.5rem 0.6rem 0', verticalAlign: 'middle' }}>
-                      <span style={{ fontFamily: 'Cinzel, serif', fontSize: '0.85rem', fontStyle: 'italic', color: 'var(--cs-accent)', fontWeight: 600 }}>{s.name}</span>
+                    <td style={{ padding: '0.6rem 0.5rem 0.6rem 0', verticalAlign: 'middle', position: 'relative' }}>
+                      <button
+                        onClick={() => setSelectedSpell(prev => prev === s.name ? null : s.name)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left' }}>
+                        <span style={{ fontFamily: 'Cinzel, serif', fontSize: '0.85rem', fontStyle: 'italic', color: 'var(--cs-accent)', fontWeight: 600, textDecoration: 'underline dotted', textDecorationColor: 'rgba(201,173,106,0.5)', textUnderlineOffset: 3 }}>
+                          {s.name}
+                        </span>
+                      </button>
                       <div style={{ fontSize: '0.65rem', color: 'var(--cs-text-muted)', marginTop: 2, fontFamily: 'Cinzel, serif', textTransform: 'uppercase' }}>
                         {s.spell_level === 0 ? 'Cantrip' : `Nivel ${s.spell_level}`}
                       </div>
+                      {selectedSpell === s.name && (
+                        <SpellPopover spellName={s.name} onClose={() => setSelectedSpell(null)} />
+                      )}
                     </td>
 
                     {/* Attack */}
