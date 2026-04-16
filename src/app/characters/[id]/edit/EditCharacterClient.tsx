@@ -1857,9 +1857,47 @@ export default function EditCharacterClient({
 
             {/* Right: Suggestions from class/race/background/feats */}
             <div className="parchment-page rounded-xl p-4" style={{ position: 'sticky', top: '1rem' }}>
-              <h3 className="font-semibold text-sm mb-2" style={{ color: 'var(--cs-text-muted)', fontFamily: 'var(--font-cinzel, Cinzel, serif)' }}>
-                Available from your build
-              </h3>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <h3 className="font-semibold text-sm" style={{ color: 'var(--cs-text-muted)', fontFamily: 'var(--font-cinzel, Cinzel, serif)' }}>
+                  Available from your build
+                </h3>
+                {skillSuggestions.some(s => (s.type === 'proficiency' || s.type === 'choice') &&
+                  !localProfs.some(p => p.name.toLowerCase() === s.skill.toLowerCase() && p.proficiency_level !== 'none')) && (
+                  <button
+                    onClick={() => {
+                      const toApply = skillSuggestions.filter(s =>
+                        (s.type === 'proficiency' || s.type === 'choice') &&
+                        !localProfs.some(p => p.name.toLowerCase() === s.skill.toLowerCase() && p.proficiency_level !== 'none')
+                      )
+                      setLocalProfs(prev => {
+                        let next = [...prev]
+                        for (const s of toApply) {
+                          const match = SKILLS.find(sk => sk.key.toLowerCase() === s.skill.toLowerCase())
+                          const key = match?.key ?? (s.skill.charAt(0).toUpperCase() + s.skill.slice(1))
+                          const existing = next.find(p => p.name === key)
+                          if (!existing) {
+                            next.push({
+                              id: `new_${key}`,
+                              character_id: character.id,
+                              type: 'skill' as const,
+                              name: key,
+                              proficiency_level: 'proficient' as ProficiencyLevel,
+                              has_advantage: false,
+                            })
+                          } else if (existing.proficiency_level === 'none') {
+                            next = next.map(p => p.name === key ? { ...p, proficiency_level: 'proficient' as ProficiencyLevel } : p)
+                          }
+                        }
+                        return next
+                      })
+                    }}
+                    className="text-xs px-2 py-0.5 rounded"
+                    style={{ background: 'var(--cs-accent)', color: 'white', border: 'none', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 700 }}
+                  >
+                    Aplicar todo
+                  </button>
+                )}
+              </div>
               {loadingSuggestions ? (
                 <p className="text-xs" style={{ color: 'var(--cs-text-muted)' }}>Loading...</p>
               ) : skillSuggestions.length === 0 ? (
