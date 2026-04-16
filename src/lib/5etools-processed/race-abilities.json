@@ -1,0 +1,450 @@
+{
+  "Aarakocra": {
+    "fixed": {
+      "dex": 2,
+      "wis": 1
+    }
+  },
+  "Aasimar": {
+    "fixed": {
+      "cha": 2
+    }
+  },
+  "Aetherborn": {
+    "fixed": {
+      "cha": 2
+    },
+    "choose": {
+      "from": [
+        "str",
+        "dex",
+        "con",
+        "int",
+        "wis"
+      ],
+      "count": 2
+    }
+  },
+  "Aven": {
+    "fixed": {
+      "dex": 2,
+      "wis": 2
+    }
+  },
+  "Bugbear": {
+    "fixed": {
+      "str": 2,
+      "dex": 1
+    }
+  },
+  "Bullywug": {
+    "fixed": {
+      "int": -2,
+      "cha": -2
+    }
+  },
+  "Centaur": {
+    "fixed": {
+      "str": 2,
+      "wis": 1
+    }
+  },
+  "Changeling": {
+    "fixed": {
+      "cha": 2
+    },
+    "choose": {
+      "from": [
+        "str",
+        "dex",
+        "con",
+        "int",
+        "wis"
+      ],
+      "count": 1
+    }
+  },
+  "Custom Lineage": {
+    "fixed": {},
+    "choose": {
+      "from": [
+        "str",
+        "dex",
+        "con",
+        "int",
+        "wis",
+        "cha"
+      ],
+      "count": 1
+    }
+  },
+  "Dragonborn": {
+    "fixed": {
+      "str": 2,
+      "cha": 1
+    }
+  },
+  "Dwarf": {
+    "fixed": {
+      "con": 2
+    }
+  },
+  "Dwarf (Kaladesh)": {
+    "fixed": {
+      "con": 2,
+      "wis": 1
+    }
+  },
+  "Elf": {
+    "fixed": {
+      "dex": 2
+    }
+  },
+  "Elf (Kaladesh)": {
+    "fixed": {
+      "dex": 2,
+      "wis": 1
+    }
+  },
+  "Elf (Zendikar)": {
+    "fixed": {
+      "wis": 2
+    }
+  },
+  "Firbolg": {
+    "fixed": {
+      "wis": 2,
+      "str": 1
+    }
+  },
+  "Genasi": {
+    "fixed": {
+      "con": 2
+    }
+  },
+  "Gith": {
+    "fixed": {
+      "int": 1
+    }
+  },
+  "Gnoll": {
+    "fixed": {
+      "str": 2,
+      "int": -2
+    }
+  },
+  "Gnome": {
+    "fixed": {
+      "int": 2
+    }
+  },
+  "Gnome (Deep)": {
+    "fixed": {
+      "str": 1,
+      "dex": 2
+    }
+  },
+  "Goblin": {
+    "fixed": {
+      "dex": 2,
+      "con": 1
+    }
+  },
+  "Goblin (Dankwood)": {
+    "fixed": {
+      "dex": 2,
+      "wis": 1
+    }
+  },
+  "Goliath": {
+    "fixed": {
+      "str": 2,
+      "con": 1
+    }
+  },
+  "Grimlock": {
+    "fixed": {
+      "str": 2,
+      "cha": -2
+    }
+  },
+  "Grung": {
+    "fixed": {
+      "dex": 2,
+      "con": 1
+    }
+  },
+  "Half-Elf": {
+    "fixed": {
+      "cha": 2
+    },
+    "choose": {
+      "from": [
+        "str",
+        "dex",
+        "con",
+        "int",
+        "wis"
+      ],
+      "count": 2
+    }
+  },
+  "Half-Orc": {
+    "fixed": {
+      "str": 2,
+      "con": 1
+    }
+  },
+  "Halfling": {
+    "fixed": {
+      "dex": 2
+    }
+  },
+  "Hobgoblin": {
+    "fixed": {
+      "con": 2,
+      "int": 1
+    }
+  },
+  "Human (Ixalan)": {
+    "fixed": {
+      "str": 1,
+      "dex": 1,
+      "con": 1,
+      "int": 1,
+      "wis": 1,
+      "cha": 1
+    }
+  },
+  "Human (Kaladesh)": {
+    "fixed": {
+      "str": 1,
+      "dex": 1,
+      "con": 1,
+      "int": 1,
+      "wis": 1,
+      "cha": 1
+    }
+  },
+  "Human (Zendikar)": {
+    "fixed": {
+      "str": 1,
+      "dex": 1,
+      "con": 1,
+      "int": 1,
+      "wis": 1,
+      "cha": 1
+    }
+  },
+  "Kalashtar": {
+    "fixed": {
+      "wis": 2,
+      "cha": 1
+    }
+  },
+  "Kenku": {
+    "fixed": {
+      "dex": 2,
+      "wis": 1
+    }
+  },
+  "Khenra": {
+    "fixed": {
+      "dex": 2,
+      "str": 1
+    }
+  },
+  "Kobold": {
+    "fixed": {
+      "dex": 2
+    }
+  },
+  "Kor": {
+    "fixed": {
+      "dex": 2,
+      "wis": 1
+    }
+  },
+  "Leonin": {
+    "fixed": {
+      "str": 1,
+      "con": 2
+    }
+  },
+  "Lizardfolk": {
+    "fixed": {
+      "con": 2,
+      "wis": 1
+    }
+  },
+  "Locathah": {
+    "fixed": {
+      "str": 2,
+      "dex": 1
+    }
+  },
+  "Loxodon": {
+    "fixed": {
+      "con": 2,
+      "wis": 1
+    }
+  },
+  "Merfolk": {
+    "fixed": {
+      "cha": 1
+    }
+  },
+  "Minotaur": {
+    "fixed": {
+      "str": 2,
+      "con": 1
+    }
+  },
+  "Minotaur (Amonkhet)": {
+    "fixed": {
+      "str": 2,
+      "con": 1
+    }
+  },
+  "Naga": {
+    "fixed": {
+      "con": 2,
+      "int": 1
+    }
+  },
+  "Orc": {
+    "fixed": {
+      "str": 2,
+      "con": 1
+    }
+  },
+  "Orc (Ixalan)": {
+    "fixed": {
+      "str": 2,
+      "con": 1
+    }
+  },
+  "Satyr": {
+    "fixed": {
+      "cha": 2,
+      "dex": 1
+    }
+  },
+  "Simic Hybrid": {
+    "fixed": {
+      "con": 2
+    },
+    "choose": {
+      "from": [
+        "str",
+        "dex",
+        "int",
+        "wis",
+        "cha"
+      ],
+      "count": 1
+    }
+  },
+  "Siren": {
+    "fixed": {
+      "cha": 2
+    }
+  },
+  "Skeleton": {
+    "fixed": {
+      "dex": 2,
+      "int": -4,
+      "cha": -4
+    }
+  },
+  "Tabaxi": {
+    "fixed": {
+      "dex": 2,
+      "cha": 1
+    }
+  },
+  "Tiefling": {
+    "fixed": {
+      "cha": 2,
+      "int": 1
+    }
+  },
+  "Tortle": {
+    "fixed": {
+      "str": 2,
+      "wis": 1
+    }
+  },
+  "Triton": {
+    "fixed": {
+      "str": 1,
+      "cha": 1,
+      "con": 1
+    }
+  },
+  "Troglodyte": {
+    "fixed": {
+      "str": 2,
+      "con": 2,
+      "int": -4,
+      "cha": -4
+    }
+  },
+  "Vampire": {
+    "fixed": {
+      "cha": 2
+    }
+  },
+  "Vedalken": {
+    "fixed": {
+      "int": 2,
+      "wis": 1
+    }
+  },
+  "Verdan": {
+    "fixed": {
+      "con": 1,
+      "cha": 2
+    }
+  },
+  "Warforged": {
+    "fixed": {
+      "con": 2
+    },
+    "choose": {
+      "from": [
+        "str",
+        "dex",
+        "int",
+        "wis",
+        "cha"
+      ],
+      "count": 1
+    }
+  },
+  "Yuan-ti Pureblood": {
+    "fixed": {
+      "cha": 2,
+      "int": 1
+    }
+  },
+  "Zombie": {
+    "fixed": {
+      "str": 1,
+      "con": 2,
+      "int": -6,
+      "wis": -4,
+      "cha": -4
+    }
+  },
+  "Human": {
+    "fixed": {
+      "str": 1,
+      "dex": 1,
+      "con": 1,
+      "int": 1,
+      "wis": 1,
+      "cha": 1
+    }
+  }
+}

@@ -15,6 +15,7 @@ import STATIC_BACKGROUND_SKILLS from '../5etools-processed/background-skills.jso
 import STATIC_RACE_SKILLS from '../5etools-processed/race-skills.json'
 import STATIC_CLASS_SKILL_CHOICES from '../5etools-processed/class-skill-choices.json'
 import STATIC_SUBCLASS_SPELLS from '../5etools-processed/subclass-spells.json'
+import STATIC_RACE_ABILITIES from '../5etools-processed/race-abilities.json'
 
 // â”€â”€ Types â”€â”€
 
@@ -179,7 +180,8 @@ export async function fetchRaces(): Promise<string[]> {
 
 export async function fetchRaceAbilities(): Promise<Record<string, RaceAbility>> {
   if (raceAbilitiesCache) return raceAbilitiesCache
-  raceAbilitiesCache = FALLBACK_RACE_ABILITIES
+  // Merge static race abilities (64 races from 5etools) with fallback for any gaps
+  raceAbilitiesCache = { ...FALLBACK_RACE_ABILITIES, ...(STATIC_RACE_ABILITIES as Record<string, RaceAbility>) }
   return raceAbilitiesCache
 }
 

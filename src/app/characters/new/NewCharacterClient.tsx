@@ -334,6 +334,8 @@ export default function NewCharacterClient({
       .insert({
         user_id: user.id, name, race, background, alignment,
         experience_points: xp, speed, ...abilities,
+        base_str: baseAbilities.str, base_dex: baseAbilities.dex, base_con: baseAbilities.con,
+        base_int: baseAbilities.int, base_wis: baseAbilities.wis, base_cha: baseAbilities.cha,
         hp_max: hpMax, hp_current: hpMax, ac, proficiency_bonus: profBonus,
         personality, ideals, bonds, flaws,
       })
