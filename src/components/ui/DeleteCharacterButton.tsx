@@ -30,7 +30,7 @@ export default function DeleteCharacterButton({
       disabled={deleting}
       title="Eliminar personaje"
       style={{
-        position: 'absolute', top: 8, right: 8,
+        position: 'absolute', top: 8, right: 8, zIndex: 10,
         background: 'rgba(139,26,26,0.15)', border: '1px solid rgba(139,26,26,0.3)',
         color: 'var(--crimson)', cursor: 'pointer',
         width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center',
