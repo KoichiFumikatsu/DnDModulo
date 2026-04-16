@@ -22,9 +22,11 @@ interface Spell {
 interface ClassData {
   id: string
   class_name: string
+  level: number
   spell_save_dc: number | null
   spell_attack_mod: number | null
   spellcasting_ability: string | null
+  spellcastingAbilityScore?: number | null
 }
 
 interface Props {
@@ -88,6 +90,46 @@ function buffFormula(b: TempBuff): string {
 }
 
 function signStr(n: number) { return n >= 0 ? `+${n}` : `${n}` }
+
+// Spells known (fixed table) for classes that don't prepare
+const SPELLS_KNOWN: Record<string, number[]> = {
+  Bard:     [0, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 15, 16, 18, 19, 19, 20, 22, 22, 22],
+  Ranger:   [0, 0, 2, 3, 3, 4, 4,  5,  5,  6,  6,  7,  7,  8,  8,  9,  9, 10, 10, 11, 11],
+  Sorcerer: [0, 2, 3, 4, 5, 6, 7,  8,  9, 10, 11, 12, 12, 13, 13, 14, 14, 15, 15, 15, 15],
+  Warlock:  [0, 2, 3, 4, 5, 6, 7,  8,  9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15],
+}
+
+function getSpellLimit(cls: ClassData): { label: string; count: number } | null {
+  const level = cls.level
+  const abilMod = cls.spellcastingAbilityScore != null ? Math.floor((cls.spellcastingAbilityScore - 10) / 2) : 0
+  const name = cls.class_name
+
+  // Spells Known classes
+  if (SPELLS_KNOWN[name]) {
+    const count = SPELLS_KNOWN[name][Math.min(level, 20)]
+    return count > 0 ? { label: 'Hechizos conocidos', count } : null
+  }
+
+  // Cleric, Druid: ability_mod + level
+  if (name === 'Cleric' || name === 'Druid') {
+    const count = Math.max(1, abilMod + level)
+    return { label: 'Hechizos preparados', count }
+  }
+
+  // Wizard: int_mod + level
+  if (name === 'Wizard') {
+    const count = Math.max(1, abilMod + level)
+    return { label: 'Hechizos preparados', count }
+  }
+
+  // Paladin / Artificer: ability_mod + half level (rounded down)
+  if (name === 'Paladin' || name === 'Artificer') {
+    const count = Math.max(1, abilMod + Math.floor(level / 2))
+    return { label: 'Hechizos preparados', count }
+  }
+
+  return null
+}
 
 /** Extract damage formula from spell.damage field or custom_notes fallback */
 function parseDamageFormula(spell: Spell): { formula: string; type: string } | null {
@@ -458,6 +500,38 @@ export default function SpellsTab({ characterId, classes, slots: initialSlots, s
             }).filter(Boolean)}
           </div>
           <div style={{ height: 2, background: 'var(--cs-gold)', borderRadius: 4, marginTop: '1rem' }} />
+        </div>
+      )}
+
+      {/* Spell limits per class */}
+      {classes.some(c => getSpellLimit(c) !== null) && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem', justifyContent: 'center' }}>
+          {classes.map(c => {
+            const limit = getSpellLimit(c)
+            if (!limit) return null
+            const knownCount = spells.filter(s => s.spell_level > 0).length
+            const overLimit = knownCount > limit.count
+            return (
+              <div key={c.id} style={{
+                display: 'flex', alignItems: 'center', gap: '0.6rem',
+                background: 'var(--cs-card)', border: `1px solid ${overLimit ? 'var(--cs-accent)' : 'var(--cs-gold)'}`,
+                borderRadius: 8, padding: '0.4rem 0.85rem', fontSize: '0.78rem',
+              }}>
+                <span style={{ fontFamily: 'Cinzel, serif', fontSize: '0.65rem', color: 'var(--cs-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  {c.class_name} · {limit.label}
+                </span>
+                <span style={{
+                  fontFamily: 'Cinzel, serif', fontWeight: 700, fontSize: '1.1rem',
+                  color: overLimit ? 'var(--cs-accent)' : 'var(--cs-gold)',
+                }}>
+                  {knownCount} / {limit.count}
+                </span>
+                {overLimit && (
+                  <span style={{ fontSize: '0.65rem', color: 'var(--cs-accent)', fontStyle: 'italic' }}>¡excedido!</span>
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
 

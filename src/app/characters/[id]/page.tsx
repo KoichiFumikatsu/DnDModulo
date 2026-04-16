@@ -391,11 +391,16 @@ export default async function CharacterPage({
         {tab === 'spells' && (
           <SpellsTab
             characterId={id}
-            classes={(classes ?? []).map(c => ({
-              id: c.id, class_name: c.class_name,
-              spell_save_dc: c.spell_save_dc, spell_attack_mod: c.spell_attack_mod,
-              spellcasting_ability: c.spellcasting_ability,
-            }))}
+            classes={(classes ?? []).map(c => {
+              const abilKey = c.spellcasting_ability as string | null
+              const score = abilKey ? (character as Record<string, unknown>)[abilKey] as number ?? null : null
+              return {
+                id: c.id, class_name: c.class_name, level: c.level,
+                spell_save_dc: c.spell_save_dc, spell_attack_mod: c.spell_attack_mod,
+                spellcasting_ability: c.spellcasting_ability,
+                spellcastingAbilityScore: score,
+              }
+            })}
             slots={(spellSlots ?? []).map(s => ({
               classId: s.class_id,
               spell_level: s.spell_level, slots_total: s.slots_total, slots_used: s.slots_used,
