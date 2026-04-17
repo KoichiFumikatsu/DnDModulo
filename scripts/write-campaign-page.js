@@ -1,4 +1,7 @@
-'use client'
+const fs = require('fs')
+const path = require('path')
+
+const content = `'use client'
 
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
@@ -135,7 +138,7 @@ export default function CampaignRoomPage() {
 
   useEffect(() => {
     if (!currentUserId) return
-    const channel = supabase.channel(`camp-presence-${id}`, { config: { presence: { key: currentUserId } } })
+    const channel = supabase.channel(\`camp-presence-\${id}\`, { config: { presence: { key: currentUserId } } })
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState<{ user_id: string }>()
         const ids = new Set(Object.values(state).flat().map((p: { user_id: string }) => p.user_id))
@@ -149,8 +152,8 @@ export default function CampaignRoomPage() {
 
   useEffect(() => {
     const channel = supabase
-      .channel(`camp-map-${id}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'campaign_map_state', filter: `campaign_id=eq.${id}` },
+      .channel(\`camp-map-\${id}\`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'campaign_map_state', filter: \`campaign_id=eq.\${id}\` },
         (payload) => {
           const r = payload.new as MapState & { tokens: Token[] }
           setMapState({
@@ -249,7 +252,7 @@ export default function CampaignRoomPage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  function sign(n: number) { return n >= 0 ? `+${n}` : `${n}` }
+  function sign(n: number) { return n >= 0 ? \`+\${n}\` : \`\${n}\` }
   function mod(score: number) { return Math.floor((score - 10) / 2) }
 
   if (loading) return (
@@ -268,7 +271,7 @@ export default function CampaignRoomPage() {
       username: m.user_profiles?.username ?? 'Jugador',
       characterId: m.character_id,
       characterName: m.characters?.name ?? null,
-      characterUrl: m.character_id ? `/characters/${m.character_id}` : null,
+      characterUrl: m.character_id ? \`/characters/\${m.character_id}\` : null,
       race: m.characters?.race ?? null,
       className: cls?.class_name ?? null,
       level: cls?.level ?? null,
@@ -306,7 +309,7 @@ export default function CampaignRoomPage() {
         </span>
         <button onClick={copyCode}
           style={{ fontSize: '0.65rem', padding: '2px 10px', borderRadius: 10, border: '1px solid rgba(201,173,106,0.5)', background: 'transparent', color: copied ? '#22c55e' : 'var(--cs-gold)', cursor: 'pointer', fontFamily: 'Cinzel, serif' }}>
-          {copied ? '✓ Copiado' : `Código: ${campaign.invite_code}`}
+          {copied ? '✓ Copiado' : \`Código: \${campaign.invite_code}\`}
         </button>
       </nav>
 
@@ -369,7 +372,7 @@ export default function CampaignRoomPage() {
                     <button key={c.id} onClick={() => assignCharacter(c.id)}
                       style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 1rem', border: '1px solid var(--cs-gold)', background: 'var(--cs-card)', cursor: 'pointer', borderRadius: 4, textAlign: 'left', width: '100%' }}>
                       {portrait && (
-                        <div style={{ width: 32, height: 32, borderRadius: '50%', background: `url(${portrait}) center/cover`, border: '1px solid var(--cs-gold)', flexShrink: 0 }} />
+                        <div style={{ width: 32, height: 32, borderRadius: '50%', background: \`url(\${portrait}) center/cover\`, border: '1px solid var(--cs-gold)', flexShrink: 0 }} />
                       )}
                       <span style={{ fontFamily: 'Cinzel, serif', fontSize: '0.9rem', fontWeight: 700, color: 'var(--cs-accent)' }}>{c.name}</span>
                       {c.race && <span style={{ fontSize: '0.72rem', color: 'var(--cs-text-muted)', fontFamily: 'var(--font-montaga)' }}>{c.race}</span>}
@@ -400,7 +403,7 @@ export default function CampaignRoomPage() {
                   <button onClick={() => setViewingSheet(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--cs-text-muted)', fontSize: '1rem' }}>✕</button>
                 </div>
                 <p style={{ fontFamily: 'var(--font-montaga)', fontSize: '0.8rem', color: 'var(--cs-text-muted)', marginBottom: '1rem' }}>
-                  {viewingSheet.race} · {viewingSheet.character_classes?.map(c => `${c.class_name} ${c.level}`).join(', ')}
+                  {viewingSheet.race} · {viewingSheet.character_classes?.map(c => \`\${c.class_name} \${c.level}\`).join(', ')}
                 </p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1rem' }}>
                   <div style={{ padding: '0.5rem', border: '1px solid var(--cs-gold)', background: 'var(--cs-card)', textAlign: 'center' }}>
@@ -422,7 +425,7 @@ export default function CampaignRoomPage() {
                   })}
                 </div>
                 <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-                  <Link href={`/characters/${viewingSheet.id}`} target="_blank"
+                  <Link href={\`/characters/\${viewingSheet.id}\`} target="_blank"
                     style={{ fontSize: '0.72rem', padding: '4px 16px', borderRadius: 20, border: '1px solid var(--cs-gold)', color: 'var(--cs-gold)', textDecoration: 'none', fontFamily: 'Cinzel, serif' }}>
                     Ver hoja completa ↗
                   </Link>
@@ -435,3 +438,8 @@ export default function CampaignRoomPage() {
     </div>
   )
 }
+`
+
+const dest = path.join(__dirname, '..', 'src', 'app', 'campaigns', '[id]', 'page.tsx')
+fs.writeFileSync(dest, content, 'utf8')
+console.log('written:', dest)

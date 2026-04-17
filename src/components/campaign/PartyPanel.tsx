@@ -1,17 +1,17 @@
 'use client'
 
-import { useState } from 'react'
-
 interface Member {
   userId: string
   username: string
   characterId: string | null
   characterName: string | null
+  characterUrl: string | null
   race: string | null
   className: string | null
   level: number | null
   portraitUrl: string | null
   isOnline: boolean
+  isDMEntry?: boolean
 }
 
 interface Props {
@@ -37,11 +37,11 @@ export default function PartyPanel({ members, isDM, currentUserId, onViewSheet, 
             <div style={{
               width: 40, height: 40, borderRadius: '50%',
               background: m.portraitUrl ? `url(${m.portraitUrl}) center/cover` : 'rgba(201,173,106,0.2)',
-              border: '2px solid var(--cs-gold)',
+              border: `2px solid ${m.isDMEntry ? '#c9ad6a' : 'var(--cs-gold)'}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontFamily: 'Cinzel, serif', fontSize: '1rem', color: 'var(--cs-accent)', fontWeight: 700,
             }}>
-              {!m.portraitUrl && (m.characterName?.[0] ?? m.username?.[0] ?? '?')}
+              {!m.portraitUrl && (m.isDMEntry ? '👑' : (m.characterName?.[0] ?? m.username?.[0] ?? '?'))}
             </div>
             <div style={{
               position: 'absolute', bottom: 0, right: 0,
@@ -54,7 +54,12 @@ export default function PartyPanel({ members, isDM, currentUserId, onViewSheet, 
           {/* Info */}
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontFamily: 'Cinzel, serif', fontSize: '0.82rem', fontWeight: 700, color: 'var(--cs-accent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {m.characterName ?? <span style={{ color: 'var(--cs-text-muted)', fontStyle: 'italic' }}>Sin personaje</span>}
+              {m.isDMEntry
+                ? <span style={{ color: 'var(--cs-gold)' }}>Master</span>
+                : m.characterName
+                  ? m.characterName
+                  : <span style={{ color: 'var(--cs-text-muted)', fontStyle: 'italic', fontWeight: 400 }}>Sin personaje</span>
+              }
             </div>
             <div style={{ fontSize: '0.62rem', color: 'var(--cs-text-muted)', fontFamily: 'var(--font-montaga)' }}>
               {[m.race, m.className, m.level ? `Nv${m.level}` : null].filter(Boolean).join(' · ')}
@@ -64,21 +69,32 @@ export default function PartyPanel({ members, isDM, currentUserId, onViewSheet, 
             </div>
           </div>
 
-          {/* DM: ver hoja */}
-          {isDM && m.characterId && onViewSheet && (
-            <button onClick={() => onViewSheet(m.characterId!)}
-              style={{ flexShrink: 0, fontSize: '0.6rem', padding: '2px 8px', borderRadius: 10, border: '1px solid var(--cs-gold)', background: 'transparent', color: 'var(--cs-gold)', cursor: 'pointer', fontFamily: 'Cinzel, serif' }}>
-              Ver PJ
-            </button>
-          )}
+          {/* Action buttons */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flexShrink: 0 }}>
+            {/* DM: ver hoja de otros jugadores */}
+            {isDM && !m.isDMEntry && m.characterId && onViewSheet && (
+              <button onClick={() => onViewSheet(m.characterId!)}
+                style={{ fontSize: '0.6rem', padding: '2px 8px', borderRadius: 10, border: '1px solid var(--cs-gold)', background: 'transparent', color: 'var(--cs-gold)', cursor: 'pointer', fontFamily: 'Cinzel, serif' }}>
+                Ver PJ
+              </button>
+            )}
 
-          {/* Player: pick/change character for own card */}
-          {!isDM && m.userId === currentUserId && onPickCharacter && (
-            <button onClick={onPickCharacter}
-              style={{ flexShrink: 0, fontSize: '0.6rem', padding: '2px 8px', borderRadius: 10, border: '1px solid var(--cs-accent)', background: 'transparent', color: 'var(--cs-accent)', cursor: 'pointer', fontFamily: 'Cinzel, serif' }}>
-              {m.characterId ? 'Cambiar PJ' : 'Elegir PJ'}
-            </button>
-          )}
+            {/* Player: open own sheet in new tab */}
+            {!m.isDMEntry && m.userId === currentUserId && m.characterUrl && (
+              <a href={m.characterUrl} target="_blank" rel="noreferrer"
+                style={{ fontSize: '0.6rem', padding: '2px 8px', borderRadius: 10, border: '1px solid #3a6fa8', background: '#3a6fa8', color: '#fff', cursor: 'pointer', fontFamily: 'Cinzel, serif', textDecoration: 'none', textAlign: 'center' }}>
+                Mi hoja ↗
+              </a>
+            )}
+
+            {/* Player: pick/change character */}
+            {!m.isDMEntry && m.userId === currentUserId && onPickCharacter && (
+              <button onClick={onPickCharacter}
+                style={{ fontSize: '0.6rem', padding: '2px 8px', borderRadius: 10, border: '1px solid var(--cs-accent)', background: 'transparent', color: 'var(--cs-accent)', cursor: 'pointer', fontFamily: 'Cinzel, serif' }}>
+                {m.characterId ? 'Cambiar' : 'Elegir PJ'}
+              </button>
+            )}
+          </div>
         </div>
       ))}
     </div>

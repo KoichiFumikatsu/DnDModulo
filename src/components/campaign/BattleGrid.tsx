@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 export interface Token {
@@ -37,6 +37,17 @@ export default function BattleGrid({
   onTokensChange,
 }: Props) {
   const [tokens, setTokens] = useState<Token[]>(initialTokens)
+  const [dragTokenId, setDragTokenId] = useState<string | null>(null)
+  const prevInitialTokensRef = useRef(initialTokens)
+
+  // Sync external token changes (auto-token, other players' edits) when not dragging
+  useEffect(() => {
+    if (!dragTokenId && prevInitialTokensRef.current !== initialTokens) {
+      prevInitialTokensRef.current = initialTokens
+      setTokens(initialTokens)
+    }
+  }, [initialTokens, dragTokenId])
+
   const [mapUrl, setMapUrl] = useState(initialMapUrl ?? '')
   const [cols, setCols] = useState(initialCols)
   const [rows, setRows] = useState(initialRows)
@@ -47,7 +58,6 @@ export default function BattleGrid({
   const [showDMControls, setShowDMControls] = useState(false)
   const [newTokenLabel, setNewTokenLabel] = useState('')
   const [newTokenColor, setNewTokenColor] = useState(TOKEN_COLORS[0])
-  const [dragTokenId, setDragTokenId] = useState<string | null>(null)
   const supabase = createClient()
 
   const CELL_SIZE = 48
