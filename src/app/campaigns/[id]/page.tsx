@@ -1,0 +1,272 @@
+'use client'
+
+import { useEffect, useState, useCallback } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
+import { setActiveCampaignId } from '@/lib/campaign/broadcast'
+import PartyPanel from '@/components/campaign/PartyPanel'
+import EventFeed from '@/components/campaign/EventFeed'
+import BattleGrid from '@/components/campaign/BattleGrid'
+import type { Token } from '@/components/campaign/BattleGrid'
+
+interface Campaign {
+  id: string
+  name: string
+  invite_code: string
+  dm_id: string
+  is_active: boolean
+}
+
+interface MemberRow {
+  user_id: string
+  character_id: string | null
+  characters: {
+    name: string
+    race: string | null
+    personality: string | null
+    character_classes: { class_name: string; level: number; is_primary: boolean }[]
+    character_images: { image_url: string; is_active: boolean }[]
+  } | null
+  user_profiles: { username: string | null } | null
+}
+
+interface MapState {
+  map_image_url: string | null
+  grid_cols: number
+  grid_rows: number
+  tokens: Token[]
+}
+
+interface SheetCharacter {
+  id: string
+  name: string
+  race: string | null
+  background: string | null
+  hp_current: number
+  hp_max: number
+  strength: number; dexterity: number; constitution: number
+  intelligence: number; wisdom: number; charisma: number
+  character_classes: { class_name: string; level: number }[]
+}
+
+export default function CampaignRoomPage() {
+  const { id } = useParams<{ id: string }>()
+  const router = useRouter()
+  const supabase = createClient()
+
+  const [loading, setLoading] = useState(true)
+  const [campaign, setCampaign] = useState<Campaign | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [isDM, setIsDM] = useState(false)
+  const [members, setMembers] = useState<MemberRow[]>([])
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set())
+  const [mapState, setMapState] = useState<MapState>({ map_image_url: null, grid_cols: 20, grid_rows: 15, tokens: [] })
+  const [viewingSheet, setViewingSheet] = useState<SheetCharacter | null>(null)
+  const [sheetLoading, setSheetLoading] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  // ── Load initial data ──
+  useEffect(() => {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/auth/login'); return }
+      setCurrentUserId(user.id)
+
+      const [{ data: camp }, { data: membersData }, { data: map }] = await Promise.all([
+        supabase.from('campaigns').select('*').eq('id', id).single(),
+        supabase.from('campaign_members')
+          .select('user_id, character_id, characters(name, race, personality, character_classes(class_name, level, is_primary), character_images(image_url, is_active)), user_profiles(username)')
+          .eq('campaign_id', id),
+        supabase.from('campaign_map_state').select('*').eq('campaign_id', id).single(),
+      ])
+
+      if (!camp) { router.push('/campaigns'); return }
+      setCampaign(camp as Campaign)
+      setIsDM(camp.dm_id === user.id)
+      setMembers((membersData ?? []) as unknown as MemberRow[])
+      if (map) setMapState({ map_image_url: map.map_image_url, grid_cols: map.grid_cols, grid_rows: map.grid_rows, tokens: (map.tokens as Token[]) ?? [] })
+
+      // Set active campaign for dice broadcasting
+      setActiveCampaignId(id)
+      setLoading(false)
+    }
+    load()
+
+    return () => { setActiveCampaignId(null) }
+  }, [id])  // eslint-disable-line
+
+  // ── Presence (online indicators) ──
+  useEffect(() => {
+    if (!currentUserId) return
+    const channel = supabase.channel(`camp-presence-${id}`, { config: { presence: { key: currentUserId } } })
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState<{ user_id: string }>()
+        const ids = new Set(Object.values(state).flat().map((p: { user_id: string }) => p.user_id))
+        setOnlineUsers(ids)
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({ user_id: currentUserId })
+        }
+      })
+    return () => { supabase.removeChannel(channel) }
+  }, [currentUserId, id])  // eslint-disable-line
+
+  // ── Realtime map sync ──
+  useEffect(() => {
+    const channel = supabase
+      .channel(`camp-map-${id}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'campaign_map_state', filter: `campaign_id=eq.${id}` },
+        (payload) => {
+          const r = payload.new as MapState & { tokens: Token[] }
+          setMapState({ map_image_url: r.map_image_url, grid_cols: r.grid_cols, grid_rows: r.grid_rows, tokens: r.tokens ?? [] })
+        })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [id])  // eslint-disable-line
+
+  // ── View sheet modal (DM) ──
+  const openSheet = useCallback(async (characterId: string) => {
+    setSheetLoading(true)
+    const { data } = await supabase
+      .from('characters')
+      .select('id, name, race, background, hp_current, hp_max, strength, dexterity, constitution, intelligence, wisdom, charisma, character_classes(class_name, level)')
+      .eq('id', characterId)
+      .single()
+    setViewingSheet(data as SheetCharacter ?? null)
+    setSheetLoading(false)
+  }, [])  // eslint-disable-line
+
+  function copyCode() {
+    if (!campaign) return
+    navigator.clipboard.writeText(campaign.invite_code)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  function sign(n: number) { return n >= 0 ? `+${n}` : `${n}` }
+  function mod(score: number) { return Math.floor((score - 10) / 2) }
+
+  if (loading) return (
+    <div className="parchment-page" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ fontFamily: 'Cinzel, serif', color: 'var(--cs-text-muted)' }}>Cargando sala...</p>
+    </div>
+  )
+
+  if (!campaign) return null
+
+  const partyMembers = members.map(m => {
+    const cls = m.characters?.character_classes?.find(c => c.is_primary) ?? m.characters?.character_classes?.[0]
+    const portrait = m.characters?.character_images?.find(i => i.is_active)?.image_url ?? null
+    return {
+      userId: m.user_id,
+      username: m.user_profiles?.username ?? 'Jugador',
+      characterId: m.character_id,
+      characterName: m.characters?.name ?? null,
+      race: m.characters?.race ?? null,
+      className: cls?.class_name ?? null,
+      level: cls?.level ?? null,
+      portraitUrl: portrait,
+      isOnline: onlineUsers.has(m.user_id),
+    }
+  })
+
+  return (
+    <div className="parchment-page" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+
+      {/* ── Nav ── */}
+      <nav style={{ background: '#2c1a0e', padding: '0.6rem 1.25rem', display: 'flex', alignItems: 'center', gap: '1rem', flexShrink: 0 }}>
+        <Link href="/campaigns" style={{ fontSize: '0.72rem', color: 'var(--cs-gold)', textDecoration: 'none', fontFamily: 'Cinzel, serif' }}>
+          ← Campañas
+        </Link>
+        <span style={{ fontFamily: 'Cinzel, serif', fontSize: '1rem', fontWeight: 700, color: '#e8d5a3', flex: 1 }}>
+          {campaign.name}
+          {isDM && <span style={{ marginLeft: 8, fontSize: '0.65rem', color: 'var(--cs-gold)' }}>👑 Master</span>}
+        </span>
+        <button onClick={copyCode}
+          style={{ fontSize: '0.65rem', padding: '2px 10px', borderRadius: 10, border: '1px solid rgba(201,173,106,0.5)', background: 'transparent', color: copied ? '#22c55e' : 'var(--cs-gold)', cursor: 'pointer', fontFamily: 'Cinzel, serif' }}>
+          {copied ? '✓ Copiado' : `Código: ${campaign.invite_code}`}
+        </button>
+      </nav>
+
+      {/* ── Main layout ── */}
+      <div className="camp-layout" style={{ flex: 1, overflow: 'hidden' }}>
+
+        {/* Left: Party */}
+        <div style={{ padding: '1rem', overflowY: 'auto', borderRight: '1px solid rgba(201,173,106,0.2)' }}>
+          <h3 className="cs-heading" style={{ fontSize: '0.72rem', marginBottom: '0.75rem' }}>Grupo</h3>
+          <PartyPanel members={partyMembers} isDM={isDM} onViewSheet={openSheet} />
+        </div>
+
+        {/* Center: Battle Grid */}
+        <div style={{ padding: '1rem', overflowY: 'auto' }}>
+          <h3 className="cs-heading" style={{ fontSize: '0.72rem', marginBottom: '0.75rem' }}>Mapa</h3>
+          <BattleGrid
+            campaignId={id}
+            isDM={isDM}
+            currentUserId={currentUserId ?? ''}
+            initialTokens={mapState.tokens}
+            initialMapUrl={mapState.map_image_url}
+            initialCols={mapState.grid_cols}
+            initialRows={mapState.grid_rows}
+          />
+        </div>
+
+        {/* Right: Event Feed */}
+        <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', overflow: 'hidden', borderLeft: '1px solid rgba(201,173,106,0.2)' }}>
+          <h3 className="cs-heading" style={{ fontSize: '0.72rem', marginBottom: '0.75rem', flexShrink: 0 }}>Tiradas</h3>
+          <EventFeed campaignId={id} isDM={isDM} />
+        </div>
+      </div>
+
+      {/* ── DM Sheet Modal ── */}
+      {(viewingSheet || sheetLoading) && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+          onClick={() => setViewingSheet(null)}>
+          <div className="parchment-page" style={{ width: '100%', maxWidth: 560, maxHeight: '85vh', overflowY: 'auto', padding: '1.5rem', borderRadius: 8, border: '1px solid var(--cs-gold)' }}
+            onClick={e => e.stopPropagation()}>
+            {sheetLoading ? (
+              <p style={{ fontFamily: 'Cinzel, serif', color: 'var(--cs-text-muted)' }}>Cargando...</p>
+            ) : viewingSheet && (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
+                  <h2 style={{ fontFamily: 'Cinzel, serif', fontSize: '1.2rem', color: 'var(--cs-accent)', margin: 0 }}>{viewingSheet.name}</h2>
+                  <button onClick={() => setViewingSheet(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--cs-text-muted)', fontSize: '1rem' }}>✕</button>
+                </div>
+                <p style={{ fontFamily: 'var(--font-montaga)', fontSize: '0.8rem', color: 'var(--cs-text-muted)', marginBottom: '1rem' }}>
+                  {viewingSheet.race} · {viewingSheet.character_classes?.map(c => `${c.class_name} ${c.level}`).join(', ')}
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1rem' }}>
+                  <div style={{ padding: '0.5rem', border: '1px solid var(--cs-gold)', background: 'var(--cs-card)', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.6rem', color: 'var(--cs-text-muted)', fontFamily: 'Cinzel, serif', textTransform: 'uppercase' }}>HP</div>
+                    <div style={{ fontFamily: 'Cinzel, serif', fontSize: '1.2rem', fontWeight: 700, color: 'var(--cs-accent)' }}>{viewingSheet.hp_current} / {viewingSheet.hp_max}</div>
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '0.4rem' }}>
+                  {(['strength','dexterity','constitution','intelligence','wisdom','charisma'] as const).map(ab => {
+                    const short = ab.slice(0,3).toUpperCase()
+                    const score = viewingSheet[ab]
+                    return (
+                      <div key={ab} style={{ textAlign: 'center', padding: '0.4rem 0.2rem', border: '1px solid var(--cs-gold)', background: 'var(--cs-card)' }}>
+                        <div style={{ fontSize: '0.55rem', color: 'var(--cs-text-muted)', fontFamily: 'Cinzel, serif', textTransform: 'uppercase' }}>{short}</div>
+                        <div style={{ fontFamily: 'Cinzel, serif', fontSize: '0.9rem', fontWeight: 700, color: 'var(--cs-accent)' }}>{sign(mod(score))}</div>
+                        <div style={{ fontSize: '0.6rem', color: 'var(--cs-text-muted)', fontFamily: 'var(--font-montaga)' }}>{score}</div>
+                      </div>
+                    )
+                  })}
+                </div>
+                <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+                  <Link href={`/characters/${viewingSheet.id}`} target="_blank"
+                    style={{ fontSize: '0.72rem', padding: '4px 16px', borderRadius: 20, border: '1px solid var(--cs-gold)', color: 'var(--cs-gold)', textDecoration: 'none', fontFamily: 'Cinzel, serif' }}>
+                    Ver hoja completa ↗
+                  </Link>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { ABILITY_NAMES, SKILLS_BY_ABILITY, ABILITY_ORDER } from '@/lib/constants'
+import { createClient } from '@/lib/supabase/client'
+import { getActiveCampaignId, broadcastRoll } from '@/lib/campaign/broadcast'
 
 interface SkillRoll {
   skill: string
@@ -42,7 +44,15 @@ export default function AbilitySkillsGrid({ abilities, proficiencyBonus, skillPr
     if (mode === 'advantage') { rolls = [d1, d2]; kept = Math.max(d1, d2) }
     else if (mode === 'disadvantage') { rolls = [d1, d2]; kept = Math.min(d1, d2) }
     else { rolls = [d1]; kept = d1 }
-    setLastRoll({ skill: skillKey, rolls, kept, bonus, total: kept + bonus, mode })
+    const result = { skill: skillKey, rolls, kept, bonus, total: kept + bonus, mode }
+    setLastRoll(result)
+    const campId = getActiveCampaignId()
+    if (campId) {
+      broadcastRoll(createClient(), campId, {
+        type: 'skill', label: skillKey,
+        total: result.total, d20: kept, detail: mode !== 'normal' ? mode : undefined,
+      })
+    }
   }
 
   return (

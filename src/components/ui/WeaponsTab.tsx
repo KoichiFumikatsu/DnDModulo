@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { getActiveCampaignId, broadcastRoll } from '@/lib/campaign/broadcast'
 
 /* ── Types ── */
 interface Weapon {
@@ -165,11 +167,10 @@ export default function WeaponsTab({ weapons, character }: Props) {
       const wbs = (bonuses[w.id] ?? []).filter(b => b.applies === 'ataque' || b.applies === 'ambos')
       wbs.forEach(b => parts.push(`${signStr(b.value)} ${b.label}`))
     }
-    setLastRoll({
-      type: 'attack', weaponName: w.name, d20, total,
-      detail: parts.join(' '),
-      isCrit: d20 === 20, isMiss: d20 === 1,
-    })
+    const roll = { type: 'attack' as const, weaponName: w.name, d20, total, detail: parts.join(' '), isCrit: d20 === 20, isMiss: d20 === 1 }
+    setLastRoll(roll)
+    const campId = getActiveCampaignId()
+    if (campId) broadcastRoll(createClient(), campId, { type: 'attack', label: w.name, total, d20, isCrit: roll.isCrit, isMiss: roll.isMiss, detail: parts.join(' ') })
   }
 
   function rollDamage(w: Weapon) {
@@ -196,11 +197,10 @@ export default function WeaponsTab({ weapons, character }: Props) {
 
     const bonusSum = activeBonusSum(w.id, 'daño')
     const total = diceOnly.total + abilityMod + extras.reduce((s, e) => s + e.total, 0) + bonusSum
-    setLastRoll({
-      type: 'damage', weaponName: w.name, total,
-      detail: `${w.damage ?? ''}${abilityMod !== 0 ? signStr(abilityMod) : ''} → ${diceOnly.detail}`,
-      extras, breakdown,
-    })
+    const dmgDetail = `${w.damage ?? ''}${abilityMod !== 0 ? signStr(abilityMod) : ''} → ${diceOnly.detail}`
+    setLastRoll({ type: 'damage', weaponName: w.name, total, detail: dmgDetail, extras, breakdown })
+    const campId = getActiveCampaignId()
+    if (campId) broadcastRoll(createClient(), campId, { type: 'damage', label: w.name, total, detail: dmgDetail })
   }
 
   function atkDisplay(w: Weapon): string {
