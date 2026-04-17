@@ -233,7 +233,7 @@ export async function fetchClasses(): Promise<ClassMap> {
       Object.entries(raw).map(([k, v]) => [k, (v as { subclasses?: string[] }).subclasses ?? []])
     )
   } else {
-    classesCache = STATIC_CLASSES as ClassMap
+    classesCache = STATIC_CLASSES as unknown as ClassMap
   }
   return classesCache
 }
