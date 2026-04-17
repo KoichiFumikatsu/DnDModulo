@@ -135,6 +135,36 @@ function autoSummary(name: string, description: string, profBonus: number): stri
   return tags.join(' · ')
 }
 
+/* Renders an infusion description with real bullet lists */
+function InfusionDesc({ text }: { text: string }) {
+  // Split on bullet markers; first segment may be an intro sentence
+  const parts = text.split(/\s*•\s*/).map(s => s.trim()).filter(Boolean)
+  const hasIntro = parts.length > 1 && !text.trimStart().startsWith('•')
+  const intro = hasIntro ? parts[0] : null
+  const items = hasIntro ? parts.slice(1) : parts
+  const textStyle: React.CSSProperties = {
+    fontSize: '0.82rem',
+    fontFamily: 'var(--font-montaga, Georgia, serif)',
+    color: 'var(--cs-text)',
+    lineHeight: 1.55,
+    margin: 0,
+  }
+  return (
+    <div style={{ marginTop: '0.35rem' }}>
+      {intro && <p style={textStyle}>{intro}</p>}
+      {items.length > 0 && (
+        <ul style={{ margin: intro ? '0.3rem 0 0' : 0, paddingLeft: '1.2rem' }}>
+          {items.map((item, i) => (
+            <li key={i} style={{ ...textStyle, marginBottom: i < items.length - 1 ? '0.25rem' : 0 }}>
+              {item}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 export default function FeaturesCompact({ features, proficiencyBonus = 2 }: Props) {
   const [openIds, setOpenIds] = useState<Set<string>>(new Set())
 
@@ -218,16 +248,18 @@ export default function FeaturesCompact({ features, proficiencyBonus = 2 }: Prop
 
               {/* Description — shown when open */}
               {isOpen && desc && (
-                <p style={{
-                  margin: '0.35rem 0 0',
-                  fontSize: '0.82rem',
-                  fontFamily: 'var(--font-montaga, Georgia, serif)',
-                  color: 'var(--cs-text)',
-                  lineHeight: 1.55,
-                  whiteSpace: 'pre-wrap',
-                }}>
-                  {desc}
-                </p>
+                f.source === 'infusion'
+                  ? <InfusionDesc text={desc} />
+                  : <p style={{
+                      margin: '0.35rem 0 0',
+                      fontSize: '0.82rem',
+                      fontFamily: 'var(--font-montaga, Georgia, serif)',
+                      color: 'var(--cs-text)',
+                      lineHeight: 1.55,
+                      whiteSpace: 'pre-wrap',
+                    }}>
+                      {desc}
+                    </p>
               )}
             </div>
           )

@@ -463,7 +463,7 @@ export default function EditCharacterClient({
   const [localFeatures, setLocalFeatures] = useState(features)
   const [newFeature, setNewFeature] = useState({ name: '', description: '', source: '' })
   const [featQuery, setFeatQuery] = useState('')
-  const [infusionSearch, setInfusionSearch] = useState('')
+
 
   /* ── Resources ── */
   const [localResources, setLocalResources] = useState(classResources)
@@ -1763,8 +1763,7 @@ export default function EditCharacterClient({
                 const overLimit = knownInfusions.length > limits.known
                 const filtered = ARTIFICER_INFUSIONS.filter(inf =>
                   inf.minLevel <= cls.level &&
-                  !knownInfusions.some(f => f.name === inf.name) &&
-                  (infusionSearch.length < 1 || inf.name.toLowerCase().includes(infusionSearch.toLowerCase()))
+                  !knownInfusions.some(f => f.name === inf.name)
                 )
                 return (
                   <div style={{ marginTop: '0.75rem', borderTop: '1px solid rgba(201,173,106,0.35)', paddingTop: '0.75rem' }}>
@@ -1777,39 +1776,31 @@ export default function EditCharacterClient({
                       </span>
                     </div>
 
-                    {/* Search */}
-                    <div style={{ position: 'relative', marginBottom: '0.5rem' }}>
-                      <input
-                        value={infusionSearch}
-                        onChange={e => setInfusionSearch(e.target.value)}
-                        placeholder="Buscar infusión para agregar..."
-                        className="ifield"
-                        style={{ fontSize: '0.8rem' }}
-                      />
-                      {infusionSearch.length >= 1 && filtered.length > 0 && (
-                        <div style={{
-                          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
-                          background: 'var(--parchment)', border: '1px solid var(--cs-gold)',
-                          maxHeight: 200, overflowY: 'auto', boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
-                        }}>
-                          {filtered.slice(0, 8).map(inf => (
-                            <button key={inf.name} onClick={() => addInfusion(inf)}
-                              style={{
-                                display: 'block', width: '100%', textAlign: 'left',
-                                padding: '0.4rem 0.75rem', background: 'none', border: 'none', cursor: 'pointer',
-                                borderBottom: '1px solid rgba(201,173,106,0.2)',
-                              }}>
-                              <span style={{ fontFamily: 'var(--font-montaga)', fontSize: '0.82rem', color: 'var(--cs-text)', fontWeight: 600 }}>
-                                {inf.name}
-                              </span>
-                              <span style={{ marginLeft: '0.5rem', fontSize: '0.65rem', color: 'var(--cs-text-muted)' }}>
-                                Lv{inf.minLevel}{inf.itemReq ? ' · ' + inf.itemReq.split('(')[0].trim().slice(0, 25) : ''}
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    {/* Select */}
+                    <select
+                      value=""
+                      onChange={e => {
+                        const inf = ARTIFICER_INFUSIONS.find(i => i.name === e.target.value)
+                        if (inf) addInfusion(inf)
+                      }}
+                      className="ifield"
+                      style={{ fontSize: '0.8rem', marginBottom: '0.5rem' }}
+                    >
+                      <option value="">— Agregar infusión —</option>
+                      {[2, 6, 10, 14].map(minLv => {
+                        const group = filtered.filter(inf => inf.minLevel === minLv)
+                        if (group.length === 0) return null
+                        return (
+                          <optgroup key={minLv} label={`Nivel ${minLv}+`}>
+                            {group.map(inf => (
+                              <option key={inf.name} value={inf.name}>
+                                {inf.name}{inf.itemReq ? ' — ' + inf.itemReq.split('(')[0].trim().slice(0, 30) : ''}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )
+                      })}
+                    </select>
 
                     {/* Known infusions list */}
                     {knownInfusions.length > 0 ? (
