@@ -1205,7 +1205,6 @@ export default function EditCharacterClient({
       sort_order: localFeatures.length,
     }).select().single()
     if (data) setLocalFeatures(prev => [...prev, data as CharacterFeature])
-    setInfusionSearch('')
   }
 
   async function loadAutoTraits() {
