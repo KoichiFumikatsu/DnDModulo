@@ -762,3 +762,106 @@ h1, h2, h3, h4 {
     10px 100%, 0 calc(100% - 10px), 0 10px
   );
 }
+
+/* ============================================================
+   RESPONSIVE — Character Sheet
+   ============================================================ */
+
+/* ── Main 3-col layout ── */
+.cs-stats-grid {
+  display: grid;
+  grid-template-columns: 360px 1fr 250px;
+  gap: 1.5rem;
+  align-items: start;
+}
+.cs-stats-left  { display: flex; flex-direction: column; gap: 1rem; }
+.cs-stats-center { position: relative; }
+.cs-stats-right { display: flex; flex-direction: column; gap: 1rem; }
+
+/* ── Nav ── */
+.cs-nav-title    { font-family: Cinzel, serif; color: var(--gold); font-size: 1.2rem; line-height: 1.1; }
+.cs-nav-subtitle { color: var(--gold-light); font-size: 0.78rem; opacity: 0.75; font-style: italic; }
+
+/* ── Tabs bar ── */
+.cs-tabs-bar {
+  display: flex;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  white-space: nowrap;
+}
+.cs-tabs-bar::-webkit-scrollbar { display: none; }
+
+/* ── Ability 2×3 grid ── */
+.cs-ability-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+/* ── Tablet  (640 – 1023px): 2-col, right panel spans full width ── */
+@media (max-width: 1023px) {
+  .cs-stats-grid {
+    grid-template-columns: 280px 1fr;
+  }
+  .cs-stats-right {
+    grid-column: 1 / -1;
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    align-items: start;
+  }
+}
+
+/* ── Mobile  (< 640px): single column, reorder panels ── */
+@media (max-width: 639px) {
+  .cs-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .cs-stats-center { order: 1; }
+  .cs-stats-right  { order: 2; display: grid !important; grid-template-columns: 1fr; }
+  .cs-stats-left   { order: 3; }
+
+  /* Shrink shields */
+  .cs-shield {
+    min-width: 55px !important;
+    min-height: 65px !important;
+    padding: 0.25rem 0.3rem 0.7rem !important;
+  }
+  .cs-shield--sm {
+    min-width: 48px !important;
+    min-height: 56px !important;
+    padding: 0.15rem 0.2rem 0.6rem !important;
+  }
+  .cs-shield--sm .cs-shield-value { font-size: 0.9rem; }
+  .cs-shield--sm .cs-shield-label { font-size: 0.42rem; }
+  .cs-shield--lg {
+    min-width: 72px !important;
+    min-height: 82px !important;
+    padding: 0.4rem 0.5rem 1.1rem !important;
+  }
+  .cs-shield--lg .cs-shield-value { font-size: 1.6rem; }
+  .cs-shield--xl {
+    min-width: 76px !important;
+    min-height: 82px !important;
+    padding: 0.3rem 0.5rem 1.1rem !important;
+  }
+  .cs-shield--xl .cs-shield-value { font-size: 1.7rem !important; }
+
+  /* Passive scores: shrink a bit */
+  .cs-passive { padding: 0.35rem 0.5rem; }
+  .cs-passive-label { font-size: 0.5rem; }
+  .cs-passive-value { font-size: 0.95rem; }
+
+  /* Nav: hide subtitle, smaller title */
+  .cs-nav-title { font-size: 1rem; }
+  .cs-nav-subtitle { display: none; }
+
+  /* Dragons: hide on mobile */
+  .cs-dragons-hide { display: none !important; }
+}
+
+/* ── Very small (< 420px): ability grid single column ── */
+@media (max-width: 419px) {
+  .cs-ability-grid { grid-template-columns: 1fr; }
+}

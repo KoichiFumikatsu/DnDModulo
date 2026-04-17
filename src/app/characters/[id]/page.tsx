@@ -110,24 +110,24 @@ export default async function CharacterPage({
   return (
     <div className="min-h-screen cs-page">
       {/* ── Nav bar (dark, unchanged) ── */}
-      <div className="book-nav px-6 py-3">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+      <div className="book-nav px-4 py-3">
+        <div className="max-w-6xl mx-auto" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', minWidth: 0, flex: 1 }}>
             <Link href="/dashboard"
-              style={{ color: 'var(--gold-light)', fontSize: '0.8rem', textDecoration: 'none', opacity: 0.7, fontFamily: 'Cinzel, serif' }}>
+              style={{ color: 'var(--gold-light)', fontSize: '0.8rem', textDecoration: 'none', opacity: 0.7, fontFamily: 'Cinzel, serif', flexShrink: 0 }}>
               ← Grimorio
             </Link>
-            <div>
-              <h1 style={{ fontFamily: 'Cinzel, serif', color: 'var(--gold)', fontSize: '1.2rem', lineHeight: 1.1 }}>
+            <div style={{ minWidth: 0 }}>
+              <h1 className="cs-nav-title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {character.name}
               </h1>
-              <p style={{ color: 'var(--gold-light)', fontSize: '0.78rem', opacity: 0.75, fontStyle: 'italic' }}>
+              <p className="cs-nav-subtitle">
                 {character.race} · {classLabel} · Level {xpData.level}
               </p>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <Link href={`/characters/${id}/edit`} className="btn-parchment" style={{ textDecoration: 'none', fontSize: '0.8rem' }}>
+          <div style={{ flexShrink: 0 }}>
+            <Link href={`/characters/${id}/edit`} className="btn-parchment" style={{ textDecoration: 'none', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
               Editar
             </Link>
           </div>
@@ -136,7 +136,7 @@ export default async function CharacterPage({
 
       {/* ── Book page tabs ── */}
       <div style={{ background: 'var(--cs-card)', borderBottom: '2px solid var(--cs-gold)' }}>
-        <div className="max-w-6xl mx-auto px-4" style={{ display: 'flex', gap: 0 }}>
+        <div className="max-w-6xl mx-auto px-4 cs-tabs-bar">
           {[
             { key: 'stats', label: 'Stats' },
             { key: 'weapons', label: 'Weapons' },
@@ -164,14 +164,14 @@ export default async function CharacterPage({
       </div>
 
       {/* ── Main content ── */}
-      <div className="max-w-6xl mx-auto px-4 py-6">
+      <div className="max-w-6xl mx-auto px-3 py-4" style={{ paddingLeft: 'clamp(0.75rem, 3vw, 1.5rem)', paddingRight: 'clamp(0.75rem, 3vw, 1.5rem)' }}>
 
         {/* ════ STATS TAB ════ */}
         {tab === 'stats' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr 250px', gap: '1.5rem', alignItems: 'start' }}>
+          <div className="cs-stats-grid">
 
             {/* LEFT: Portrait + Money + Languages + Personality */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div className="cs-stats-left">
               <CharacterPortrait
                 characterId={id}
                 userId={user.id}
@@ -262,15 +262,15 @@ export default async function CharacterPage({
             </div>
 
             {/* CENTER: Combat stats + Ability grid */}
-            <div style={{ position: 'relative' }}>
-              <img src="/assets/dnd/dragon-right.svg" alt="" aria-hidden="true"
+            <div className="cs-stats-center">
+              <img src="/assets/dnd/dragon-right.svg" alt="" aria-hidden="true" className="cs-dragons-hide"
                 style={{ position: 'absolute', right: 0, top: 0, width: 100, height: 100, pointerEvents: 'none', opacity: 0.9, zIndex: 0 }} />
-              <img src="/assets/dnd/dragon-left.svg" alt="" aria-hidden="true"
+              <img src="/assets/dnd/dragon-left.svg" alt="" aria-hidden="true" className="cs-dragons-hide"
                 style={{ position: 'absolute', left: 0, top: 0, width: 100, height: 100, pointerEvents: 'none', opacity: 0.9, zIndex: 0, transform: 'scaleX(-1)' }} />
 
               <div style={{ position: 'relative', zIndex: 1 }}>
                 {/* ROW 1: Prof — Level — Hit Die */}
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: '1.5rem', marginBottom: '0.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: '1rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
                   <div className="cs-shield cs-shield--sm">
                     <ShieldSm />
                     <span className="cs-shield-label">Prof</span>
@@ -290,7 +290,7 @@ export default async function CharacterPage({
                 </div>
 
                 {/* ROW 2: Ini — HP — AC — Spd */}
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: '1rem', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
                   <div className="cs-shield cs-shield--sm">
                     <ShieldSm />
                     <span className="cs-shield-label">Ini</span>
@@ -347,7 +347,7 @@ export default async function CharacterPage({
             </div>
 
             {/* RIGHT: HP → Resources → Equipment */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div className="cs-stats-right">
               <HpManager
                 characterId={id}
                 hpCurrent={character.hp_current}

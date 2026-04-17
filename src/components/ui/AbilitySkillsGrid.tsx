@@ -92,7 +92,7 @@ export default function AbilitySkillsGrid({ abilities, proficiencyBonus, skillPr
       )}
 
       {/* 2x3 ability grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+      <div className="cs-ability-grid">
         {ABILITY_ORDER.map(ab => {
           const score = abilities[ab]
           const m = modNum(score)
