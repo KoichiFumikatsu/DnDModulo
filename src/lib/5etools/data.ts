@@ -172,7 +172,10 @@ let raceSkillsCache: Record<string, { fixed: string[]; choose?: { from: string[]
 
 export async function fetchRaces(): Promise<string[]> {
   if (racesCache) return racesCache
-  racesCache = STATIC_RACES as string[]
+  const raw = STATIC_RACES as unknown as { name: string }[]
+  racesCache = Array.isArray(raw) && typeof raw[0] === 'object'
+    ? raw.map(r => r.name)
+    : STATIC_RACES as unknown as string[]
   return racesCache
 }
 
@@ -189,7 +192,10 @@ export async function fetchRaceAbilities(): Promise<Record<string, RaceAbility>>
 
 export async function fetchBackgrounds(): Promise<string[]> {
   if (backgroundsCache) return backgroundsCache
-  backgroundsCache = STATIC_BACKGROUNDS as string[]
+  const raw = STATIC_BACKGROUNDS as unknown as { name: string }[]
+  backgroundsCache = Array.isArray(raw) && typeof raw[0] === 'object'
+    ? raw.map(b => b.name)
+    : STATIC_BACKGROUNDS as unknown as string[]
   return backgroundsCache
 }
 
@@ -219,7 +225,16 @@ export async function fetchRaceSkills(): Promise<Record<string, RaceSkillProf>> 
 
 export async function fetchClasses(): Promise<ClassMap> {
   if (classesCache) return classesCache
-  classesCache = STATIC_CLASSES as ClassMap
+  // New format: Record<string, { subclasses: string[], ... }>
+  const raw = STATIC_CLASSES as Record<string, { subclasses?: string[] } | string[]>
+  const isNewFormat = !Array.isArray(Object.values(raw)[0])
+  if (isNewFormat) {
+    classesCache = Object.fromEntries(
+      Object.entries(raw).map(([k, v]) => [k, (v as { subclasses?: string[] }).subclasses ?? []])
+    )
+  } else {
+    classesCache = STATIC_CLASSES as ClassMap
+  }
   return classesCache
 }
 
