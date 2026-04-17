@@ -954,10 +954,21 @@ function getSpellSlots(className: string, level: number): Record<number, number>
     17:[4,3,3,3,2,1,1,1,1], 18:[4,3,3,3,3,1,1,1,1],
     19:[4,3,3,3,3,2,1,1,1], 20:[4,3,3,3,3,2,2,1,1],
   }
-  const fullCasters = ['Bard', 'Cleric', 'Druid', 'Sorcerer', 'Wizard']
-  if (!fullCasters.includes(className)) return {}
-  const slots = fullCaster[Math.min(20, Math.max(1, level))] ?? []
+  const lv = Math.min(20, Math.max(1, level))
+  let arr: number[] | undefined
+  const full = ['Bard','Cleric','Druid','Sorcerer','Wizard']
+  const half = ['Paladin','Ranger']
+  const thirdArt = ['Artificer']
+  if (full.includes(className)) arr = fullCaster[lv]
+  else if (thirdArt.includes(className)) arr = fullCaster[Math.ceil(lv/2)]
+  else if (half.includes(className) && lv >= 2) arr = fullCaster[Math.floor(lv/2)]
+  else if (className === 'Warlock') {
+    const warlockSlots: [number,number][] = [[0,0],[1,1],[1,2],[2,2],[2,2],[3,2],[3,2],[4,2],[4,2],[5,2],[5,2],[5,3],[5,3],[5,3],[5,3],[5,3],[5,3],[5,4],[5,4],[5,4],[5,4]]
+    const [slotLvl, slotCnt] = warlockSlots[lv]
+    return slotCnt > 0 ? { [slotLvl]: slotCnt } : {}
+  }
+  if (!arr) return {}
   const result: Record<number, number> = {}
-  slots.forEach((count, i) => { result[i + 1] = count })
+  arr.forEach((count, i) => { if (count > 0) result[i + 1] = count })
   return result
 }

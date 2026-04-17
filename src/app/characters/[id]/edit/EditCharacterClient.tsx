@@ -45,6 +45,48 @@ const CANTRIPS_KNOWN: Record<string, number[]> = {
   Wizard:    [0, 3,3,3,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5],
 }
 
+// ── Spell slot computation (all caster types) ──────────────────
+const FULL_CASTER_SLOTS: Record<number, number[]> = {
+  1: [2,0,0,0,0,0,0,0,0], 2: [3,0,0,0,0,0,0,0,0],
+  3: [4,2,0,0,0,0,0,0,0], 4: [4,3,0,0,0,0,0,0,0],
+  5: [4,3,2,0,0,0,0,0,0], 6: [4,3,3,0,0,0,0,0,0],
+  7: [4,3,3,1,0,0,0,0,0], 8: [4,3,3,2,0,0,0,0,0],
+  9: [4,3,3,3,1,0,0,0,0], 10:[4,3,3,3,2,0,0,0,0],
+  11:[4,3,3,3,2,1,0,0,0], 12:[4,3,3,3,2,1,0,0,0],
+  13:[4,3,3,3,2,1,1,0,0], 14:[4,3,3,3,2,1,1,0,0],
+  15:[4,3,3,3,2,1,1,1,0], 16:[4,3,3,3,2,1,1,1,0],
+  17:[4,3,3,3,2,1,1,1,1], 18:[4,3,3,3,3,1,1,1,1],
+  19:[4,3,3,3,3,2,1,1,1], 20:[4,3,3,3,3,2,2,1,1],
+}
+// Warlock pact magic: [slotLevel, slotCount] per character level
+const WARLOCK_PACT_SLOTS: [number, number][] = [
+  [0,0],[1,1],[1,2],[2,2],[2,2],[3,2],[3,2],[4,2],[4,2],[5,2],[5,2],[5,3],[5,3],[5,3],[5,3],[5,3],[5,3],[5,4],[5,4],[5,4],[5,4]
+]
+/** Returns { spellLevel: totalSlots } for any class at given level */
+function getSpellSlotsForClass(className: string, level: number): Record<number, number> {
+  const lv = Math.min(20, Math.max(1, level))
+  const full = ['Bard','Cleric','Druid','Sorcerer','Wizard']
+  const half = ['Paladin','Ranger'] // level 1 = no slots, level 2+ = ceil(level/2)
+  const thirdArt = ['Artificer'] // ceil(level/2) starting at level 1
+  if (full.includes(className)) {
+    const arr = FULL_CASTER_SLOTS[lv] ?? []
+    return Object.fromEntries(arr.map((n,i) => [i+1, n]).filter(([,n]) => n > 0))
+  }
+  if (thirdArt.includes(className)) {
+    const arr = FULL_CASTER_SLOTS[Math.ceil(lv/2)] ?? []
+    return Object.fromEntries(arr.map((n,i) => [i+1, n]).filter(([,n]) => n > 0))
+  }
+  if (half.includes(className) && lv >= 2) {
+    const arr = FULL_CASTER_SLOTS[Math.floor(lv/2)] ?? []
+    return Object.fromEntries(arr.map((n,i) => [i+1, n]).filter(([,n]) => n > 0))
+  }
+  if (className === 'Warlock') {
+    const [slotLvl, slotCnt] = WARLOCK_PACT_SLOTS[lv]
+    return slotCnt > 0 ? { [slotLvl]: slotCnt } : {}
+  }
+  return {}
+}
+
 // Spells known (fixed table) for non-preparation classes
 const SPELLS_KNOWN_EDIT: Record<string, number[]> = {
   Bard:     [0, 4, 5, 6, 7, 8, 9,10,11,12,14,15,15,16,18,19,19,20,22,22,22],
@@ -729,12 +771,31 @@ export default function EditCharacterClient({
     await supabase.from('character_classes').update(clsPayload(cls)).eq('id', cls.id)
   }
 
+  /** Upsert spell slots for a class based on its current level */
+  async function syncSpellSlots(cls: CharacterClass) {
+    const slots = getSpellSlotsForClass(cls.class_name, cls.level)
+    if (Object.keys(slots).length === 0) return
+    // Delete old slots for this class then insert fresh
+    await supabase.from('character_spell_slots').delete().eq('class_id', cls.id)
+    const rows = Object.entries(slots).map(([lvl, total]) => ({
+      character_id: character.id,
+      class_id: cls.id,
+      spell_level: Number(lvl),
+      slots_total: total,
+      slots_used: 0,
+    }))
+    await supabase.from('character_spell_slots').insert(rows)
+  }
+
   async function saveClassWithLevelUp(cls: CharacterClass) {
     const prevLevel = origLevels.current[cls.id] ?? cls.level
     await saveClass(cls)
     origLevels.current[cls.id] = cls.level
 
-    if (cls.level <= prevLevel) return // not a level up
+    // Always sync spell slots when level changes
+    await syncSpellSlots(cls)
+
+    if (cls.level <= prevLevel) return // not a level up (slots still synced above)
 
     // Compute new proficiency bonus based on total character level
     const totalLevel = localClasses.reduce((sum, c) => sum + (c.id === cls.id ? cls.level : c.level), 0)
@@ -1669,6 +1730,12 @@ export default function EditCharacterClient({
                 <button onClick={async () => { await saveClassWithLevelUp(cls); await saveGrants() }}
                   className="btn-primary text-sm">
                   Guardar esta clase
+                </button>
+                <button onClick={() => syncSpellSlots(cls)}
+                  className="text-xs px-3 py-1 rounded"
+                  title="Recalcula y sincroniza los spell slots según el nivel actual"
+                  style={{ border: '1px solid var(--cs-gold)', color: 'var(--cs-gold)', background: 'transparent', cursor: 'pointer' }}>
+                  ↻ Sincronizar slots
                 </button>
                 {cls.subclass_name && !cls.is_homebrew && (() => {
                   const grants = fetchSubclassSpells(cls.class_name, cls.subclass_name, cls.level)
