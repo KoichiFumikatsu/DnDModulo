@@ -10,7 +10,7 @@ export default async function DashboardPage() {
   // Campaigns
   const { data: dmCampaigns } = await supabase.from('campaigns').select('id, name, invite_code').eq('dm_id', user!.id).order('created_at', { ascending: false })
   const { data: memberRows } = await supabase.from('campaign_members').select('campaign_id, campaigns(id, name, invite_code)').eq('user_id', user!.id)
-  const memberCampaigns = (memberRows ?? []).map(r => r.campaigns as { id: string; name: string; invite_code: string } | null).filter(Boolean) as { id: string; name: string; invite_code: string }[]
+  const memberCampaigns = (memberRows ?? []).map(r => r.campaigns as unknown as { id: string; name: string; invite_code: string } | null).filter(Boolean) as { id: string; name: string; invite_code: string }[]
 
   const { data: rawChars } = await supabase
     .from('characters')
