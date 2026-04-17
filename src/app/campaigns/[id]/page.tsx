@@ -128,6 +128,20 @@ export default function CampaignRoomPage() {
 
       setActiveCampaignId(id)
       setLoading(false)
+
+      // Auto-open character picker if player has no character assigned
+      const isPlayerDM = camp.dm_id === user.id
+      if (!isPlayerDM) {
+        const myRow = (membersData ?? []).find((m: { user_id: string; character_id: string | null }) => m.user_id === user.id)
+        if (myRow && !myRow.character_id) {
+          const { data: chars } = await supabase.from('characters')
+            .select('id, name, race, character_images(image_url, is_active)')
+            .eq('user_id', user.id)
+            .order('updated_at', { ascending: false })
+          setMyCharacters((chars ?? []) as unknown as MyCharacter[])
+          setShowCharPicker(true)
+        }
+      }
     }
     load()
     return () => { setActiveCampaignId(null) }
