@@ -139,7 +139,13 @@ function getDetail(item: AnyEntry, catKey: string): { sections: { label: string;
   }
 
   else if (catKey === 'classes') {
-    mainDesc = String(item.description ?? extractText(item.entries) ?? '')
+    if (item.hitDie) sections.push({ label: 'Dado de vida', content: String(item.hitDie) })
+    if (item.savingThrows) sections.push({ label: 'Salvaciones', content: String(item.savingThrows) })
+    if (item.armorProfs) sections.push({ label: 'Armadura', content: String(item.armorProfs) })
+    if (item.weaponProfs) sections.push({ label: 'Armas', content: String(item.weaponProfs) })
+    if (Array.isArray(item.subclasses) && (item.subclasses as string[]).length > 0)
+      sections.push({ label: 'Subclases', content: (item.subclasses as string[]).join(', ') })
+    mainDesc = String(item.description ?? '')
   }
 
   else if (catKey === 'races') {
