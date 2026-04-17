@@ -322,6 +322,10 @@ export default function CampaignRoomPage() {
           style={{ fontSize: '0.65rem', padding: '2px 10px', borderRadius: 10, border: '1px solid rgba(201,173,106,0.5)', background: 'transparent', color: copied ? '#22c55e' : 'var(--cs-gold)', cursor: 'pointer', fontFamily: 'Cinzel, serif' }}>
           {copied ? '✓ Copiado' : `Código: ${campaign.invite_code}`}
         </button>
+        <Link href="/campaigns"
+          style={{ fontSize: '0.65rem', padding: '2px 10px', borderRadius: 10, border: '1px solid rgba(220,50,50,0.5)', background: 'transparent', color: 'rgba(220,100,100,0.9)', cursor: 'pointer', fontFamily: 'Cinzel, serif', textDecoration: 'none' }}>
+          Salir
+        </Link>
       </nav>
 
       <div className="camp-layout" style={{ flex: 1, overflow: 'hidden' }}>
