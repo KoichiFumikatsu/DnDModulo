@@ -293,6 +293,26 @@ export default async function CharacterPage({
                 />
               )}
 
+              {(features ?? []).some(f => f.source === 'infusion') && (
+                <div style={{ border: '1px solid var(--cs-gold)', background: 'var(--cs-card)', padding: '0.75rem 1rem' }}>
+                  <h3 className="cs-heading" style={{ marginBottom: '0.5rem', fontSize: '0.78rem' }}>⚙ Infusiones</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                    {(features ?? []).filter(f => f.source === 'infusion').map(f => (
+                      <div key={f.id} style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+                        <span style={{
+                          fontFamily: 'var(--font-cinzel, Cinzel, serif)',
+                          fontSize: '0.78rem', fontWeight: 600,
+                          color: '#3a6fa8', flexShrink: 0,
+                        }}>{f.name}</span>
+                        {f.summary && (
+                          <span style={{ fontSize: '0.65rem', color: 'var(--cs-text-muted)', flexShrink: 0 }}>{f.summary}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {(equipment ?? []).length > 0 && (
                 <div className="cs-card--notched" style={{ padding: '0.75rem 1rem' }}>
                   <EquipmentTracker initialEquipment={equipment ?? []} variant="parchment" />
