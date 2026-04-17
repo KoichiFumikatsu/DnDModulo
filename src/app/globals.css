@@ -818,9 +818,23 @@ h1, h2, h3, h4 {
     grid-template-columns: 1fr;
     gap: 1rem;
   }
+  /* 1: Combat shields + ability grid, 2: Portrait, 3: HP/Resources */
   .cs-stats-center { order: 1; }
-  .cs-stats-right  { order: 2; display: grid !important; grid-template-columns: 1fr; }
-  .cs-stats-left   { order: 3; }
+  .cs-stats-left   { order: 2; }
+  .cs-stats-right  { order: 3; display: grid !important; grid-template-columns: 1fr; }
+
+  /* Ability grid: single column on mobile so nothing gets cut */
+  .cs-ability-grid { grid-template-columns: 1fr !important; }
+
+  /* Hide A/D advantage buttons — only keep d20 */
+  .cs-page .cs-dice-btn--adv,
+  .cs-page .cs-dice-btn--dis { display: none !important; }
+
+  /* Portrait: cap image height so it doesn't fill the whole screen */
+  .cs-portrait-img-box {
+    aspect-ratio: unset !important;
+    max-height: 220px !important;
+  }
 
   /* Shrink shields */
   .cs-shield {
@@ -859,9 +873,7 @@ h1, h2, h3, h4 {
 
   /* Dragons: hide on mobile */
   .cs-dragons-hide { display: none !important; }
-}
 
-/* ── Very small (< 420px): ability grid single column ── */
-@media (max-width: 419px) {
-  .cs-ability-grid { grid-template-columns: 1fr; }
+  /* Skill row text compact */
+  .cs-ability-grid > div { font-size: 0.75rem !important; }
 }

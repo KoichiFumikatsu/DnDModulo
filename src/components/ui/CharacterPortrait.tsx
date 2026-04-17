@@ -180,7 +180,7 @@ export default function CharacterPortrait({ characterId, userId, characterName, 
           </svg>
         ))}
 
-        <div style={{ aspectRatio: '5/7', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--cs-bg)', overflow: 'hidden', borderRadius: 3 }}>
+        <div className="cs-portrait-img-box" style={{ aspectRatio: '5/7', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--cs-bg)', overflow: 'hidden', borderRadius: 3 }}>
           {currentImage ? (
             <img src={currentImage} alt={characterName}
               style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '3px' }} />
