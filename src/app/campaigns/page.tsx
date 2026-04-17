@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import CampaignCreateForm from './CampaignCreateForm'
+import LeaveCampaignButton from './LeaveCampaignButton'
 
 export default async function CampaignsPage() {
   const supabase = await createClient()
@@ -112,10 +113,13 @@ function CampaignCard({ campaign, role }: { campaign: { id: string; name: string
           {role === 'dm' ? '👑 Master' : '🗡 Jugador'} · Código: <strong style={{ color: 'var(--cs-gold)' }}>{campaign.invite_code}</strong>
         </div>
       </div>
-      <Link href={`/campaigns/${campaign.id}`}
-        style={{ padding: '4px 16px', borderRadius: 20, border: '1px solid var(--cs-accent)', background: 'var(--cs-accent)', color: '#fff', fontFamily: 'Cinzel, serif', fontSize: '0.72rem', textDecoration: 'none' }}>
-        Entrar
-      </Link>
+      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        {role === 'player' && <LeaveCampaignButton campaignId={campaign.id} />}
+        <Link href={`/campaigns/${campaign.id}`}
+          style={{ padding: '4px 16px', borderRadius: 20, border: '1px solid var(--cs-accent)', background: 'var(--cs-accent)', color: '#fff', fontFamily: 'Cinzel, serif', fontSize: '0.72rem', textDecoration: 'none' }}>
+          Entrar
+        </Link>
+      </div>
     </div>
   )
 }
