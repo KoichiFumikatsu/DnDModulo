@@ -22,7 +22,7 @@ export default async function CampaignsPage() {
     .eq('user_id', user.id)
 
   const memberCampaigns = (memberRows ?? [])
-    .map(r => r.campaigns as { id: string; name: string; invite_code: string; is_active: boolean } | null)
+    .map(r => r.campaigns as unknown as { id: string; name: string; invite_code: string; is_active: boolean } | null)
     .filter(Boolean) as { id: string; name: string; invite_code: string; is_active: boolean }[]
 
   return (
