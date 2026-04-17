@@ -185,9 +185,10 @@ export default function FeaturesCompact({ features, proficiencyBonus = 2 }: Prop
                   fontStyle: 'italic',
                   fontSize: '0.88rem',
                   fontWeight: 600,
-                  color: 'var(--cs-accent)',
+                  color: f.source === 'infusion' ? '#3a6fa8' : 'var(--cs-accent)',
                   flexShrink: 0,
                 }}>
+                  {f.source === 'infusion' && <span style={{ fontSize: '0.7rem', marginRight: 4 }}>⚙</span>}
                   {f.name}
                 </span>
                 {mechSummary && (

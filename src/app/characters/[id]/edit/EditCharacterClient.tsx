@@ -13,6 +13,7 @@ import {
   type ClassDetail, type RaceSkillProf, type ClassMap,
 } from '@/lib/5etools/data'
 import RACE_ABILITIES_JSON from '@/lib/5etools-processed/race-abilities.json'
+import ARTIFICER_INFUSIONS_RAW from '@/lib/5etools-processed/artificer-infusions.json'
 import type {
   Character, CharacterClass, CharacterSpell,
   CharacterWeapon, CharacterEquipment, CharacterFeature,
@@ -25,6 +26,20 @@ import { getLevelFromXP, XP_THRESHOLDS } from '@/lib/5etools/xp'
 /* ── Constants ── */
 
 const ABILITY_LABELS: Record<string, string> = AB_LABELS
+
+// Artificer infusions typed
+const ARTIFICER_INFUSIONS = ARTIFICER_INFUSIONS_RAW as {
+  name: string; source: string; minLevel: number; itemReq: string | null; description: string
+}[]
+
+// Infusions known + items infusible per Artificer level
+const INFUSION_LIMITS: Record<number, { known: number; items: number }> = {
+  2: { known: 4, items: 2 }, 3: { known: 4, items: 2 }, 4: { known: 4, items: 2 }, 5: { known: 4, items: 2 },
+  6: { known: 6, items: 3 }, 7: { known: 6, items: 3 }, 8: { known: 6, items: 3 }, 9: { known: 6, items: 3 },
+  10: { known: 8, items: 4 }, 11: { known: 8, items: 4 }, 12: { known: 8, items: 4 }, 13: { known: 8, items: 4 },
+  14: { known: 10, items: 5 }, 15: { known: 10, items: 5 }, 16: { known: 10, items: 5 }, 17: { known: 10, items: 5 },
+  18: { known: 12, items: 6 }, 19: { known: 12, items: 6 }, 20: { known: 12, items: 6 },
+}
 
 const DMG_TYPE_MAP: Record<string, string> = {
   S: 'Cortante', P: 'Perforante', B: 'Contundente',
@@ -448,6 +463,7 @@ export default function EditCharacterClient({
   const [localFeatures, setLocalFeatures] = useState(features)
   const [newFeature, setNewFeature] = useState({ name: '', description: '', source: '' })
   const [featQuery, setFeatQuery] = useState('')
+  const [infusionSearch, setInfusionSearch] = useState('')
 
   /* ── Resources ── */
   const [localResources, setLocalResources] = useState(classResources)
@@ -1178,6 +1194,20 @@ export default function EditCharacterClient({
     setLocalFeatures(prev => prev.filter(f => f.id !== id))
   }
 
+  async function addInfusion(inf: typeof ARTIFICER_INFUSIONS[0]) {
+    if (localFeatures.some(f => f.source === 'infusion' && f.name === inf.name)) return
+    const { data } = await supabase.from('character_features').insert({
+      character_id: character.id,
+      name: inf.name,
+      source: 'infusion',
+      description: inf.description,
+      summary: `Lv${inf.minLevel}${inf.itemReq ? ' · ' + inf.itemReq.split('(')[0].trim().slice(0, 28) : ''}`,
+      sort_order: localFeatures.length,
+    }).select().single()
+    if (data) setLocalFeatures(prev => [...prev, data as CharacterFeature])
+    setInfusionSearch('')
+  }
+
   async function loadAutoTraits() {
     setLoadingTraits(true)
     try {
@@ -1726,6 +1756,93 @@ export default function EditCharacterClient({
                   />
                 </div>
               )}
+              {/* ── Artificer Infusions panel ── */}
+              {cls.class_name === 'Artificer' && cls.level >= 2 && (() => {
+                const limits = INFUSION_LIMITS[Math.min(cls.level, 20)] ?? { known: 4, items: 2 }
+                const knownInfusions = localFeatures.filter(f => f.source === 'infusion')
+                const overLimit = knownInfusions.length > limits.known
+                const filtered = ARTIFICER_INFUSIONS.filter(inf =>
+                  inf.minLevel <= cls.level &&
+                  !knownInfusions.some(f => f.name === inf.name) &&
+                  (infusionSearch.length < 1 || inf.name.toLowerCase().includes(infusionSearch.toLowerCase()))
+                )
+                return (
+                  <div style={{ marginTop: '0.75rem', borderTop: '1px solid rgba(201,173,106,0.35)', paddingTop: '0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
+                      <span style={{ fontFamily: 'Cinzel, serif', fontSize: '0.8rem', fontWeight: 700, color: 'var(--cs-gold)' }}>
+                        ⚙ Infusiones de Artificiero
+                      </span>
+                      <span style={{ fontSize: '0.72rem', color: overLimit ? 'var(--danger)' : 'var(--cs-text-muted)' }}>
+                        {knownInfusions.length} / {limits.known} conocidas · máx {limits.items} objetos imbuidos
+                      </span>
+                    </div>
+
+                    {/* Search */}
+                    <div style={{ position: 'relative', marginBottom: '0.5rem' }}>
+                      <input
+                        value={infusionSearch}
+                        onChange={e => setInfusionSearch(e.target.value)}
+                        placeholder="Buscar infusión para agregar..."
+                        className="ifield"
+                        style={{ fontSize: '0.8rem' }}
+                      />
+                      {infusionSearch.length >= 1 && filtered.length > 0 && (
+                        <div style={{
+                          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
+                          background: 'var(--parchment)', border: '1px solid var(--cs-gold)',
+                          maxHeight: 200, overflowY: 'auto', boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+                        }}>
+                          {filtered.slice(0, 8).map(inf => (
+                            <button key={inf.name} onClick={() => addInfusion(inf)}
+                              style={{
+                                display: 'block', width: '100%', textAlign: 'left',
+                                padding: '0.4rem 0.75rem', background: 'none', border: 'none', cursor: 'pointer',
+                                borderBottom: '1px solid rgba(201,173,106,0.2)',
+                              }}>
+                              <span style={{ fontFamily: 'var(--font-montaga)', fontSize: '0.82rem', color: 'var(--cs-text)', fontWeight: 600 }}>
+                                {inf.name}
+                              </span>
+                              <span style={{ marginLeft: '0.5rem', fontSize: '0.65rem', color: 'var(--cs-text-muted)' }}>
+                                Lv{inf.minLevel}{inf.itemReq ? ' · ' + inf.itemReq.split('(')[0].trim().slice(0, 25) : ''}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Known infusions list */}
+                    {knownInfusions.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                        {knownInfusions.map(f => (
+                          <div key={f.id} style={{
+                            display: 'flex', alignItems: 'center', gap: '0.5rem',
+                            padding: '0.3rem 0.6rem',
+                            background: 'rgba(201,173,106,0.08)',
+                            border: '1px solid rgba(201,173,106,0.3)',
+                          }}>
+                            <span style={{ flex: 1, fontFamily: 'var(--font-montaga)', fontSize: '0.8rem', color: 'var(--cs-text)' }}>
+                              {f.name}
+                            </span>
+                            {f.summary && (
+                              <span style={{ fontSize: '0.62rem', color: 'var(--cs-text-muted)', flexShrink: 0 }}>{f.summary}</span>
+                            )}
+                            <button onClick={() => deleteFeature(f.id)}
+                              style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', padding: '0 0.2rem', flexShrink: 0 }}>
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p style={{ fontSize: '0.75rem', color: 'var(--cs-text-muted)', fontStyle: 'italic' }}>
+                        Sin infusiones. Escribe para buscar y seleccionar.
+                      </p>
+                    )}
+                  </div>
+                )
+              })()}
+
               <div className="flex gap-2 flex-wrap">
                 <button onClick={async () => { await saveClassWithLevelUp(cls); await saveGrants() }}
                   className="btn-primary text-sm">
