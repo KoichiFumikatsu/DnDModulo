@@ -767,17 +767,6 @@ h1, h2, h3, h4 {
    RESPONSIVE — Character Sheet
    ============================================================ */
 
-/* ── Main 3-col layout ── */
-.cs-stats-grid {
-  display: grid;
-  grid-template-columns: 360px 1fr 250px;
-  gap: 1.5rem;
-  align-items: start;
-}
-.cs-stats-left  { display: flex; flex-direction: column; gap: 1rem; }
-.cs-stats-center { position: relative; }
-.cs-stats-right { display: flex; flex-direction: column; gap: 1rem; }
-
 /* ── Nav ── */
 .cs-nav-title    { font-family: Cinzel, serif; color: var(--gold); font-size: 1.2rem; line-height: 1.1; }
 .cs-nav-subtitle { color: var(--gold-light); font-size: 0.78rem; opacity: 0.75; font-style: italic; }
@@ -799,73 +788,134 @@ h1, h2, h3, h4 {
   gap: 0.75rem;
 }
 
-/* ── Tablet  (640 – 1023px): 2-col, right panel spans full width ── */
+/* ══════════════════════════════════════
+   MAIN PAGE GRID  (5 named areas)
+   ══════════════════════════════════════
+   Desktop  (≥1024px): 3 cols
+   ┌─────────┬──────────┬───────┐
+   │ portrait│  combat  │ right │
+   │         ├──────────┤       │
+   │  info   │abilities │       │
+   └─────────┴──────────┴───────┘
+   ====================================== */
+.cs-main-grid {
+  display: grid;
+  grid-template-columns: 340px 1fr 250px;
+  grid-template-areas:
+    "portrait  combat     right"
+    "info      abilities  right";
+  gap: 1.5rem;
+  align-items: start;
+}
+.cs-area-portrait  { grid-area: portrait; }
+.cs-area-combat    { grid-area: combat;   position: relative; }
+.cs-area-abilities { grid-area: abilities; }
+.cs-area-right     { grid-area: right;    display: flex; flex-direction: column; gap: 1rem; align-self: start; }
+.cs-area-info      { grid-area: info;     display: flex; flex-direction: column; gap: 1rem; }
+
+/* ── Tablet  (640 – 1023px): portrait left + combat/abilities right, right panel full width ──
+   ┌─────────┬──────────────┐
+   │ portrait│   combat     │
+   │         ├──────────────┤
+   │         │  abilities   │
+   ├─────────┴──────────────┤
+   │         right          │
+   ├────────────────────────┤
+   │         info           │
+   └────────────────────────┘  */
 @media (max-width: 1023px) {
-  .cs-stats-grid {
-    grid-template-columns: 280px 1fr;
-  }
-  .cs-stats-right {
-    grid-column: 1 / -1;
-    display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    align-items: start;
+  .cs-main-grid {
+    grid-template-columns: 260px 1fr;
+    grid-template-areas:
+      "portrait  combat"
+      "portrait  abilities"
+      "right     right"
+      "info      info";
   }
 }
 
-/* ── Mobile  (< 640px): single column, reorder panels ── */
+/* ── Mobile  (<640px): portrait 38% | combat 62%, then full-width rows ──
+   ┌──────┬──────────────────┐
+   │ foto │ Prof/Lvl/HitDie  │
+   │ peq  │ Ini/HP/AC/Spd    │
+   │      │ Passives         │
+   ├──────┴──────────────────┤
+   │     Ability grid        │
+   ├─────────────────────────┤
+   │     HP + Recursos       │
+   ├─────────────────────────┤
+   │     Info / Monedas      │
+   └─────────────────────────┘  */
 @media (max-width: 639px) {
-  .cs-stats-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+  .cs-main-grid {
+    grid-template-columns: 38% 62%;
+    grid-template-areas:
+      "portrait  combat"
+      "abilities abilities"
+      "right     right"
+      "info      info";
+    gap: 0.75rem;
   }
-  /* 1: Combat shields + ability grid, 2: Portrait, 3: HP/Resources */
-  .cs-stats-center { order: 1; }
-  .cs-stats-left   { order: 2; }
-  .cs-stats-right  { order: 3; display: grid !important; grid-template-columns: 1fr; }
 
-  /* Ability grid: single column on mobile so nothing gets cut */
+  /* Portrait: compact height, fill the combat area height */
+  .cs-area-portrait { align-self: stretch; }
+  .cs-portrait-img-box {
+    aspect-ratio: unset !important;
+    height: 100% !important;
+    min-height: 160px;
+    max-height: 260px !important;
+  }
+
+  /* Combat area: smaller gaps, compact */
+  .cs-area-combat { padding-top: 0.25rem; }
+
+  /* Ability grid: 1 column so nothing gets cut */
   .cs-ability-grid { grid-template-columns: 1fr !important; }
 
-  /* Hide A/D advantage buttons — only keep d20 */
+  /* Hide A/D advantage buttons — keep only d20 */
   .cs-page .cs-dice-btn--adv,
   .cs-page .cs-dice-btn--dis { display: none !important; }
 
-  /* Portrait: cap image height so it doesn't fill the whole screen */
-  .cs-portrait-img-box {
-    aspect-ratio: unset !important;
-    max-height: 220px !important;
-  }
-
-  /* Shrink shields */
+  /* Shrink shields for the narrow combat column */
   .cs-shield {
-    min-width: 55px !important;
-    min-height: 65px !important;
-    padding: 0.25rem 0.3rem 0.7rem !important;
+    min-width: 44px !important;
+    min-height: 52px !important;
+    padding: 0.2rem 0.2rem 0.6rem !important;
   }
   .cs-shield--sm {
-    min-width: 48px !important;
-    min-height: 56px !important;
-    padding: 0.15rem 0.2rem 0.6rem !important;
+    min-width: 40px !important;
+    min-height: 48px !important;
+    padding: 0.1rem 0.15rem 0.55rem !important;
   }
-  .cs-shield--sm .cs-shield-value { font-size: 0.9rem; }
-  .cs-shield--sm .cs-shield-label { font-size: 0.42rem; }
+  .cs-shield--sm .cs-shield-value { font-size: 0.82rem; }
+  .cs-shield--sm .cs-shield-label { font-size: 0.38rem; }
   .cs-shield--lg {
-    min-width: 72px !important;
-    min-height: 82px !important;
-    padding: 0.4rem 0.5rem 1.1rem !important;
+    min-width: 58px !important;
+    min-height: 66px !important;
+    padding: 0.3rem 0.4rem 0.9rem !important;
   }
-  .cs-shield--lg .cs-shield-value { font-size: 1.6rem; }
+  .cs-shield--lg .cs-shield-value { font-size: 1.3rem; }
+  .cs-shield--lg .cs-shield-sub { font-size: 0.55rem; }
   .cs-shield--xl {
-    min-width: 76px !important;
-    min-height: 82px !important;
-    padding: 0.3rem 0.5rem 1.1rem !important;
+    min-width: 60px !important;
+    min-height: 66px !important;
+    padding: 0.2rem 0.3rem 0.9rem !important;
   }
-  .cs-shield--xl .cs-shield-value { font-size: 1.7rem !important; }
+  .cs-shield--xl .cs-shield-value { font-size: 1.4rem !important; }
+  .cs-shield--xl .cs-shield-label { font-size: 0.52rem; }
 
-  /* Passive scores: shrink a bit */
-  .cs-passive { padding: 0.35rem 0.5rem; }
-  .cs-passive-label { font-size: 0.5rem; }
-  .cs-passive-value { font-size: 0.95rem; }
+  /* Passive scores: 1 per line, full width in combat area */
+  .cs-passive {
+    padding: 0.25rem 0.4rem;
+    flex: 1 1 100%;
+    clip-path: none;
+    border-radius: 2px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .cs-passive-label { font-size: 0.48rem; text-align: left; }
+  .cs-passive-value { font-size: 0.85rem; }
 
   /* Nav: hide subtitle, smaller title */
   .cs-nav-title { font-size: 1rem; }
@@ -875,5 +925,5 @@ h1, h2, h3, h4 {
   .cs-dragons-hide { display: none !important; }
 
   /* Skill row text compact */
-  .cs-ability-grid > div { font-size: 0.75rem !important; }
+  .cs-ability-grid > div { font-size: 0.74rem !important; }
 }
