@@ -1,15 +1,34 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
+interface Character {
+  id: string
+  name: string
+  race: string | null
+}
+
 export default function JoinCampaignPage() {
   const router = useRouter()
   const [code, setCode] = useState('')
+  const [characters, setCharacters] = useState<Character[]>([])
+  const [selectedCharId, setSelectedCharId] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const supabase = createClient()
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return
+      supabase.from('characters').select('id, name, race')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false })
+        .then(({ data }) => { if (data) setCharacters(data) })
+    })
+  }, []) // eslint-disable-line
 
   async function join(e: React.FormEvent) {
     e.preventDefault()
@@ -17,11 +36,9 @@ export default function JoinCampaignPage() {
     if (!trimmed) return
     setLoading(true); setError('')
 
-    const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/auth/login'); return }
 
-    // Find campaign by invite code
     const { data: campaign, error: lookupErr } = await supabase
       .from('campaigns')
       .select('id, name, dm_id')
@@ -34,12 +51,10 @@ export default function JoinCampaignPage() {
     }
 
     if (campaign.dm_id === user.id) {
-      // DM joining their own campaign — just redirect
       router.push(`/campaigns/${campaign.id}`)
       return
     }
 
-    // Check if already a member
     const { data: existing } = await supabase
       .from('campaign_members')
       .select('id')
@@ -51,8 +66,14 @@ export default function JoinCampaignPage() {
       const { error: joinErr } = await supabase.from('campaign_members').insert({
         campaign_id: campaign.id,
         user_id: user.id,
+        character_id: selectedCharId || null,
       })
       if (joinErr) { setError(joinErr.message); setLoading(false); return }
+    } else if (selectedCharId) {
+      await supabase.from('campaign_members')
+        .update({ character_id: selectedCharId })
+        .eq('campaign_id', campaign.id)
+        .eq('user_id', user.id)
     }
 
     router.push(`/campaigns/${campaign.id}`)
@@ -82,6 +103,28 @@ export default function JoinCampaignPage() {
               style={{ textAlign: 'center', fontSize: '1.2rem', fontFamily: 'Cinzel, serif', letterSpacing: '0.2em', fontWeight: 700 }}
               required
             />
+
+            {characters.length > 0 && (
+              <div>
+                <label style={{ fontSize: '0.68rem', color: 'var(--cs-text-muted)', fontFamily: 'Cinzel, serif', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 4 }}>
+                  Personaje (opcional)
+                </label>
+                <select
+                  value={selectedCharId}
+                  onChange={e => setSelectedCharId(e.target.value)}
+                  className="ifield"
+                  style={{ fontSize: '0.85rem' }}
+                >
+                  <option value="">— Sin personaje por ahora —</option>
+                  {characters.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}{c.race ? ` (${c.race})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {error && (
               <p style={{ color: 'var(--danger)', fontSize: '0.78rem', fontFamily: 'var(--font-montaga)', textAlign: 'center' }}>{error}</p>
             )}

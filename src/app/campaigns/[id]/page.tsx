@@ -36,6 +36,9 @@ interface MapState {
   grid_cols: number
   grid_rows: number
   tokens: Token[]
+  map_offset_x: number
+  map_offset_y: number
+  map_scale: number
 }
 
 interface SheetCharacter {
@@ -50,6 +53,12 @@ interface SheetCharacter {
   character_classes: { class_name: string; level: number }[]
 }
 
+interface MyCharacter {
+  id: string
+  name: string
+  race: string | null
+}
+
 export default function CampaignRoomPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
@@ -61,12 +70,23 @@ export default function CampaignRoomPage() {
   const [isDM, setIsDM] = useState(false)
   const [members, setMembers] = useState<MemberRow[]>([])
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set())
-  const [mapState, setMapState] = useState<MapState>({ map_image_url: null, grid_cols: 20, grid_rows: 15, tokens: [] })
+  const [mapState, setMapState] = useState<MapState>({ map_image_url: null, grid_cols: 20, grid_rows: 15, tokens: [], map_offset_x: 0, map_offset_y: 0, map_scale: 1 })
   const [viewingSheet, setViewingSheet] = useState<SheetCharacter | null>(null)
   const [sheetLoading, setSheetLoading] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  // ── Load initial data ──
+  const [showCharPicker, setShowCharPicker] = useState(false)
+  const [myCharacters, setMyCharacters] = useState<MyCharacter[]>([])
+  const [charPickerLoading, setCharPickerLoading] = useState(false)
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const loadMembers = useCallback(async () => {
+    const { data } = await supabase.from('campaign_members')
+      .select('user_id, character_id, characters(name, race, personality, character_classes(class_name, level, is_primary), character_images(image_url, is_active)), user_profiles(username)')
+      .eq('campaign_id', id)
+    if (data) setMembers(data as unknown as MemberRow[])
+  }, [id])
+
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
@@ -85,18 +105,23 @@ export default function CampaignRoomPage() {
       setCampaign(camp as Campaign)
       setIsDM(camp.dm_id === user.id)
       setMembers((membersData ?? []) as unknown as MemberRow[])
-      if (map) setMapState({ map_image_url: map.map_image_url, grid_cols: map.grid_cols, grid_rows: map.grid_rows, tokens: (map.tokens as Token[]) ?? [] })
+      if (map) setMapState({
+        map_image_url: map.map_image_url,
+        grid_cols: map.grid_cols,
+        grid_rows: map.grid_rows,
+        tokens: (map.tokens as Token[]) ?? [],
+        map_offset_x: map.map_offset_x ?? 0,
+        map_offset_y: map.map_offset_y ?? 0,
+        map_scale: map.map_scale ?? 1,
+      })
 
-      // Set active campaign for dice broadcasting
       setActiveCampaignId(id)
       setLoading(false)
     }
     load()
-
     return () => { setActiveCampaignId(null) }
   }, [id])  // eslint-disable-line
 
-  // ── Presence (online indicators) ──
   useEffect(() => {
     if (!currentUserId) return
     const channel = supabase.channel(`camp-presence-${id}`, { config: { presence: { key: currentUserId } } })
@@ -106,27 +131,31 @@ export default function CampaignRoomPage() {
         setOnlineUsers(ids)
       })
       .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          await channel.track({ user_id: currentUserId })
-        }
+        if (status === 'SUBSCRIBED') await channel.track({ user_id: currentUserId })
       })
     return () => { supabase.removeChannel(channel) }
   }, [currentUserId, id])  // eslint-disable-line
 
-  // ── Realtime map sync ──
   useEffect(() => {
     const channel = supabase
       .channel(`camp-map-${id}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'campaign_map_state', filter: `campaign_id=eq.${id}` },
         (payload) => {
           const r = payload.new as MapState & { tokens: Token[] }
-          setMapState({ map_image_url: r.map_image_url, grid_cols: r.grid_cols, grid_rows: r.grid_rows, tokens: r.tokens ?? [] })
+          setMapState({
+            map_image_url: r.map_image_url,
+            grid_cols: r.grid_cols,
+            grid_rows: r.grid_rows,
+            tokens: r.tokens ?? [],
+            map_offset_x: r.map_offset_x ?? 0,
+            map_offset_y: r.map_offset_y ?? 0,
+            map_scale: r.map_scale ?? 1,
+          })
         })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [id])  // eslint-disable-line
 
-  // ── View sheet modal (DM) ──
   const openSheet = useCallback(async (characterId: string) => {
     setSheetLoading(true)
     const { data } = await supabase
@@ -137,6 +166,27 @@ export default function CampaignRoomPage() {
     setViewingSheet(data as SheetCharacter ?? null)
     setSheetLoading(false)
   }, [])  // eslint-disable-line
+
+  const openCharPicker = useCallback(async () => {
+    if (!currentUserId) return
+    setCharPickerLoading(true)
+    setShowCharPicker(true)
+    const { data } = await supabase.from('characters').select('id, name, race')
+      .eq('user_id', currentUserId)
+      .order('updated_at', { ascending: false })
+    setMyCharacters((data ?? []) as MyCharacter[])
+    setCharPickerLoading(false)
+  }, [currentUserId])  // eslint-disable-line
+
+  const assignCharacter = useCallback(async (charId: string | null) => {
+    if (!currentUserId) return
+    await supabase.from('campaign_members')
+      .update({ character_id: charId })
+      .eq('campaign_id', id)
+      .eq('user_id', currentUserId)
+    setShowCharPicker(false)
+    await loadMembers()
+  }, [currentUserId, id, loadMembers])
 
   function copyCode() {
     if (!campaign) return
@@ -175,7 +225,6 @@ export default function CampaignRoomPage() {
   return (
     <div className="parchment-page" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
 
-      {/* ── Nav ── */}
       <nav style={{ background: '#2c1a0e', padding: '0.6rem 1.25rem', display: 'flex', alignItems: 'center', gap: '1rem', flexShrink: 0 }}>
         <Link href="/campaigns" style={{ fontSize: '0.72rem', color: 'var(--cs-gold)', textDecoration: 'none', fontFamily: 'Cinzel, serif' }}>
           ← Campañas
@@ -190,16 +239,19 @@ export default function CampaignRoomPage() {
         </button>
       </nav>
 
-      {/* ── Main layout ── */}
       <div className="camp-layout" style={{ flex: 1, overflow: 'hidden' }}>
 
-        {/* Left: Party */}
         <div style={{ padding: '1rem', overflowY: 'auto', borderRight: '1px solid rgba(201,173,106,0.2)' }}>
           <h3 className="cs-heading" style={{ fontSize: '0.72rem', marginBottom: '0.75rem' }}>Grupo</h3>
-          <PartyPanel members={partyMembers} isDM={isDM} onViewSheet={openSheet} />
+          <PartyPanel
+            members={partyMembers}
+            isDM={isDM}
+            currentUserId={currentUserId ?? ''}
+            onViewSheet={openSheet}
+            onPickCharacter={openCharPicker}
+          />
         </div>
 
-        {/* Center: Battle Grid */}
         <div style={{ padding: '1rem', overflowY: 'auto' }}>
           <h3 className="cs-heading" style={{ fontSize: '0.72rem', marginBottom: '0.75rem' }}>Mapa</h3>
           <BattleGrid
@@ -210,17 +262,53 @@ export default function CampaignRoomPage() {
             initialMapUrl={mapState.map_image_url}
             initialCols={mapState.grid_cols}
             initialRows={mapState.grid_rows}
+            initialOffsetX={mapState.map_offset_x}
+            initialOffsetY={mapState.map_offset_y}
+            initialScale={mapState.map_scale}
           />
         </div>
 
-        {/* Right: Event Feed */}
         <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', overflow: 'hidden', borderLeft: '1px solid rgba(201,173,106,0.2)' }}>
           <h3 className="cs-heading" style={{ fontSize: '0.72rem', marginBottom: '0.75rem', flexShrink: 0 }}>Tiradas</h3>
           <EventFeed campaignId={id} isDM={isDM} />
         </div>
       </div>
 
-      {/* ── DM Sheet Modal ── */}
+      {showCharPicker && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+          onClick={() => setShowCharPicker(false)}>
+          <div className="parchment-page" style={{ width: '100%', maxWidth: 400, padding: '1.5rem', borderRadius: 8, border: '1px solid var(--cs-gold)' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1rem' }}>
+              <h2 style={{ fontFamily: 'Cinzel, serif', fontSize: '1rem', color: 'var(--cs-accent)', margin: 0 }}>Elige tu personaje</h2>
+              <button onClick={() => setShowCharPicker(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--cs-text-muted)', fontSize: '1rem' }}>✕</button>
+            </div>
+            {charPickerLoading ? (
+              <p style={{ fontFamily: 'Cinzel, serif', color: 'var(--cs-text-muted)', fontSize: '0.85rem' }}>Cargando...</p>
+            ) : myCharacters.length === 0 ? (
+              <p style={{ fontFamily: 'var(--font-montaga)', color: 'var(--cs-text-muted)', fontSize: '0.85rem' }}>
+                No tienes personajes creados.{' '}
+                <Link href="/characters/new" style={{ color: 'var(--cs-gold)' }}>Crear uno</Link>
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {myCharacters.map(c => (
+                  <button key={c.id} onClick={() => assignCharacter(c.id)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 1rem', border: '1px solid var(--cs-gold)', background: 'var(--cs-card)', cursor: 'pointer', borderRadius: 4, textAlign: 'left', width: '100%' }}>
+                    <span style={{ fontFamily: 'Cinzel, serif', fontSize: '0.9rem', fontWeight: 700, color: 'var(--cs-accent)' }}>{c.name}</span>
+                    {c.race && <span style={{ fontSize: '0.72rem', color: 'var(--cs-text-muted)', fontFamily: 'var(--font-montaga)' }}>{c.race}</span>}
+                  </button>
+                ))}
+                <button onClick={() => assignCharacter(null)}
+                  style={{ padding: '0.4rem', border: '1px dashed rgba(201,173,106,0.3)', background: 'transparent', cursor: 'pointer', borderRadius: 4, fontSize: '0.72rem', color: 'var(--cs-text-muted)', fontFamily: 'Cinzel, serif', width: '100%' }}>
+                  Sin personaje
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {(viewingSheet || sheetLoading) && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
           onClick={() => setViewingSheet(null)}>

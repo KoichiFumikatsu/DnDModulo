@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 export interface Token {
@@ -22,6 +22,9 @@ interface Props {
   initialMapUrl: string | null
   initialCols: number
   initialRows: number
+  initialOffsetX?: number
+  initialOffsetY?: number
+  initialScale?: number
   onTokensChange?: (tokens: Token[]) => void
 }
 
@@ -30,12 +33,16 @@ const TOKEN_COLORS = ['#8b1a1a', '#3a6fa8', '#2d7a4f', '#7c3aed', '#d97706', '#0
 export default function BattleGrid({
   campaignId, isDM, currentUserId,
   initialTokens, initialMapUrl, initialCols, initialRows,
+  initialOffsetX = 0, initialOffsetY = 0, initialScale = 1,
   onTokensChange,
 }: Props) {
   const [tokens, setTokens] = useState<Token[]>(initialTokens)
   const [mapUrl, setMapUrl] = useState(initialMapUrl ?? '')
   const [cols, setCols] = useState(initialCols)
   const [rows, setRows] = useState(initialRows)
+  const [mapOffsetX, setMapOffsetX] = useState(initialOffsetX)
+  const [mapOffsetY, setMapOffsetY] = useState(initialOffsetY)
+  const [mapScale, setMapScale] = useState(initialScale)
   const [mapInput, setMapInput] = useState(initialMapUrl ?? '')
   const [showDMControls, setShowDMControls] = useState(false)
   const [newTokenLabel, setNewTokenLabel] = useState('')
@@ -45,13 +52,24 @@ export default function BattleGrid({
 
   const CELL_SIZE = 48
 
-  async function saveMapState(updatedTokens: Token[], updatedMapUrl?: string, updatedCols?: number, updatedRows?: number) {
+  async function saveMapState(
+    updatedTokens: Token[],
+    updatedMapUrl?: string,
+    updatedCols?: number,
+    updatedRows?: number,
+    updatedOffsetX?: number,
+    updatedOffsetY?: number,
+    updatedScale?: number,
+  ) {
     await supabase.from('campaign_map_state').upsert({
       campaign_id: campaignId,
       map_image_url: updatedMapUrl ?? mapUrl,
       grid_cols: updatedCols ?? cols,
       grid_rows: updatedRows ?? rows,
       tokens: updatedTokens,
+      map_offset_x: updatedOffsetX ?? mapOffsetX,
+      map_offset_y: updatedOffsetY ?? mapOffsetY,
+      map_scale: updatedScale ?? mapScale,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'campaign_id' })
     onTokensChange?.(updatedTokens)
@@ -99,7 +117,7 @@ export default function BattleGrid({
 
   function applyMapSettings() {
     setMapUrl(mapInput)
-    saveMapState(tokens, mapInput, cols, rows)
+    saveMapState(tokens, mapInput, cols, rows, mapOffsetX, mapOffsetY, mapScale)
   }
 
   const cellStyle: React.CSSProperties = {
@@ -120,12 +138,12 @@ export default function BattleGrid({
         overflow: 'auto',
         flexShrink: 0,
         backgroundImage: mapUrl ? `url(${mapUrl})` : 'none',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        backgroundSize: mapUrl ? `${Math.round(mapScale * 100)}%` : 'cover',
+        backgroundPosition: mapUrl ? `${mapOffsetX}px ${mapOffsetY}px` : 'center',
+        backgroundRepeat: 'no-repeat',
         backgroundColor: mapUrl ? undefined : 'rgba(0,0,0,0.15)',
         border: '1px solid var(--cs-gold)',
       }}>
-        {/* Grid overlay */}
         <div style={{
           position: 'absolute', inset: 0,
           display: 'grid',
@@ -190,11 +208,37 @@ export default function BattleGrid({
                   <input type="number" value={rows} onChange={e => setRows(Math.max(5, Math.min(30, +e.target.value)))}
                     className="ifield" style={{ fontSize: '0.75rem', width: 52 }} />
                 </div>
-                <button onClick={applyMapSettings}
-                  style={{ fontSize: '0.7rem', padding: '3px 12px', borderRadius: 10, border: '1px solid var(--cs-gold)', background: 'transparent', color: 'var(--cs-gold)', cursor: 'pointer' }}>
-                  Aplicar
+              </div>
+
+              {/* Map pan / scale */}
+              <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                <label style={{ fontSize: '0.62rem', color: 'var(--cs-text-muted)', fontFamily: 'Cinzel, serif', whiteSpace: 'nowrap' }}>Escala</label>
+                <input type="range" min={0.25} max={4} step={0.05} value={mapScale}
+                  onChange={e => setMapScale(+e.target.value)}
+                  style={{ flex: 1, minWidth: 80, accentColor: 'var(--cs-gold)' }} />
+                <span style={{ fontSize: '0.65rem', color: 'var(--cs-gold)', fontFamily: 'Cinzel, serif', minWidth: 36 }}>{Math.round(mapScale * 100)}%</span>
+                <button onClick={() => setMapScale(1)}
+                  style={{ fontSize: '0.6rem', padding: '1px 6px', borderRadius: 6, border: '1px solid rgba(201,173,106,0.4)', background: 'transparent', color: 'var(--cs-text-muted)', cursor: 'pointer' }}>
+                  ×1
                 </button>
               </div>
+              <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                <label style={{ fontSize: '0.62rem', color: 'var(--cs-text-muted)', fontFamily: 'Cinzel, serif' }}>Pos X</label>
+                <input type="number" value={mapOffsetX} onChange={e => setMapOffsetX(+e.target.value)}
+                  className="ifield" style={{ fontSize: '0.75rem', width: 64 }} />
+                <label style={{ fontSize: '0.62rem', color: 'var(--cs-text-muted)', fontFamily: 'Cinzel, serif' }}>Y</label>
+                <input type="number" value={mapOffsetY} onChange={e => setMapOffsetY(+e.target.value)}
+                  className="ifield" style={{ fontSize: '0.75rem', width: 64 }} />
+                <button onClick={() => { setMapOffsetX(0); setMapOffsetY(0) }}
+                  style={{ fontSize: '0.6rem', padding: '1px 6px', borderRadius: 6, border: '1px solid rgba(201,173,106,0.4)', background: 'transparent', color: 'var(--cs-text-muted)', cursor: 'pointer' }}>
+                  Reset
+                </button>
+              </div>
+
+              <button onClick={applyMapSettings}
+                style={{ fontSize: '0.7rem', padding: '3px 12px', borderRadius: 10, border: '1px solid var(--cs-gold)', background: 'transparent', color: 'var(--cs-gold)', cursor: 'pointer', alignSelf: 'flex-start' }}>
+                Aplicar mapa
+              </button>
 
               {/* Add token */}
               <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>

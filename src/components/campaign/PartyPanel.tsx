@@ -17,10 +17,12 @@ interface Member {
 interface Props {
   members: Member[]
   isDM: boolean
+  currentUserId: string
   onViewSheet?: (characterId: string) => void
+  onPickCharacter?: () => void
 }
 
-export default function PartyPanel({ members, isDM, onViewSheet }: Props) {
+export default function PartyPanel({ members, isDM, currentUserId, onViewSheet, onPickCharacter }: Props) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
       {members.length === 0 && (
@@ -52,7 +54,7 @@ export default function PartyPanel({ members, isDM, onViewSheet }: Props) {
           {/* Info */}
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontFamily: 'Cinzel, serif', fontSize: '0.82rem', fontWeight: 700, color: 'var(--cs-accent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {m.characterName ?? '—'}
+              {m.characterName ?? <span style={{ color: 'var(--cs-text-muted)', fontStyle: 'italic' }}>Sin personaje</span>}
             </div>
             <div style={{ fontSize: '0.62rem', color: 'var(--cs-text-muted)', fontFamily: 'var(--font-montaga)' }}>
               {[m.race, m.className, m.level ? `Nv${m.level}` : null].filter(Boolean).join(' · ')}
@@ -67,6 +69,14 @@ export default function PartyPanel({ members, isDM, onViewSheet }: Props) {
             <button onClick={() => onViewSheet(m.characterId!)}
               style={{ flexShrink: 0, fontSize: '0.6rem', padding: '2px 8px', borderRadius: 10, border: '1px solid var(--cs-gold)', background: 'transparent', color: 'var(--cs-gold)', cursor: 'pointer', fontFamily: 'Cinzel, serif' }}>
               Ver PJ
+            </button>
+          )}
+
+          {/* Player: pick/change character for own card */}
+          {!isDM && m.userId === currentUserId && onPickCharacter && (
+            <button onClick={onPickCharacter}
+              style={{ flexShrink: 0, fontSize: '0.6rem', padding: '2px 8px', borderRadius: 10, border: '1px solid var(--cs-accent)', background: 'transparent', color: 'var(--cs-accent)', cursor: 'pointer', fontFamily: 'Cinzel, serif' }}>
+              {m.characterId ? 'Cambiar PJ' : 'Elegir PJ'}
             </button>
           )}
         </div>
