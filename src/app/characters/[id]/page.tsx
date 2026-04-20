@@ -270,6 +270,7 @@ export default async function CharacterPage({
                 skillProfs={skillProfs.map(p => ({ name: p.name, proficiency_level: p.proficiency_level, has_advantage: p.has_advantage }))}
                 saveProfs={saveProfs.map(p => ({ name: p.name }))}
                 hitDiceTotal={character.hit_dice_total || ''}
+                characterName={character.name}
               />
             </div>
 
@@ -398,6 +399,7 @@ export default async function CharacterPage({
               int: character.int, wis: character.wis, cha: character.cha,
               proficiency_bonus: character.proficiency_bonus,
             }}
+            characterName={character.name}
           />
         )}
 

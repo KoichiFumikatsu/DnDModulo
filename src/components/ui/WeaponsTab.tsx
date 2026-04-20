@@ -27,6 +27,7 @@ interface CharStats {
 interface Props {
   weapons: Weapon[]
   character?: CharStats
+  characterName?: string
 }
 
 /* ── Bonus type ── */
@@ -106,7 +107,7 @@ const PRESET_LABELS = ['Inspiración', 'Infusión', 'Attunement', 'Bendición', 
 
 /* ══════════════════════════════════════════════════════════════ */
 
-export default function WeaponsTab({ weapons, character }: Props) {
+export default function WeaponsTab({ weapons, character, characterName }: Props) {
   const [lastRoll, setLastRoll] = useState<RollResult | null>(null)
 
   // bonuses[weaponId] = Bonus[]
@@ -170,7 +171,7 @@ export default function WeaponsTab({ weapons, character }: Props) {
     const roll = { type: 'attack' as const, weaponName: w.name, d20, total, detail: parts.join(' '), isCrit: d20 === 20, isMiss: d20 === 1 }
     setLastRoll(roll)
     const campId = getActiveCampaignId()
-    if (campId) broadcastRoll(createClient(), campId, { type: 'attack', label: w.name, total, d20, isCrit: roll.isCrit, isMiss: roll.isMiss, detail: parts.join(' ') })
+    if (campId) broadcastRoll(createClient(), campId, { type: 'attack', label: w.name, total, d20, isCrit: roll.isCrit, isMiss: roll.isMiss, detail: parts.join(' ') }, characterName)
   }
 
   function rollDamage(w: Weapon) {
@@ -200,7 +201,7 @@ export default function WeaponsTab({ weapons, character }: Props) {
     const dmgDetail = `${w.damage ?? ''}${abilityMod !== 0 ? signStr(abilityMod) : ''} → ${diceOnly.detail}`
     setLastRoll({ type: 'damage', weaponName: w.name, total, detail: dmgDetail, extras, breakdown })
     const campId = getActiveCampaignId()
-    if (campId) broadcastRoll(createClient(), campId, { type: 'damage', label: w.name, total, detail: dmgDetail })
+    if (campId) broadcastRoll(createClient(), campId, { type: 'damage', label: w.name, total, detail: dmgDetail }, characterName)
   }
 
   function atkDisplay(w: Weapon): string {

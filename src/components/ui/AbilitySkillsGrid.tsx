@@ -20,12 +20,13 @@ interface Props {
   skillProfs: { name: string; proficiency_level: string; has_advantage?: boolean }[]
   saveProfs: { name: string }[]
   hitDiceTotal: string
+  characterName?: string
 }
 
 function modNum(score: number) { return Math.floor((score - 10) / 2) }
 function sign(n: number) { return n >= 0 ? `+${n}` : `${n}` }
 
-export default function AbilitySkillsGrid({ abilities, proficiencyBonus, skillProfs, saveProfs, hitDiceTotal }: Props) {
+export default function AbilitySkillsGrid({ abilities, proficiencyBonus, skillProfs, saveProfs, hitDiceTotal, characterName }: Props) {
   const [lastRoll, setLastRoll] = useState<SkillRoll | null>(null)
 
   function calcBonus(skillKey: string, ability: string): number {
@@ -51,7 +52,7 @@ export default function AbilitySkillsGrid({ abilities, proficiencyBonus, skillPr
       broadcastRoll(createClient(), campId, {
         type: 'skill', label: skillKey,
         total: result.total, d20: kept, detail: mode !== 'normal' ? mode : undefined,
-      })
+      }, characterName)
     }
   }
 
