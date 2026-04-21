@@ -204,57 +204,26 @@ export default function CampaignRoomPage() {
     setCharPickerLoading(false)
   }, [currentUserId])  // eslint-disable-line
 
+  const [pickerError, setPickerError] = useState<string | null>(null)
+
   const assignCharacter = useCallback(async (charId: string | null) => {
     if (!currentUserId) return
-    await supabase.from('campaign_members')
-      .update({ character_id: charId })
-      .eq('campaign_id', id)
-      .eq('user_id', currentUserId)
-
-    // Auto-add token when character is assigned and no token exists for this user
-    if (charId) {
-      const char = myCharacters.find(c => c.id === charId)
-      const portrait = char?.character_images?.find(i => i.is_active)?.image_url ?? null
-      const hasToken = mapState.tokens.some(t => t.owner_user_id === currentUserId)
-
-      if (!hasToken && char) {
-        const { data: currentMap } = await supabase
-          .from('campaign_map_state')
-          .select('tokens, map_image_url, grid_cols, grid_rows, map_offset_x, map_offset_y, map_scale')
-          .eq('campaign_id', id)
-          .single()
-
-        const currentTokens = (currentMap?.tokens as Token[]) ?? []
-        const newToken: Token = {
-          id: crypto.randomUUID(),
-          label: char.name.slice(0, 3).toUpperCase(),
-          color: '#3a6fa8',
-          col: 0, row: 0,
-          portrait_url: portrait,
-          character_id: charId,
-          owner_user_id: currentUserId,
-        }
-        const updatedTokens = [...currentTokens, newToken]
-
-        await supabase.from('campaign_map_state').upsert({
-          campaign_id: id,
-          map_image_url: currentMap?.map_image_url ?? null,
-          grid_cols: currentMap?.grid_cols ?? 20,
-          grid_rows: currentMap?.grid_rows ?? 15,
-          tokens: updatedTokens,
-          map_offset_x: currentMap?.map_offset_x ?? 0,
-          map_offset_y: currentMap?.map_offset_y ?? 0,
-          map_scale: currentMap?.map_scale ?? 1,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'campaign_id' })
-
-        setMapState(prev => ({ ...prev, tokens: updatedTokens }))
-      }
+    setPickerError(null)
+    const res = await fetch(`/api/campaigns/${id}/assign-character`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ characterId: charId }),
+    })
+    if (!res.ok) {
+      const { error } = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
+      setPickerError(error ?? 'No se pudo asignar el personaje')
+      return
     }
-
+    const { tokens } = await res.json() as { tokens?: Token[] }
+    if (tokens) setMapState(prev => ({ ...prev, tokens }))
     setShowCharPicker(false)
     await loadMembers()
-  }, [currentUserId, id, loadMembers, mapState.tokens, myCharacters])  // eslint-disable-line
+  }, [currentUserId, id, loadMembers])  // eslint-disable-line
 
   function copyCode() {
     if (!campaign) return
@@ -372,6 +341,11 @@ export default function CampaignRoomPage() {
               <h2 style={{ fontFamily: 'Cinzel, serif', fontSize: '1rem', color: 'var(--cs-accent)', margin: 0 }}>Elige tu personaje</h2>
               <button onClick={() => setShowCharPicker(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--cs-text-muted)', fontSize: '1rem' }}>✕</button>
             </div>
+            {pickerError && (
+              <p style={{ fontFamily: 'var(--font-montaga)', color: 'var(--danger, #b85450)', fontSize: '0.78rem', marginBottom: '0.5rem' }}>
+                {pickerError}
+              </p>
+            )}
             {charPickerLoading ? (
               <p style={{ fontFamily: 'Cinzel, serif', color: 'var(--cs-text-muted)', fontSize: '0.85rem' }}>Cargando...</p>
             ) : myCharacters.length === 0 ? (

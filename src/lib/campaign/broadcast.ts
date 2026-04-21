@@ -30,9 +30,11 @@ export async function broadcastRoll(
   characterName?: string
 ) {
   try {
+    const { data: { session } } = await supabase.auth.getSession()
     await supabase.from('campaign_events').insert({
       campaign_id: campaignId,
-      type: 'dice_roll',
+      user_id: session?.user.id ?? null,
+      type: roll.type,
       character_name: characterName ?? roll.characterName ?? null,
       data: roll,
       is_private: roll.isPrivate ?? false,
