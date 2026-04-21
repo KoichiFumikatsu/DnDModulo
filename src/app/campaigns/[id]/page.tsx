@@ -28,7 +28,7 @@ interface MemberRow {
     character_classes: { class_name: string; level: number; is_primary: boolean }[]
     character_images: { image_url: string; is_active: boolean }[]
   } | null
-  user_profiles: { username: string | null } | null
+  username: string | null
 }
 
 interface MapState {
@@ -84,9 +84,17 @@ export default function CampaignRoomPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const loadMembers = useCallback(async () => {
     const { data } = await supabase.from('campaign_members')
-      .select('user_id, character_id, characters(name, race, personality, character_classes(class_name, level, is_primary), character_images(image_url, is_active)), user_profiles(username)')
+      .select('user_id, character_id, characters(name, race, personality, character_classes(class_name, level, is_primary), character_images(image_url, is_active))')
       .eq('campaign_id', id)
-    if (data) setMembers(data as unknown as MemberRow[])
+    if (!data) return
+    const userIds = (data as { user_id: string }[]).map(m => m.user_id)
+    const { data: profiles } = await supabase.from('user_profiles').select('id, username').in('id', userIds)
+    const nameById = new Map((profiles ?? []).map(p => [p.id, p.username]))
+    const merged = (data as unknown as Omit<MemberRow, 'username'>[]).map(m => ({
+      ...m,
+      username: nameById.get(m.user_id) ?? null,
+    }))
+    setMembers(merged)
   }, [id])
 
   useEffect(() => {
@@ -98,7 +106,7 @@ export default function CampaignRoomPage() {
       const [{ data: camp }, { data: membersData }, { data: map }] = await Promise.all([
         supabase.from('campaigns').select('*').eq('id', id).single(),
         supabase.from('campaign_members')
-          .select('user_id, character_id, characters(name, race, personality, character_classes(class_name, level, is_primary), character_images(image_url, is_active)), user_profiles(username)')
+          .select('user_id, character_id, characters(name, race, personality, character_classes(class_name, level, is_primary), character_images(image_url, is_active))')
           .eq('campaign_id', id),
         supabase.from('campaign_map_state').select('*').eq('campaign_id', id).single(),
       ])
@@ -106,15 +114,17 @@ export default function CampaignRoomPage() {
       if (!camp) { router.push('/campaigns'); return }
       setCampaign(camp as Campaign)
       setIsDM(camp.dm_id === user.id)
-      setMembers((membersData ?? []) as unknown as MemberRow[])
 
-      // Fetch DM username for party display
-      const { data: dmProfile } = await supabase
+      // Fetch usernames for members and DM in one query (no FK to user_profiles, so no embed).
+      const memberRows = (membersData ?? []) as unknown as Omit<MemberRow, 'username'>[]
+      const profileIds = Array.from(new Set([camp.dm_id, ...memberRows.map(m => m.user_id)]))
+      const { data: profiles } = await supabase
         .from('user_profiles')
-        .select('username')
-        .eq('id', camp.dm_id)
-        .single()
-      setDmUsername(dmProfile?.username ?? null)
+        .select('id, username')
+        .in('id', profileIds)
+      const nameById = new Map((profiles ?? []).map(p => [p.id, p.username]))
+      setMembers(memberRows.map(m => ({ ...m, username: nameById.get(m.user_id) ?? null })))
+      setDmUsername(nameById.get(camp.dm_id) ?? null)
 
       if (map) setMapState({
         map_image_url: map.map_image_url,
@@ -129,10 +139,12 @@ export default function CampaignRoomPage() {
       setActiveCampaignId(id)
       setLoading(false)
 
-      // Auto-open character picker if player has no character assigned
+      // Auto-open character picker if player has no character assigned.
+      // If they have a character but no token on the map (e.g. assigned before
+      // the API route existed), trigger the idempotent assign to create it.
       const isPlayerDM = camp.dm_id === user.id
       if (!isPlayerDM) {
-        const myRow = (membersData ?? []).find((m: { user_id: string; character_id: string | null }) => m.user_id === user.id)
+        const myRow = memberRows.find(m => m.user_id === user.id)
         if (myRow && !myRow.character_id) {
           const { data: chars } = await supabase.from('characters')
             .select('id, name, race, character_images(image_url, is_active)')
@@ -140,6 +152,20 @@ export default function CampaignRoomPage() {
             .order('updated_at', { ascending: false })
           setMyCharacters((chars ?? []) as unknown as MyCharacter[])
           setShowCharPicker(true)
+        } else if (myRow?.character_id) {
+          const tokens = (map?.tokens as Token[] | undefined) ?? []
+          const hasToken = tokens.some(t => t.owner_user_id === user.id)
+          if (!hasToken) {
+            const res = await fetch(`/api/campaigns/${id}/assign-character`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ characterId: myRow.character_id }),
+            })
+            if (res.ok) {
+              const { tokens: newTokens } = await res.json() as { tokens?: Token[] }
+              if (newTokens) setMapState(prev => ({ ...prev, tokens: newTokens }))
+            }
+          }
         }
       }
     }
@@ -248,7 +274,7 @@ export default function CampaignRoomPage() {
     const portrait = m.characters?.character_images?.find(i => i.is_active)?.image_url ?? null
     return {
       userId: m.user_id,
-      username: m.user_profiles?.username ?? 'Jugador',
+      username: m.username ?? 'Jugador',
       characterId: m.character_id,
       characterName: m.characters?.name ?? null,
       characterUrl: m.character_id ? `/characters/${m.character_id}` : null,
