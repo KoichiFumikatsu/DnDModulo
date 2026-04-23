@@ -2,6 +2,8 @@
 
 import { useState, useTransition, useEffect, useRef } from 'react'
 import { updateSlotUsed } from '@/app/characters/[id]/actions'
+import { broadcastRoll, getActiveCampaignId } from '@/lib/campaign/broadcast'
+import { createClient } from '@/lib/supabase/client'
 
 interface SpellSlot {
   classId: string
@@ -34,6 +36,7 @@ interface Props {
   classes: ClassData[]
   slots: SpellSlot[]
   spells: Spell[]
+  characterName?: string
 }
 
 type BuffTarget = 'attack' | 'damage' | 'both' | 'advantage'
@@ -253,11 +256,12 @@ const inputStyle: React.CSSProperties = {
   color: 'var(--cs-text)', borderRadius: 4, outline: 'none',
 }
 
-export default function SpellsTab({ characterId, classes, slots: initialSlots, spells }: Props) {
+export default function SpellsTab({ characterId, classes, slots: initialSlots, spells, characterName }: Props) {
   const [slots, setSlots] = useState<SpellSlot[]>(initialSlots)
   const [, startTransition] = useTransition()
   const [lastRoll, setLastRoll] = useState<SpellRollResult | null>(null)
   const [selectedSpell, setSelectedSpell] = useState<string | null>(null)
+  const supabase = createClient()
 
   /* ── Structured multi-buff system ── */
   const [tempBuffs, setTempBuffs] = useState<TempBuff[]>([])
@@ -323,7 +327,16 @@ export default function SpellsTab({ characterId, classes, slots: initialSlots, s
       total += b.total
       parts.push(...b.parts.map(p => `+${p}`))
     }
-    setLastRoll({ spellName: spell.name, type: 'attack', d20, total, detail: parts.join(' '), isCrit: d20 === 20, isMiss: d20 === 1 })
+    const result: SpellRollResult = { spellName: spell.name, type: 'attack', d20, total, detail: parts.join(' '), isCrit: d20 === 20, isMiss: d20 === 1 }
+    setLastRoll(result)
+    const campaignId = getActiveCampaignId()
+    if (campaignId) {
+      broadcastRoll(supabase, campaignId, {
+        type: 'spell', label: spell.name, total, d20,
+        detail: `atk · ${result.detail}`,
+        isCrit: result.isCrit, isMiss: result.isMiss,
+      }, characterName)
+    }
   }
 
   function rollDamage(spell: Spell) {
@@ -337,7 +350,15 @@ export default function SpellsTab({ characterId, classes, slots: initialSlots, s
       total += b.total
       parts.push(...b.parts.map(p => `+${p}`))
     }
-    setLastRoll({ spellName: spell.name, type: 'damage', total, detail: parts.join(' ') })
+    const result: SpellRollResult = { spellName: spell.name, type: 'damage', total, detail: parts.join(' ') }
+    setLastRoll(result)
+    const campaignId = getActiveCampaignId()
+    if (campaignId) {
+      broadcastRoll(supabase, campaignId, {
+        type: 'damage', label: spell.name, total,
+        detail: `dmg · ${result.detail}`,
+      }, characterName)
+    }
   }
 
   return (

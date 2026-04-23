@@ -8,7 +8,7 @@ import { setActiveCampaignId } from '@/lib/campaign/broadcast'
 import PartyPanel from '@/components/campaign/PartyPanel'
 import EventFeed from '@/components/campaign/EventFeed'
 import BattleGrid from '@/components/campaign/BattleGrid'
-import type { Token, MapEffect } from '@/components/campaign/BattleGrid'
+import type { Token, MapEffect, CastableWeapon } from '@/components/campaign/BattleGrid'
 
 interface Campaign {
   id: string
@@ -90,6 +90,8 @@ export default function CampaignRoomPage() {
   const [charPickerLoading, setCharPickerLoading] = useState(false)
   const [speedByCharacter, setSpeedByCharacter] = useState<Record<string, number>>({})
   const [mySpells, setMySpells] = useState<CastableSpell[]>([])
+  const [myWeapons, setMyWeapons] = useState<CastableWeapon[]>([])
+  const [myCharacterName, setMyCharacterName] = useState<string | null>(null)
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const loadMembers = useCallback(async () => {
@@ -159,12 +161,19 @@ export default function CampaignRoomPage() {
       // the API route existed), trigger the idempotent assign to create it.
       const myMember = memberRows.find(m => m.user_id === user.id)
       if (myMember?.character_id) {
-        const { data: spells } = await supabase
-          .from('character_spells')
-          .select('id, name, spell_level, damage')
-          .eq('character_id', myMember.character_id)
-          .order('spell_level')
+        const [{ data: spells }, { data: weapons }] = await Promise.all([
+          supabase.from('character_spells')
+            .select('id, name, spell_level, damage')
+            .eq('character_id', myMember.character_id)
+            .order('spell_level'),
+          supabase.from('character_weapons')
+            .select('id, name, range, damage')
+            .eq('character_id', myMember.character_id)
+            .order('sort_order'),
+        ])
         setMySpells((spells ?? []) as CastableSpell[])
+        setMyWeapons((weapons ?? []) as CastableWeapon[])
+        setMyCharacterName(myMember.characters?.name ?? null)
       }
 
       const isPlayerDM = camp.dm_id === user.id
@@ -378,6 +387,8 @@ export default function CampaignRoomPage() {
             initialEffects={mapState.active_effects}
             speedByCharacter={speedByCharacter}
             mySpells={mySpells}
+            myWeapons={myWeapons}
+            myCharacterName={myCharacterName}
           />
         </div>
 

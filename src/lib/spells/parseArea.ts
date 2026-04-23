@@ -47,11 +47,39 @@ export function parseSpell(range: string | undefined | null, description: string
 }
 
 export type Direction4 = 'n' | 's' | 'e' | 'w'
+export type Direction8 = Direction4 | 'ne' | 'nw' | 'se' | 'sw'
 
-export function pickCardinal(dc: number, dr: number): Direction4 {
+const CARDINAL4 = new Set<Direction8>(['n', 's', 'e', 'w'])
+
+export function pickCardinal(dc: number, dr: number): Direction8 {
   if (dc === 0 && dr === 0) return 'e'
-  if (Math.abs(dc) >= Math.abs(dr)) return dc >= 0 ? 'e' : 'w'
-  return dr >= 0 ? 's' : 'n'
+  // Screen coords: dr positive = south. Snap the angle to the nearest 45°.
+  const angle = Math.atan2(dr, dc) * 180 / Math.PI
+  const snapped = (Math.round(angle / 45) * 45 + 360) % 360
+  switch (snapped) {
+    case 0: return 'e'
+    case 45: return 'se'
+    case 90: return 's'
+    case 135: return 'sw'
+    case 180: return 'w'
+    case 225: return 'nw'
+    case 270: return 'n'
+    case 315: return 'ne'
+    default: return 'e'
+  }
+}
+
+function directionVector(d: Direction8): [number, number] {
+  switch (d) {
+    case 'e': return [1, 0]
+    case 'w': return [-1, 0]
+    case 's': return [0, 1]
+    case 'n': return [0, -1]
+    case 'ne': return [1, -1]
+    case 'nw': return [-1, -1]
+    case 'se': return [1, 1]
+    case 'sw': return [-1, 1]
+  }
 }
 
 export interface ShapeParams {
@@ -59,7 +87,7 @@ export interface ShapeParams {
   sizeCells: number
   originCol: number
   originRow: number
-  direction?: Direction4
+  direction?: Direction8
 }
 
 // Return the set of (col,row) keys covered by the given shape.
@@ -81,26 +109,48 @@ export function shapeCells(p: ShapeParams): Set<string> {
     }
   } else if (shape === 'cone') {
     const dir = p.direction ?? 'e'
-    for (let d = 1; d <= sizeCells; d++) {
-      for (let k = -d; k <= d; k++) {
-        let c = oc, r = or
-        if (dir === 'e') { c = oc + d; r = or + k }
-        else if (dir === 'w') { c = oc - d; r = or + k }
-        else if (dir === 's') { c = oc + k; r = or + d }
-        else if (dir === 'n') { c = oc + k; r = or - d }
-        out.add(`${c},${r}`)
+    if (CARDINAL4.has(dir)) {
+      // Straight cone widening by ±d at depth d.
+      for (let d = 1; d <= sizeCells; d++) {
+        for (let k = -d; k <= d; k++) {
+          let c = oc, r = or
+          if (dir === 'e') { c = oc + d; r = or + k }
+          else if (dir === 'w') { c = oc - d; r = or + k }
+          else if (dir === 's') { c = oc + k; r = or + d }
+          else if (dir === 'n') { c = oc + k; r = or - d }
+          out.add(`${c},${r}`)
+        }
+      }
+    } else {
+      // Diagonal cone: quadrant extending outward sizeCells × sizeCells.
+      const [cStep, rStep] = directionVector(dir)
+      for (let dc = 1; dc <= sizeCells; dc++) {
+        for (let dr = 1; dr <= sizeCells; dr++) {
+          out.add(`${oc + dc * cStep},${or + dr * rStep}`)
+        }
       }
     }
   } else if (shape === 'line') {
     const dir = p.direction ?? 'e'
+    const [cStep, rStep] = directionVector(dir)
     for (let d = 1; d <= sizeCells; d++) {
-      let c = oc, r = or
-      if (dir === 'e') c = oc + d
-      else if (dir === 'w') c = oc - d
-      else if (dir === 's') r = or + d
-      else if (dir === 'n') r = or - d
-      out.add(`${c},${r}`)
+      out.add(`${oc + cStep * d},${or + rStep * d}`)
     }
   }
   return out
+}
+
+// Weapon range parser — prefer meters (user-entered), fall back to feet.
+export function parseWeaponRange(range: string | null | undefined): number {
+  if (!range) return 1
+  const low = range.toLowerCase()
+  if (/melee|touch|toque|cuerpo/.test(low)) return 1
+  let m = low.match(/(\d+(?:\.\d+)?)\s*m(?!in|\w)/)
+  if (m) return Math.max(1, Math.round(Number(m[1]) / 2))
+  m = low.match(/(\d+)\s*(?:feet|ft|foot|pies)/)
+  if (m) return Math.max(1, Math.round(Number(m[1]) / 6))
+  // Bare number → meters (user convention).
+  m = low.match(/^(\d+)/)
+  if (m) return Math.max(1, Math.round(Number(m[1]) / 2))
+  return 1
 }

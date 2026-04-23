@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { parseSpell, shapeCells, pickCardinal, type AoeShape, type Direction4, type ParsedSpell } from '@/lib/spells/parseArea'
+import { parseSpell, parseWeaponRange, shapeCells, pickCardinal, type AoeShape, type Direction8, type ParsedSpell } from '@/lib/spells/parseArea'
+import { broadcastRoll, getActiveCampaignId } from '@/lib/campaign/broadcast'
 
 export interface Token {
   id: string
@@ -26,13 +27,20 @@ export interface MapEffect {
   caster_token_id: string | null
   created_at: string
   shape?: AoeShape            // defaults to 'circle' for legacy rows
-  direction?: Direction4      // only relevant for cone/line
+  direction?: Direction8      // only relevant for cone/line
 }
 
 export interface CastableSpell {
   id: string
   name: string
   spell_level: number
+  damage: string | null
+}
+
+export interface CastableWeapon {
+  id: string
+  name: string
+  range: string | null
   damage: string | null
 }
 
@@ -51,6 +59,8 @@ interface Props {
   onTokensChange?: (tokens: Token[]) => void
   speedByCharacter?: Record<string, number>
   mySpells?: CastableSpell[]
+  myWeapons?: CastableWeapon[]
+  myCharacterName?: string | null
 }
 
 const METERS_PER_CELL = 2
@@ -75,7 +85,8 @@ function hexWithAlpha(hex: string, alpha: number): string {
 }
 
 interface CastMode {
-  spell: CastableSpell
+  kind: 'spell' | 'weapon'
+  name: string
   parsed: ParsedSpell
   casterTokenId: string
   color: string
@@ -89,6 +100,8 @@ export default function BattleGrid({
   onTokensChange,
   speedByCharacter,
   mySpells = [],
+  myWeapons = [],
+  myCharacterName,
 }: Props) {
   const [tokens, setTokens] = useState<Token[]>(initialTokens)
   const [dragTokenId, setDragTokenId] = useState<string | null>(null)
@@ -101,6 +114,7 @@ export default function BattleGrid({
   const [spellDetails, setSpellDetails] = useState<Record<string, { range?: string; description?: string | null }>>({})
   const [hoverSpellId, setHoverSpellId] = useState<string | null>(null)
   const [spellLoadingId, setSpellLoadingId] = useState<string | null>(null)
+  const [castDirection, setCastDirection] = useState<Direction8>('e')
   const prevInitialTokensRef = useRef(initialTokens)
   const prevInitialEffectsRef = useRef(initialEffects)
 
@@ -209,10 +223,22 @@ export default function BattleGrid({
     }
     const parsed = parseSpell(detail?.range, detail?.description)
     const color = EFFECT_COLORS[spell.spell_level % EFFECT_COLORS.length]
-    setCastMode({ spell, parsed, casterTokenId: myToken.id, color })
+    setCastMode({ kind: 'spell', name: spell.name, parsed, casterTokenId: myToken.id, color })
     setSelectedTokenId(null)
     setShowEffectForm(false)
     setHoverCell(null)
+    setCastDirection('e')
+  }
+
+  function beginCastWeapon(weapon: CastableWeapon) {
+    if (!myToken) return
+    const rangeCells = parseWeaponRange(weapon.range)
+    const parsed: ParsedSpell = { rangeCells, aoe: null }
+    setCastMode({ kind: 'weapon', name: weapon.name, parsed, casterTokenId: myToken.id, color: '#b85450' })
+    setSelectedTokenId(null)
+    setShowEffectForm(false)
+    setHoverCell(null)
+    setCastDirection('e')
   }
 
   function cancelCast() {
@@ -224,23 +250,21 @@ export default function BattleGrid({
     if (!castMode) return
     const caster = tokens.find(t => t.id === castMode.casterTokenId)
     if (!caster) return
-    const { parsed, spell, color } = castMode
-    // Target must be inside range (unless range is 0 = self)
+    const { parsed, name, color, kind } = castMode
     const dc = targetCol - caster.col
     const dr = targetRow - caster.row
     const dist = Math.abs(dc) + Math.abs(dr)
     if (parsed.rangeCells === 0) {
-      // Self: target only used to pick direction for cone/line
+      // Self-origin: target is only used to pick direction.
     } else if (dist === 0 || dist > parsed.rangeCells) return
 
     let originCol = targetCol
     let originRow = targetRow
     let shape: AoeShape = parsed.aoe?.shape ?? 'circle'
     let sizeCells = parsed.aoe?.sizeCells ?? 1
-    let direction: Direction4 | undefined
+    let direction: Direction8 | undefined
 
     if (parsed.rangeCells === 0) {
-      // Self-origin spells: AoE is anchored at the caster.
       originCol = caster.col
       originRow = caster.row
       if (shape === 'cone' || shape === 'line') direction = pickCardinal(dc, dr)
@@ -249,14 +273,14 @@ export default function BattleGrid({
       originRow = caster.row
       direction = pickCardinal(dc, dr)
     } else if (!parsed.aoe) {
-      // No AoE parsed → treat as a 1-cell marker at target.
+      // Weapons and no-AoE spells → single-cell marker at target.
       shape = 'circle'
       sizeCells = 0
     }
 
     const fx: MapEffect = {
       id: crypto.randomUUID(),
-      name: spell.name,
+      name,
       origin_col: originCol,
       origin_row: originRow,
       radius_cells: sizeCells,
@@ -270,6 +294,19 @@ export default function BattleGrid({
     const updated = [...effects, fx]
     setEffects(updated)
     saveMapState(tokens, undefined, undefined, undefined, undefined, undefined, undefined, updated)
+
+    const campaignId = getActiveCampaignId()
+    if (campaignId) {
+      const shapeLabel = parsed.aoe ? `${shape} ${parsed.aoe.sizeCells * METERS_PER_CELL}m` : 'objetivo'
+      const targetLabel = parsed.rangeCells === 0 && direction ? `dirección ${direction.toUpperCase()}` : `(${targetCol},${targetRow})`
+      broadcastRoll(supabase, campaignId, {
+        type: kind === 'spell' ? 'spell' : 'attack',
+        label: name,
+        total: 0,
+        detail: `${kind === 'weapon' ? 'ataque' : 'lanzamiento'} · ${shapeLabel} → ${targetLabel}`,
+      }, myCharacterName ?? undefined)
+    }
+
     setCastMode(null)
     setHoverCell(null)
   }
@@ -386,22 +423,36 @@ export default function BattleGrid({
           }
         }
       }
-      if (hoverCell && rangeKeys.has(`${hoverCell.col},${hoverCell.row}`)) {
-        const dc = hoverCell.col - castCaster.col
-        const dr = hoverCell.row - castCaster.row
+      const hoverInRange = hoverCell && rangeKeys.has(`${hoverCell.col},${hoverCell.row}`)
+      const isSelfCone = parsed.rangeCells === 0 && (parsed.aoe?.shape === 'cone' || parsed.aoe?.shape === 'line')
+      // For Self cones/lines show a preview in the last-used direction even
+      // before the user hovers, so the player sees the AoE anchored on them.
+      if (hoverInRange || isSelfCone) {
         const shape = parsed.aoe?.shape ?? 'circle'
         const size = parsed.aoe?.sizeCells ?? 0
-        let originCol = hoverCell.col
-        let originRow = hoverCell.row
-        let direction: Direction4 | undefined
-        if (parsed.rangeCells === 0) {
+        let originCol: number
+        let originRow: number
+        let direction: Direction8 | undefined
+        if (hoverInRange) {
+          const dc = hoverCell!.col - castCaster.col
+          const dr = hoverCell!.row - castCaster.row
+          if (parsed.rangeCells === 0) {
+            originCol = castCaster.col
+            originRow = castCaster.row
+            if (shape === 'cone' || shape === 'line') direction = pickCardinal(dc, dr)
+          } else if (shape === 'cone' || shape === 'line') {
+            originCol = castCaster.col
+            originRow = castCaster.row
+            direction = pickCardinal(dc, dr)
+          } else {
+            originCol = hoverCell!.col
+            originRow = hoverCell!.row
+          }
+        } else {
+          // Self cone/line with no hover: anchor on caster with stored direction.
           originCol = castCaster.col
           originRow = castCaster.row
-          if (shape === 'cone' || shape === 'line') direction = pickCardinal(dc, dr)
-        } else if (shape === 'cone' || shape === 'line') {
-          originCol = castCaster.col
-          originRow = castCaster.row
-          direction = pickCardinal(dc, dr)
+          direction = castDirection
         }
         const cells = size > 0
           ? shapeCells({ shape, sizeCells: size, originCol, originRow, direction })
@@ -465,7 +516,7 @@ export default function BattleGrid({
             const detail = spellDetails[sp.name]
             const parsed = detail ? parseSpell(detail.range, detail.description) : null
             const isLoading = spellLoadingId === sp.id
-            const isActive = castMode?.spell.id === sp.id
+            const isActive = castMode?.kind === 'spell' && castMode.name === sp.name
             return (
               <div key={sp.id} style={{ position: 'relative' }}
                 onMouseEnter={() => setHoverSpellId(sp.id)}
@@ -505,6 +556,31 @@ export default function BattleGrid({
           })}
         </div>
       )}
+      {myWeapons.length > 0 && myToken && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.62rem', color: 'var(--cs-text-muted)', fontFamily: 'Cinzel, serif', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Armas</span>
+          {myWeapons.map(w => {
+            const rangeCells = parseWeaponRange(w.range)
+            const isActive = castMode?.kind === 'weapon' && castMode.name === w.name
+            return (
+              <button key={w.id}
+                title={`${w.range ?? 'melee'}${w.damage ? ` · ${w.damage}` : ''}`}
+                onClick={() => isActive ? cancelCast() : beginCastWeapon(w)}
+                style={{
+                  fontFamily: 'Cinzel, serif', fontSize: '0.7rem',
+                  padding: '3px 10px', borderRadius: 12,
+                  border: `1px solid ${isActive ? '#b85450' : 'rgba(184,84,80,0.6)'}`,
+                  background: isActive ? '#b85450' : 'transparent',
+                  color: isActive ? '#fff' : '#b85450',
+                  cursor: 'pointer',
+                }}>
+                {w.name}
+                <span style={{ marginLeft: 4, fontSize: '0.58rem', opacity: 0.7 }}>{rangeCells * METERS_PER_CELL}m</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
       {castMode && castCaster && (
         <div style={{
           display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap',
@@ -513,7 +589,7 @@ export default function BattleGrid({
           background: hexWithAlpha(castMode.color, 0.08),
           fontSize: '0.7rem', fontFamily: 'Cinzel, serif',
         }}>
-          <span style={{ color: castMode.color, fontWeight: 700 }}>⚡ Lanzando: {castMode.spell.name}</span>
+          <span style={{ color: castMode.color, fontWeight: 700 }}>{castMode.kind === 'weapon' ? '⚔' : '⚡'} {castMode.kind === 'weapon' ? 'Atacando' : 'Lanzando'}: {castMode.name}</span>
           <span style={{ color: 'var(--cs-text-muted)' }}>
             {castMode.parsed.rangeCells === 0 ? 'origen en sí mismo' : `rango ${castMode.parsed.rangeCells * METERS_PER_CELL} m`}
             {castMode.parsed.aoe && ` · ${castMode.parsed.aoe.shape} ${castMode.parsed.aoe.sizeCells * METERS_PER_CELL} m`}
@@ -665,7 +741,14 @@ export default function BattleGrid({
                 }}
                 onDragOver={e => e.preventDefault()}
                 onDrop={e => handleDrop(e, col, row)}
-                onMouseEnter={castMode ? () => setHoverCell({ col, row }) : undefined}
+                onMouseEnter={castMode ? () => {
+                  setHoverCell({ col, row })
+                  if (castCaster && castMode.parsed.rangeCells === 0) {
+                    const dc = col - castCaster.col
+                    const dr = row - castCaster.row
+                    if (dc !== 0 || dr !== 0) setCastDirection(pickCardinal(dc, dr))
+                  }
+                } : undefined}
                 onClick={
                   canClickToCast ? () => commitCast(col, row)
                   : canClickToMove ? () => moveSelectedTo(col, row)

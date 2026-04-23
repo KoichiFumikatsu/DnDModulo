@@ -426,6 +426,7 @@ export default async function CharacterPage({
               damage: (s as Record<string, unknown>).damage as string ?? null,
               custom_notes: s.custom_notes, is_prepared: s.is_prepared,
             }))}
+            characterName={character.name}
           />
         )}
 
