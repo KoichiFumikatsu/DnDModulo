@@ -80,6 +80,7 @@ export default function CampaignRoomPage() {
   const [showCharPicker, setShowCharPicker] = useState(false)
   const [myCharacters, setMyCharacters] = useState<MyCharacter[]>([])
   const [charPickerLoading, setCharPickerLoading] = useState(false)
+  const [speedByCharacter, setSpeedByCharacter] = useState<Record<string, number>>({})
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const loadMembers = useCallback(async () => {
@@ -118,13 +119,17 @@ export default function CampaignRoomPage() {
       // Fetch usernames for members and DM in one query (no FK to user_profiles, so no embed).
       const memberRows = (membersData ?? []) as unknown as Omit<MemberRow, 'username'>[]
       const profileIds = Array.from(new Set([camp.dm_id, ...memberRows.map(m => m.user_id)]))
-      const { data: profiles } = await supabase
-        .from('user_profiles')
-        .select('id, username')
-        .in('id', profileIds)
+      const charIds = memberRows.map(m => m.character_id).filter((c): c is string => !!c)
+      const [{ data: profiles }, { data: charSpeeds }] = await Promise.all([
+        supabase.from('user_profiles').select('id, username').in('id', profileIds),
+        charIds.length > 0
+          ? supabase.from('characters').select('id, speed').in('id', charIds)
+          : Promise.resolve({ data: [] as { id: string; speed: number }[] }),
+      ])
       const nameById = new Map((profiles ?? []).map(p => [p.id, p.username]))
       setMembers(memberRows.map(m => ({ ...m, username: nameById.get(m.user_id) ?? null })))
       setDmUsername(nameById.get(camp.dm_id) ?? null)
+      setSpeedByCharacter(Object.fromEntries((charSpeeds ?? []).map(c => [c.id, c.speed])))
 
       if (map) setMapState({
         map_image_url: map.map_image_url,
@@ -349,6 +354,7 @@ export default function CampaignRoomPage() {
             initialOffsetX={mapState.map_offset_x}
             initialOffsetY={mapState.map_offset_y}
             initialScale={mapState.map_scale}
+            speedByCharacter={speedByCharacter}
           />
         </div>
 

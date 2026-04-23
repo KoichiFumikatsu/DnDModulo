@@ -26,6 +26,13 @@ interface Props {
   initialOffsetY?: number
   initialScale?: number
   onTokensChange?: (tokens: Token[]) => void
+  speedByCharacter?: Record<string, number>
+}
+
+const METERS_PER_CELL = 2
+
+function speedToCells(speedM: number): number {
+  return Math.max(1, Math.floor(speedM / METERS_PER_CELL))
 }
 
 const TOKEN_COLORS = ['#8b1a1a', '#3a6fa8', '#2d7a4f', '#7c3aed', '#d97706', '#0891b2', '#db2777', '#4b5563']
@@ -35,9 +42,11 @@ export default function BattleGrid({
   initialTokens, initialMapUrl, initialCols, initialRows,
   initialOffsetX = 0, initialOffsetY = 0, initialScale = 1,
   onTokensChange,
+  speedByCharacter,
 }: Props) {
   const [tokens, setTokens] = useState<Token[]>(initialTokens)
   const [dragTokenId, setDragTokenId] = useState<string | null>(null)
+  const [selectedTokenId, setSelectedTokenId] = useState<string | null>(null)
   const prevInitialTokensRef = useRef(initialTokens)
 
   // Sync external token changes (auto-token, other players' edits) when not dragging
@@ -102,6 +111,36 @@ export default function BattleGrid({
     setTokens(updated)
     saveMapState(updated)
     setDragTokenId(null)
+    setSelectedTokenId(null)
+  }
+
+  function canSelect(token: Token): boolean {
+    if (!token.character_id) return false
+    return isDM || token.owner_user_id === currentUserId
+  }
+
+  function handleTokenClick(e: React.MouseEvent, token: Token) {
+    if (!canSelect(token)) return
+    e.stopPropagation()
+    setSelectedTokenId(prev => prev === token.id ? null : token.id)
+  }
+
+  const selectedToken = selectedTokenId ? tokens.find(t => t.id === selectedTokenId) : null
+  const selectedSpeedM = selectedToken?.character_id ? speedByCharacter?.[selectedToken.character_id] : undefined
+  const selectedCells = selectedSpeedM ? speedToCells(selectedSpeedM) : 0
+
+  const reachableKeys = new Set<string>()
+  if (selectedToken && selectedCells > 0) {
+    for (let dc = -selectedCells; dc <= selectedCells; dc++) {
+      for (let dr = -selectedCells; dr <= selectedCells; dr++) {
+        if (dc === 0 && dr === 0) continue
+        if (Math.max(Math.abs(dc), Math.abs(dr)) > selectedCells) continue
+        const c = selectedToken.col + dc
+        const r = selectedToken.row + dr
+        if (c < 0 || r < 0 || c >= cols || r >= rows) continue
+        reachableKeys.add(`${c},${r}`)
+      }
+    }
   }
 
   function addToken() {
@@ -139,6 +178,25 @@ export default function BattleGrid({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', height: '100%' }}>
+      {selectedToken && selectedCells > 0 && (
+        <div style={{
+          fontSize: '0.7rem',
+          fontFamily: 'Cinzel, serif',
+          color: 'var(--cs-gold)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+        }}>
+          <span>
+            Movimiento: <strong style={{ color: 'var(--cs-accent)' }}>{selectedCells}</strong> casillas
+            <span style={{ color: 'var(--cs-text-muted)' }}> ({selectedCells * METERS_PER_CELL} m · vel. {selectedSpeedM} m)</span>
+          </span>
+          <button onClick={() => setSelectedTokenId(null)}
+            style={{ fontSize: '0.6rem', padding: '1px 8px', borderRadius: 8, border: '1px solid rgba(201,173,106,0.4)', background: 'transparent', color: 'var(--cs-text-muted)', cursor: 'pointer' }}>
+            Deseleccionar
+          </button>
+        </div>
+      )}
       {/* Grid */}
       <div style={{
         position: 'relative',
@@ -164,10 +222,20 @@ export default function BattleGrid({
             const col = i % cols
             const row = Math.floor(i / cols)
             const tokenHere = tokens.find(t => t.col === col && t.row === row)
+            const isReachable = reachableKeys.has(`${col},${row}`)
+            const isSelectedCell = selectedToken && selectedToken.col === col && selectedToken.row === row
             return (
               <div
                 key={i}
-                style={cellStyle}
+                style={{
+                  ...cellStyle,
+                  background: isReachable
+                    ? 'rgba(90, 180, 120, 0.22)'
+                    : isSelectedCell
+                      ? 'rgba(201, 173, 106, 0.22)'
+                      : undefined,
+                  boxShadow: isReachable ? 'inset 0 0 0 1px rgba(90,180,120,0.45)' : undefined,
+                }}
                 onDragOver={e => e.preventDefault()}
                 onDrop={e => handleDrop(e, col, row)}
               >
@@ -176,11 +244,18 @@ export default function BattleGrid({
                     className="camp-token"
                     draggable={canDrag(tokenHere)}
                     onDragStart={e => canDrag(tokenHere) ? handleDragStart(e, tokenHere.id) : e.preventDefault()}
+                    onClick={e => handleTokenClick(e, tokenHere)}
                     style={{
                       background: tokenHere.portrait_url
                         ? `url(${tokenHere.portrait_url}) center/cover`
                         : tokenHere.color,
-                      cursor: canDrag(tokenHere) ? 'grab' : 'default',
+                      cursor: canDrag(tokenHere)
+                        ? 'grab'
+                        : canSelect(tokenHere)
+                          ? 'pointer'
+                          : 'default',
+                      outline: selectedTokenId === tokenHere.id ? '2px solid var(--cs-gold)' : undefined,
+                      outlineOffset: selectedTokenId === tokenHere.id ? '1px' : undefined,
                     }}
                     title={tokenHere.label}
                   >

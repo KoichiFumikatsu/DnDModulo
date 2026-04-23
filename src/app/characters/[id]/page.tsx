@@ -241,7 +241,7 @@ export default async function CharacterPage({
                   <div className="cs-shield cs-shield--sm">
                     <ShieldSm />
                     <span className="cs-shield-label">Spd</span>
-                    <span className="cs-shield-value cs-num">{character.speed}</span>
+                    <span className="cs-shield-value cs-num">{character.speed}m</span>
                   </div>
                 </div>
 

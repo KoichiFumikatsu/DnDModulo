@@ -1489,7 +1489,7 @@ export default function EditCharacterClient({
                   ))}
                 </select>
               </F>
-              <F label="Velocidad">
+              <F label="Velocidad (m)">
                 <input type="number" value={basic.speed}
                   onChange={e => setBasic(p => ({ ...p, speed: +e.target.value }))}
                   className="ifield" />
@@ -2529,7 +2529,7 @@ export default function EditCharacterClient({
               <F label="Range">
                 <input value={newSpell.range}
                   onChange={e => setNewSpell(p => ({ ...p, range: e.target.value }))}
-                  className="ifield" placeholder="120 feet, Touch..." />
+                  className="ifield" placeholder="36 m, Toque..." />
               </F>
               <F label="Damage">
                 <input value={newSpell.damage}
@@ -2586,7 +2586,7 @@ export default function EditCharacterClient({
                             <F label="Alcance">
                               <input value={editSpell.range}
                                 onChange={e => setEditSpell(p => ({ ...p, range: e.target.value }))}
-                                className="ifield" placeholder="60 pies" />
+                                className="ifield" placeholder="20 m" />
                             </F>
                             <F label="Componentes">
                               <input value={editSpell.components}
@@ -2739,7 +2739,7 @@ export default function EditCharacterClient({
               <F label="Alcance">
                 <input value={newWeapon.range}
                   onChange={e => setNewWeapon(p => ({ ...p, range: e.target.value }))}
-                  className="ifield" placeholder="80/320ft" />
+                  className="ifield" placeholder="25/100 m" />
               </F>
               <F label="Notas">
                 <input value={newWeapon.notes}
@@ -2801,7 +2801,7 @@ export default function EditCharacterClient({
                       <F label="Alcance">
                         <input value={editWeapon.range}
                           onChange={e => setEditWeapon(p => ({ ...p, range: e.target.value }))}
-                          className="ifield" placeholder="80/320ft" />
+                          className="ifield" placeholder="25/100 m" />
                       </F>
                       <F label="Notas">
                         <input value={editWeapon.notes}

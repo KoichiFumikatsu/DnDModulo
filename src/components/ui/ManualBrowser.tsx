@@ -11,6 +11,29 @@ function stripTags(text: string): string {
     .trim()
 }
 
+// 5etools stores distances in feet. Campaign convention: 3 ft ≈ 1 m.
+function ftToM(ft: number): number {
+  return Math.max(1, Math.round(ft / 3))
+}
+
+function formatSpeed(raw: unknown): string {
+  if (typeof raw === 'number') return `${ftToM(raw)} m`
+  if (typeof raw === 'string') {
+    return raw.replace(/(\d+)\s*(ft\.?|feet|pies)/gi, (_, n) => `${ftToM(Number(n))} m`)
+  }
+  if (typeof raw === 'object' && raw !== null) {
+    const obj = raw as Record<string, unknown>
+    const parts: string[] = []
+    for (const [k, v] of Object.entries(obj)) {
+      const ft = typeof v === 'number' ? v : typeof v === 'object' && v && typeof (v as Record<string, unknown>).number === 'number' ? (v as Record<string, number>).number : null
+      if (ft == null) continue
+      parts.push(`${k === 'walk' ? '' : k + ' '}${ftToM(ft)} m`.trim())
+    }
+    return parts.join(', ')
+  }
+  return ''
+}
+
 type EntryObj = { type?: string; name?: string; entries?: unknown; entry?: unknown; items?: unknown; text?: unknown; rows?: unknown[][] }
 function extractText(entry: unknown, depth = 0): string {
   if (typeof entry === 'string') return stripTags(entry)
@@ -115,7 +138,7 @@ function getDetail(item: AnyEntry, catKey: string): { sections: { label: string;
       const hp = item.hp as { average?: number; formula?: string }
       sections.push({ label: 'PG', content: `${hp.average ?? '?'} (${hp.formula ?? ''})` })
     }
-    if (item.speed) sections.push({ label: 'Velocidad', content: String(item.speed) })
+    if (item.speed) sections.push({ label: 'Velocidad', content: formatSpeed(item.speed) })
     const abilLine = (['str','dex','con','int','wis','cha'] as const)
       .map(k => `${k.toUpperCase()} ${item[k] ?? 10} (${modStr(Number(item[k] ?? 10))})`).join('  ')
     sections.push({ label: 'Atributos', content: abilLine })
@@ -154,7 +177,7 @@ function getDetail(item: AnyEntry, catKey: string): { sections: { label: string;
       const parts = ab.flatMap(e => Object.entries(e).map(([k, v]) => `${k.toUpperCase()} +${v}`))
       if (parts.length) sections.push({ label: 'Bonus', content: parts.join(', ') })
     }
-    if (item.speed) sections.push({ label: 'Velocidad', content: `${typeof item.speed === 'object' ? (item.speed as Record<string,unknown>).walk ?? 30 : item.speed} ft.` })
+    if (item.speed) sections.push({ label: 'Velocidad', content: formatSpeed(item.speed) })
     if (item.size) sections.push({ label: 'Tamaño', content: String(item.size) })
     mainDesc = item.description ? String(item.description) : extractText(item.entries)
   }

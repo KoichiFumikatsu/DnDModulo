@@ -126,7 +126,7 @@ export default function NewCharacterClient({
   const [background, setBackground] = useState('')
   const [alignment, setAlignment] = useState('')
   const [xp, setXp] = useState(0)
-  const [speed, setSpeed] = useState(30)
+  const [speed, setSpeed] = useState(10)
 
   // Derived
   const totalLevel = getLevelFromXP(xp)
@@ -488,8 +488,8 @@ export default function NewCharacterClient({
                   {ALIGNMENTS.map(a => <option key={a} value={a}>{a}</option>)}
                 </select>
               </Field>
-              <Field label="Velocidad (ft)">
-                <input type="number" value={speed} onChange={e => setSpeed(parseInt(e.target.value) || 30)} style={darkInput} />
+              <Field label="Velocidad (m)">
+                <input type="number" value={speed} onChange={e => setSpeed(parseInt(e.target.value) || 10)} style={darkInput} />
               </Field>
             </div>
             <Field label="Experiencia (XP)">
