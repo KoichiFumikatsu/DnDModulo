@@ -8,7 +8,7 @@ import { setActiveCampaignId } from '@/lib/campaign/broadcast'
 import PartyPanel from '@/components/campaign/PartyPanel'
 import EventFeed from '@/components/campaign/EventFeed'
 import BattleGrid from '@/components/campaign/BattleGrid'
-import type { Token } from '@/components/campaign/BattleGrid'
+import type { Token, MapEffect } from '@/components/campaign/BattleGrid'
 
 interface Campaign {
   id: string
@@ -39,6 +39,7 @@ interface MapState {
   map_offset_x: number
   map_offset_y: number
   map_scale: number
+  active_effects: MapEffect[]
 }
 
 interface SheetCharacter {
@@ -72,7 +73,7 @@ export default function CampaignRoomPage() {
   const [dmUsername, setDmUsername] = useState<string | null>(null)
   const [members, setMembers] = useState<MemberRow[]>([])
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set())
-  const [mapState, setMapState] = useState<MapState>({ map_image_url: null, grid_cols: 20, grid_rows: 15, tokens: [], map_offset_x: 0, map_offset_y: 0, map_scale: 1 })
+  const [mapState, setMapState] = useState<MapState>({ map_image_url: null, grid_cols: 20, grid_rows: 15, tokens: [], map_offset_x: 0, map_offset_y: 0, map_scale: 1, active_effects: [] })
   const [viewingSheet, setViewingSheet] = useState<SheetCharacter | null>(null)
   const [sheetLoading, setSheetLoading] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -139,6 +140,7 @@ export default function CampaignRoomPage() {
         map_offset_x: map.map_offset_x ?? 0,
         map_offset_y: map.map_offset_y ?? 0,
         map_scale: map.map_scale ?? 1,
+        active_effects: (map.active_effects as MapEffect[]) ?? [],
       })
 
       setActiveCampaignId(id)
@@ -197,7 +199,7 @@ export default function CampaignRoomPage() {
       .channel(`camp-map-${id}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'campaign_map_state', filter: `campaign_id=eq.${id}` },
         (payload) => {
-          const r = payload.new as MapState & { tokens: Token[] }
+          const r = payload.new as MapState & { tokens: Token[]; active_effects?: MapEffect[] }
           setMapState({
             map_image_url: r.map_image_url,
             grid_cols: r.grid_cols,
@@ -206,6 +208,7 @@ export default function CampaignRoomPage() {
             map_offset_x: r.map_offset_x ?? 0,
             map_offset_y: r.map_offset_y ?? 0,
             map_scale: r.map_scale ?? 1,
+            active_effects: r.active_effects ?? [],
           })
         })
       .subscribe()
@@ -354,6 +357,7 @@ export default function CampaignRoomPage() {
             initialOffsetX={mapState.map_offset_x}
             initialOffsetY={mapState.map_offset_y}
             initialScale={mapState.map_scale}
+            initialEffects={mapState.active_effects}
             speedByCharacter={speedByCharacter}
           />
         </div>

@@ -14,6 +14,18 @@ export interface Token {
   owner_user_id?: string | null
 }
 
+export interface MapEffect {
+  id: string
+  name: string
+  origin_col: number
+  origin_row: number
+  radius_cells: number
+  color: string
+  caster_user_id: string | null
+  caster_token_id: string | null
+  created_at: string
+}
+
 interface Props {
   campaignId: string
   isDM: boolean
@@ -25,6 +37,7 @@ interface Props {
   initialOffsetX?: number
   initialOffsetY?: number
   initialScale?: number
+  initialEffects?: MapEffect[]
   onTokensChange?: (tokens: Token[]) => void
   speedByCharacter?: Record<string, number>
 }
@@ -36,18 +49,36 @@ function speedToCells(speedM: number): number {
 }
 
 const TOKEN_COLORS = ['#8b1a1a', '#3a6fa8', '#2d7a4f', '#7c3aed', '#d97706', '#0891b2', '#db2777', '#4b5563']
+const EFFECT_COLORS = ['#dc2626', '#2563eb', '#16a34a', '#9333ea', '#ea580c', '#0891b2', '#db2777', '#ca8a04']
+
+function metersToCells(m: number): number {
+  return Math.max(1, Math.round(m / METERS_PER_CELL))
+}
+
+function hexWithAlpha(hex: string, alpha: number): string {
+  const h = hex.replace('#', '')
+  const r = parseInt(h.slice(0, 2), 16)
+  const g = parseInt(h.slice(2, 4), 16)
+  const b = parseInt(h.slice(4, 6), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
 
 export default function BattleGrid({
   campaignId, isDM, currentUserId,
   initialTokens, initialMapUrl, initialCols, initialRows,
   initialOffsetX = 0, initialOffsetY = 0, initialScale = 1,
+  initialEffects = [],
   onTokensChange,
   speedByCharacter,
 }: Props) {
   const [tokens, setTokens] = useState<Token[]>(initialTokens)
   const [dragTokenId, setDragTokenId] = useState<string | null>(null)
   const [selectedTokenId, setSelectedTokenId] = useState<string | null>(null)
+  const [effects, setEffects] = useState<MapEffect[]>(initialEffects)
+  const [showEffectForm, setShowEffectForm] = useState(false)
+  const [newEffect, setNewEffect] = useState<{ name: string; radiusM: number; color: string }>({ name: '', radiusM: 6, color: EFFECT_COLORS[0] })
   const prevInitialTokensRef = useRef(initialTokens)
+  const prevInitialEffectsRef = useRef(initialEffects)
 
   // Sync external token changes (auto-token, other players' edits) when not dragging
   useEffect(() => {
@@ -56,6 +87,13 @@ export default function BattleGrid({
       setTokens(initialTokens)
     }
   }, [initialTokens, dragTokenId])
+
+  useEffect(() => {
+    if (prevInitialEffectsRef.current !== initialEffects) {
+      prevInitialEffectsRef.current = initialEffects
+      setEffects(initialEffects)
+    }
+  }, [initialEffects])
 
   const [mapUrl, setMapUrl] = useState(initialMapUrl ?? '')
   const [cols, setCols] = useState(initialCols)
@@ -79,6 +117,7 @@ export default function BattleGrid({
     updatedOffsetX?: number,
     updatedOffsetY?: number,
     updatedScale?: number,
+    updatedEffects?: MapEffect[],
   ) {
     await supabase.from('campaign_map_state').upsert({
       campaign_id: campaignId,
@@ -89,9 +128,44 @@ export default function BattleGrid({
       map_offset_x: updatedOffsetX ?? mapOffsetX,
       map_offset_y: updatedOffsetY ?? mapOffsetY,
       map_scale: updatedScale ?? mapScale,
+      active_effects: updatedEffects ?? effects,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'campaign_id' })
     onTokensChange?.(updatedTokens)
+  }
+
+  function canRemoveEffect(fx: MapEffect): boolean {
+    return isDM || fx.caster_user_id === currentUserId
+  }
+
+  function castEffectFromSelected() {
+    if (!selectedToken) return
+    const name = newEffect.name.trim() || 'Efecto'
+    const radius = metersToCells(newEffect.radiusM)
+    const fx: MapEffect = {
+      id: crypto.randomUUID(),
+      name,
+      origin_col: selectedToken.col,
+      origin_row: selectedToken.row,
+      radius_cells: radius,
+      color: newEffect.color,
+      caster_user_id: selectedToken.owner_user_id ?? currentUserId,
+      caster_token_id: selectedToken.id,
+      created_at: new Date().toISOString(),
+    }
+    const updated = [...effects, fx]
+    setEffects(updated)
+    saveMapState(tokens, undefined, undefined, undefined, undefined, undefined, undefined, updated)
+    setShowEffectForm(false)
+    setNewEffect(p => ({ ...p, name: '' }))
+  }
+
+  function removeEffect(fxId: string) {
+    const target = effects.find(f => f.id === fxId)
+    if (!target || !canRemoveEffect(target)) return
+    const updated = effects.filter(f => f.id !== fxId)
+    setEffects(updated)
+    saveMapState(tokens, undefined, undefined, undefined, undefined, undefined, undefined, updated)
   }
 
   function canDrag(token: Token) {
@@ -143,6 +217,21 @@ export default function BattleGrid({
     }
   }
 
+  // Map of cell key → effect color (first matching effect wins when overlapping).
+  const effectColorByCell = new Map<string, string>()
+  for (const fx of effects) {
+    for (let dc = -fx.radius_cells; dc <= fx.radius_cells; dc++) {
+      for (let dr = -fx.radius_cells; dr <= fx.radius_cells; dr++) {
+        if (Math.max(Math.abs(dc), Math.abs(dr)) > fx.radius_cells) continue
+        const c = fx.origin_col + dc
+        const r = fx.origin_row + dr
+        if (c < 0 || r < 0 || c >= cols || r >= rows) continue
+        const key = `${c},${r}`
+        if (!effectColorByCell.has(key)) effectColorByCell.set(key, fx.color)
+      }
+    }
+  }
+
   function addToken() {
     if (!newTokenLabel.trim()) return
     const t: Token = {
@@ -178,7 +267,7 @@ export default function BattleGrid({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', height: '100%' }}>
-      {selectedToken && selectedCells > 0 && (
+      {selectedToken && (
         <div style={{
           fontSize: '0.7rem',
           fontFamily: 'Cinzel, serif',
@@ -186,15 +275,70 @@ export default function BattleGrid({
           display: 'flex',
           alignItems: 'center',
           gap: '0.5rem',
+          flexWrap: 'wrap',
         }}>
-          <span>
-            Movimiento: <strong style={{ color: 'var(--cs-accent)' }}>{selectedCells}</strong> casillas
-            <span style={{ color: 'var(--cs-text-muted)' }}> ({selectedCells * METERS_PER_CELL} m · vel. {selectedSpeedM} m)</span>
-          </span>
-          <button onClick={() => setSelectedTokenId(null)}
+          {selectedCells > 0 && (
+            <span>
+              Movimiento: <strong style={{ color: 'var(--cs-accent)' }}>{selectedCells}</strong> casillas
+              <span style={{ color: 'var(--cs-text-muted)' }}> ({selectedCells * METERS_PER_CELL} m · vel. {selectedSpeedM} m)</span>
+            </span>
+          )}
+          <button onClick={() => setShowEffectForm(v => !v)}
+            style={{ fontSize: '0.6rem', padding: '1px 10px', borderRadius: 8, border: '1px solid var(--cs-accent)', background: 'transparent', color: 'var(--cs-accent)', cursor: 'pointer' }}>
+            {showEffectForm ? '▲ Efecto' : '+ Efecto'}
+          </button>
+          <button onClick={() => { setSelectedTokenId(null); setShowEffectForm(false) }}
             style={{ fontSize: '0.6rem', padding: '1px 8px', borderRadius: 8, border: '1px solid rgba(201,173,106,0.4)', background: 'transparent', color: 'var(--cs-text-muted)', cursor: 'pointer' }}>
             Deseleccionar
           </button>
+        </div>
+      )}
+      {selectedToken && showEffectForm && (
+        <div style={{
+          display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap',
+          padding: '0.5rem 0.6rem', border: '1px solid rgba(201,173,106,0.35)',
+          background: 'rgba(201,173,106,0.06)', borderRadius: 6,
+        }}>
+          <input value={newEffect.name} onChange={e => setNewEffect(p => ({ ...p, name: e.target.value }))}
+            placeholder="Nombre (ej: Bola de fuego)"
+            className="ifield" style={{ fontSize: '0.72rem', flex: 1, minWidth: 140 }} />
+          <label style={{ fontSize: '0.62rem', color: 'var(--cs-text-muted)', fontFamily: 'Cinzel, serif' }}>Radio (m)</label>
+          <input type="number" min={1} step={1} value={newEffect.radiusM}
+            onChange={e => setNewEffect(p => ({ ...p, radiusM: Math.max(1, +e.target.value) }))}
+            className="ifield" style={{ fontSize: '0.72rem', width: 56 }} />
+          <div style={{ display: 'flex', gap: 4 }}>
+            {EFFECT_COLORS.map(c => (
+              <button key={c} onClick={() => setNewEffect(p => ({ ...p, color: c }))}
+                style={{ width: 18, height: 18, borderRadius: '50%', background: c, border: newEffect.color === c ? '2px solid white' : '2px solid transparent', cursor: 'pointer', padding: 0 }} />
+            ))}
+          </div>
+          <button onClick={castEffectFromSelected}
+            style={{ fontSize: '0.7rem', padding: '3px 12px', borderRadius: 10, border: '1px solid var(--cs-accent)', background: 'var(--cs-accent)', color: '#fff', cursor: 'pointer' }}>
+            Lanzar
+          </button>
+        </div>
+      )}
+      {effects.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', fontSize: '0.68rem' }}>
+          {effects.map(fx => (
+            <span key={fx.id} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '2px 8px', borderRadius: 10,
+              background: hexWithAlpha(fx.color, 0.18),
+              border: `1px solid ${hexWithAlpha(fx.color, 0.55)}`,
+              fontFamily: 'Cinzel, serif', color: 'var(--cs-text)',
+            }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: fx.color }} />
+              {fx.name}
+              <span style={{ color: 'var(--cs-text-muted)' }}>· {fx.radius_cells * METERS_PER_CELL}m</span>
+              {canRemoveEffect(fx) && (
+                <button onClick={() => removeEffect(fx.id)}
+                  style={{ background: 'none', border: 'none', color: 'var(--cs-text-muted)', cursor: 'pointer', padding: 0, fontSize: '0.75rem', lineHeight: 1 }}>
+                  ✕
+                </button>
+              )}
+            </span>
+          ))}
         </div>
       )}
       {/* Grid */}
@@ -222,19 +366,29 @@ export default function BattleGrid({
             const col = i % cols
             const row = Math.floor(i / cols)
             const tokenHere = tokens.find(t => t.col === col && t.row === row)
-            const isReachable = reachableKeys.has(`${col},${row}`)
+            const cellKey = `${col},${row}`
+            const isReachable = reachableKeys.has(cellKey)
             const isSelectedCell = selectedToken && selectedToken.col === col && selectedToken.row === row
+            const effectColor = effectColorByCell.get(cellKey)
+            const cellBg = isReachable
+              ? 'rgba(90, 180, 120, 0.22)'
+              : effectColor
+                ? hexWithAlpha(effectColor, 0.22)
+                : isSelectedCell
+                  ? 'rgba(201, 173, 106, 0.22)'
+                  : undefined
+            const cellShadow = isReachable
+              ? 'inset 0 0 0 1px rgba(90,180,120,0.45)'
+              : effectColor
+                ? `inset 0 0 0 1px ${hexWithAlpha(effectColor, 0.55)}`
+                : undefined
             return (
               <div
                 key={i}
                 style={{
                   ...cellStyle,
-                  background: isReachable
-                    ? 'rgba(90, 180, 120, 0.22)'
-                    : isSelectedCell
-                      ? 'rgba(201, 173, 106, 0.22)'
-                      : undefined,
-                  boxShadow: isReachable ? 'inset 0 0 0 1px rgba(90,180,120,0.45)' : undefined,
+                  background: cellBg,
+                  boxShadow: cellShadow,
                 }}
                 onDragOver={e => e.preventDefault()}
                 onDrop={e => handleDrop(e, col, row)}
