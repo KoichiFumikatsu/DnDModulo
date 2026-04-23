@@ -203,12 +203,14 @@ export default function BattleGrid({
   const selectedSpeedM = selectedToken?.character_id ? speedByCharacter?.[selectedToken.character_id] : undefined
   const selectedCells = selectedSpeedM ? speedToCells(selectedSpeedM) : 0
 
+  // Manhattan distance: diagonals cost 2 (one horizontal + one vertical step),
+  // matching Dofus-style grid movement. This yields a diamond-shaped reach.
   const reachableKeys = new Set<string>()
   if (selectedToken && selectedCells > 0) {
     for (let dc = -selectedCells; dc <= selectedCells; dc++) {
       for (let dr = -selectedCells; dr <= selectedCells; dr++) {
         if (dc === 0 && dr === 0) continue
-        if (Math.max(Math.abs(dc), Math.abs(dr)) > selectedCells) continue
+        if (Math.abs(dc) + Math.abs(dr) > selectedCells) continue
         const c = selectedToken.col + dc
         const r = selectedToken.row + dr
         if (c < 0 || r < 0 || c >= cols || r >= rows) continue
@@ -218,11 +220,12 @@ export default function BattleGrid({
   }
 
   // Map of cell key → effect color (first matching effect wins when overlapping).
+  // Same Manhattan shape as movement, so area effects are radial diamonds.
   const effectColorByCell = new Map<string, string>()
   for (const fx of effects) {
     for (let dc = -fx.radius_cells; dc <= fx.radius_cells; dc++) {
       for (let dr = -fx.radius_cells; dr <= fx.radius_cells; dr++) {
-        if (Math.max(Math.abs(dc), Math.abs(dr)) > fx.radius_cells) continue
+        if (Math.abs(dc) + Math.abs(dr) > fx.radius_cells) continue
         const c = fx.origin_col + dc
         const r = fx.origin_row + dr
         if (c < 0 || r < 0 || c >= cols || r >= rows) continue
@@ -230,6 +233,14 @@ export default function BattleGrid({
         if (!effectColorByCell.has(key)) effectColorByCell.set(key, fx.color)
       }
     }
+  }
+
+  function moveSelectedTo(col: number, row: number) {
+    if (!selectedToken) return
+    const updated = tokens.map(t => t.id === selectedToken.id ? { ...t, col, row } : t)
+    setTokens(updated)
+    saveMapState(updated)
+    setSelectedTokenId(null)
   }
 
   function addToken() {
@@ -382,6 +393,7 @@ export default function BattleGrid({
               : effectColor
                 ? `inset 0 0 0 1px ${hexWithAlpha(effectColor, 0.55)}`
                 : undefined
+            const canClickToMove = !!(selectedToken && isReachable && canDrag(selectedToken))
             return (
               <div
                 key={i}
@@ -389,9 +401,11 @@ export default function BattleGrid({
                   ...cellStyle,
                   background: cellBg,
                   boxShadow: cellShadow,
+                  cursor: canClickToMove ? 'pointer' : undefined,
                 }}
                 onDragOver={e => e.preventDefault()}
                 onDrop={e => handleDrop(e, col, row)}
+                onClick={canClickToMove ? () => moveSelectedTo(col, row) : undefined}
               >
                 {tokenHere && (
                   <div
