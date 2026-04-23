@@ -61,6 +61,13 @@ interface MyCharacter {
   character_images: { image_url: string; is_active: boolean }[]
 }
 
+interface CastableSpell {
+  id: string
+  name: string
+  spell_level: number
+  damage: string | null
+}
+
 export default function CampaignRoomPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
@@ -82,6 +89,7 @@ export default function CampaignRoomPage() {
   const [myCharacters, setMyCharacters] = useState<MyCharacter[]>([])
   const [charPickerLoading, setCharPickerLoading] = useState(false)
   const [speedByCharacter, setSpeedByCharacter] = useState<Record<string, number>>({})
+  const [mySpells, setMySpells] = useState<CastableSpell[]>([])
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const loadMembers = useCallback(async () => {
@@ -149,6 +157,16 @@ export default function CampaignRoomPage() {
       // Auto-open character picker if player has no character assigned.
       // If they have a character but no token on the map (e.g. assigned before
       // the API route existed), trigger the idempotent assign to create it.
+      const myMember = memberRows.find(m => m.user_id === user.id)
+      if (myMember?.character_id) {
+        const { data: spells } = await supabase
+          .from('character_spells')
+          .select('id, name, spell_level, damage')
+          .eq('character_id', myMember.character_id)
+          .order('spell_level')
+        setMySpells((spells ?? []) as CastableSpell[])
+      }
+
       const isPlayerDM = camp.dm_id === user.id
       if (!isPlayerDM) {
         const myRow = memberRows.find(m => m.user_id === user.id)
@@ -359,6 +377,7 @@ export default function CampaignRoomPage() {
             initialScale={mapState.map_scale}
             initialEffects={mapState.active_effects}
             speedByCharacter={speedByCharacter}
+            mySpells={mySpells}
           />
         </div>
 
